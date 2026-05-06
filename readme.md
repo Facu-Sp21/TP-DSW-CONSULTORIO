@@ -6,7 +6,7 @@
 * 50491 - Sampaulesi, Mateo
 * 51556 - Zacchino, Bruno
 * 55366 - Cuadradas, Lucas
-* 54826 - Elian, Cavestri
+* 54826 - Cavestri, Elian
 
 
 ### Repositorios
