@@ -3,9 +3,10 @@
 ## Grupo
 ### Integrantes
 * 48711 - Speranza, Facundo
-* 50491 - Sampaulesi - Mateo
-* 51556 - Zacchino - Bruno
-* 55366 - Cuadradas - Lucas
+* 50491 - Sampaulesi, Mateo
+* 51556 - Zacchino, Bruno
+* 55366 - Cuadradas, Lucas
+* 54826 - Elian, Cavestri
 
 
 ### Repositorios
