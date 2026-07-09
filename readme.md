@@ -26,7 +26,7 @@
 Regularidad:
 |Req|Detalle|
 |:-|:-|
-|CRUD simple|1. CRUD Afiliado<br>2. CRUD Obra_Social<br>3. CRUD Especialidad<br>4. CRUD Especialista<br>5. estado_turno|
+|CRUD simple|1. CRUD Afiliado<br>2. CRUD Obra_Social<br>3. CRUD Especialidad<br>4. CRUD Administrativo|
 |CRUD dependiente|1. CRUD Turno {depende de} paciente y de especialista <br>2. CRUD Agenda {depende de} CRUD especialista<br>3. CRUD historia_clinica {depende de} CRUD paciente|
 |Listado<br>+<br>detalle| 1. Listado de especialistas filtrado por especialidad, muestra especialistas que tengan una determinada especialidad<br> 2. Listado de turnos posibles filtrado por especialista, muestra horarios posibles para atenderse con un determinado especialista<br>3. Listado de especialistas por obra social, muestra a los especialistas que trabajan con determinada obra social|
 |CUU/Epic|1. Reservar un turno con un especialista<br>2. El especialista realiza la consulta y genera un informe<br>3. El sistema a final de mes genera una factura/informe a la obra social con todos servicios prestados|
