@@ -8,7 +8,7 @@ export function cGetAllAfiliados(req: Request, res: Response) {
 }
 
 export function cGetAfiliadoById(req: Request, res: Response) {
-  // Sacamos el ID desde el local validado por el schema
+  
   const id = parseInt(res.locals.params.id);
   const afiliado = dbAfiliados.find((a) => a.id === id);
 
@@ -22,7 +22,7 @@ export function cGetAfiliadoById(req: Request, res: Response) {
 export function cCreateAfiliado(req: Request, res: Response) {
   const { nombreCompleto, dni, email, password, obraSocialId } = res.locals.body;
 
-  // Calculamos el próximo ID disponible
+  
   const nuevoId = dbAfiliados.length > 0 ? Math.max(...dbAfiliados.map(a => a.id)) + 1 : 1;
   
   const nuevoAfiliado = new Afiliado(nuevoId, nombreCompleto, dni, email, password, obraSocialId);
@@ -41,7 +41,7 @@ export function cUpdateAfiliado(req: Request, res: Response) {
     throw new NotFoundError('Afiliado no encontrado');
   }
 
-  // Actualizamos los campos
+  
   dbAfiliados[afiliadoIndex] = {
     ...dbAfiliados[afiliadoIndex],
     nombreCompleto: nombreCompleto || dbAfiliados[afiliadoIndex].nombreCompleto,
