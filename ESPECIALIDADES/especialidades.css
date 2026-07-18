@@ -1,0 +1,25 @@
+.caja-icono {
+  width: 52px;
+  height: 52px;
+  border-radius: var(--radio-chico);
+  background-color: var(--color-primario-suave);
+  color: var(--color-primario-oscuro);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.tarjeta-especialidad {
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.tarjeta-especialidad:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 1rem 2rem rgba(15, 23, 42, 0.08);
+  border-color: var(--color-primario) !important;
+}
+
+.tarjeta-especialidad p {
+  min-height: 66px;
+}
