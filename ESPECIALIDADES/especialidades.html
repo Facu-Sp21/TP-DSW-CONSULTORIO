@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Especialidades | Vitalis</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="../INDEX/globales.css">
+  <link rel="stylesheet" href="../INDEX/index.css">
+  <link rel="stylesheet" href="../ESPECIALIDADES/especialidades.css">
+</head>
+<body>
+
+  <nav class="navbar navbar-expand-lg bg-white sticky-top border-bottom py-3">
+    <div class="container">
+      <a class="navbar-brand d-flex align-items-center gap-2" href="index.html">
+        <span class="icono-marca"><i class="bi bi-heart-pulse-fill"></i></span>
+        <span class="fw-bold fs-5" style="color: var(--color-primario-oscuro);">Vitalis</span>
+      </a>
+
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu" aria-controls="navMenu" aria-expanded="false" aria-label="Abrir menú">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <div class="collapse navbar-collapse" id="navMenu">
+        <ul class="navbar-nav mx-auto gap-lg-1 py-2 py-lg-0">
+          <li class="nav-item"><a class="nav-link" href="../INDEX/index.html">Inicio</a></li>
+          <li class="nav-item"><a class="nav-link active" href="../ESPECIALIDADES/especialidades.html">Especialidades</a></li>
+          <li class="nav-item"><a class="nav-link" href="../NOSOTROS/nosotros.html">Nosotros</a></li>
+          <li class="nav-item"><a class="nav-link" href="../CONTACTO/contacto.html">Contacto</a></li>
+        </ul>
+        <a href="login.html" class="btn btn-outline-primary rounded-pill px-4">Iniciar Sesión</a>
+      </div>
+    </div>
+  </nav>
+
+  <section class="fondo-punteado py-5">
+    <div class="container text-center mx-auto" style="max-width: 700px;">
+      <span class="etiqueta-superior rounded-pill mb-4">Nuestras especialidades</span>
+      <h1 class="fw-bold mb-3" style="font-size: clamp(1.9rem, 4vw, 2.6rem); letter-spacing: -0.02em;">
+        Un especialista para <span class="texto-degradado">cada etapa de tu vida</span>
+      </h1>
+      <p class="text-muted fs-5">
+        Encontrá al profesional indicado según lo que necesites y reservá tu turno en pocos clics.
+      </p>
+    </div>
+  </section>
+
+  <!-- BUSCADOR -->
+  <section class="py-5">
+    <div class="container d-flex justify-content-center">
+      <form class="input-group input-group-lg shadow-sm rounded-pill overflow-hidden" style="max-width: 560px;">
+        <span class="input-group-text bg-white border-0 ps-4"><i class="bi bi-search text-muted"></i></span>
+        <input type="text" class="form-control border-0" placeholder="Buscar por especialidad, ej: Pediatría, Cardiología...">
+        <button type="submit" class="btn btn-primary px-4">Buscar</button>
+      </form>
+    </div>
+  </section>
+
+  <!-- GRID DE ESPECIALIDADES-->
+  <section class="pb-5 pb-md-6">
+    <div class="container">
+      <div class="row g-4 row-cols-1 row-cols-md-2 row-cols-lg-3">
+
+        <div class="col">
+          <div class="card tarjeta-especialidad border h-100 p-4">
+            <div class="card-body p-0">
+              <div class="d-flex align-items-start justify-content-between mb-3">
+                <span class="caja-icono"><i class="bi bi-clipboard2-pulse fs-4"></i></span>
+                <span class="badge rounded-pill" style="background-color: var(--color-primary-soft); color: var(--color-primario-oscuro);">8 profesionales</span>
+              </div>
+              <h3 class="h5 fw-bold mb-2">Medicina General</h3>
+              <p class="text-muted small">Consultas de rutina, control de salud y seguimiento de tratamientos a largo plazo.</p>
+              <a href="turnos.html" class="fw-semibold small text-decoration-none" style="color: var(--color-primario-oscuro);">
+                Ver profesionales <i class="bi bi-arrow-right ms-1"></i>
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <div class="col">
+          <div class="card tarjeta-especialidad border h-100 p-4">
+            <div class="card-body p-0">
+              <div class="d-flex align-items-start justify-content-between mb-3">
+                <span class="caja-icono"><i class="bi bi-heart-pulse fs-4"></i></span>
+                <span class="badge rounded-pill" style="background-color: var(--color-primary-soft); color: var(--color-primario-oscuro);">5 profesionales</span>
+              </div>
+              <h3 class="h5 fw-bold mb-2">Cardiología</h3>
+              <p class="text-muted small">Evaluación, diagnóstico y control de la salud cardiovascular en todas las edades.</p>
+              <a href="turnos.html" class="fw-semibold small text-decoration-none" style="color: var(--color-primario-oscuro);">
+                Ver profesionales <i class="bi bi-arrow-right ms-1"></i>
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <div class="col">
+          <div class="card tarjeta-especialidad border h-100 p-4">
+            <div class="card-body p-0">
+              <div class="d-flex align-items-start justify-content-between mb-3">
+                <span class="caja-icono"><i class="bi bi-emoji-smile fs-4"></i></span>
+                <span class="badge rounded-pill" style="background-color: var(--color-primary-soft); color: var(--color-primario-oscuro);">6 profesionales</span>
+              </div>
+              <h3 class="h5 fw-bold mb-2">Pediatría</h3>
+              <p class="text-muted small">Cuidado integral de niños, niñas y adolescentes desde el nacimiento hasta los 18 años.</p>
+              <a href="turnos.html" class="fw-semibold small text-decoration-none" style="color: var(--color-primario-oscuro);">
+                Ver profesionales <i class="bi bi-arrow-right ms-1"></i>
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <div class="col">
+          <div class="card tarjeta-especialidad border h-100 p-4">
+            <div class="card-body p-0">
+              <div class="d-flex align-items-start justify-content-between mb-3">
+                <span class="caja-icono"><i class="bi bi-droplet-half fs-4"></i></span>
+                <span class="badge rounded-pill" style="background-color: var(--color-primary-soft); color: var(--color-primario-oscuro);">4 profesionales</span>
+              </div>
+              <h3 class="h5 fw-bold mb-2">Dermatología</h3>
+              <p class="text-muted small">Diagnóstico y tratamiento de afecciones de piel, cabello y uñas.</p>
+              <a href="turnos.html" class="fw-semibold small text-decoration-none" style="color: var(--color-primario-oscuro);">
+                Ver profesionales <i class="bi bi-arrow-right ms-1"></i>
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <div class="col">
+          <div class="card tarjeta-especialidad border h-100 p-4">
+            <div class="card-body p-0">
+              <div class="d-flex align-items-start justify-content-between mb-3">
+                <span class="caja-icono"><i class="bi bi-gender-female fs-4"></i></span>
+                <span class="badge rounded-pill" style="background-color: var(--color-primary-soft); color: var(--color-primario-oscuro);">4 profesionales</span>
+              </div>
+              <h3 class="h5 fw-bold mb-2">Ginecología</h3>
+              <p class="text-muted small">Salud reproductiva, controles ginecológicos y acompañamiento en cada etapa.</p>
+              <a href="turnos.html" class="fw-semibold small text-decoration-none" style="color: var(--color-primario-oscuro);">
+                Ver profesionales <i class="bi bi-arrow-right ms-1"></i>
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <div class="col">
+          <div class="card tarjeta-especialidad border h-100 p-4">
+            <div class="card-body p-0">
+              <div class="d-flex align-items-start justify-content-between mb-3">
+                <span class="caja-icono"><i class="bi bi-bandaid fs-4"></i></span>
+                <span class="badge rounded-pill" style="background-color: var(--color-primary-soft); color: var(--color-primario-oscuro);">3 profesionales</span>
+              </div>
+              <h3 class="h5 fw-bold mb-2">Traumatología</h3>
+              <p class="text-muted small">Atención de lesiones óseas, musculares y articulares, y su rehabilitación.</p>
+              <a href="turnos.html" class="fw-semibold small text-decoration-none" style="color: var(--color-primario-oscuro);">
+                Ver profesionales <i class="bi bi-arrow-right ms-1"></i>
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <div class="col">
+          <div class="card tarjeta-especialidad border h-100 p-4">
+            <div class="card-body p-0">
+              <div class="d-flex align-items-start justify-content-between mb-3">
+                <span class="caja-icono"><i class="bi bi-eye fs-4"></i></span>
+                <span class="badge rounded-pill" style="background-color: var(--color-primary-soft); color: var(--color-primario-oscuro);">3 profesionales</span>
+              </div>
+              <h3 class="h5 fw-bold mb-2">Oftalmología</h3>
+              <p class="text-muted small">Control de la vista, diagnóstico y tratamiento de enfermedades oculares.</p>
+              <a href="turnos.html" class="fw-semibold small text-decoration-none" style="color: var(--color-primario-oscuro);">
+                Ver profesionales <i class="bi bi-arrow-right ms-1"></i>
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <div class="col">
+          <div class="card tarjeta-especialidad border h-100 p-4">
+            <div class="card-body p-0">
+              <div class="d-flex align-items-start justify-content-between mb-3">
+                <span class="caja-icono"><i class="bi bi-apple fs-4"></i></span>
+                <span class="badge rounded-pill" style="background-color: var(--color-primary-soft); color: var(--color-primario-oscuro);">2 profesionales</span>
+              </div>
+              <h3 class="h5 fw-bold mb-2">Nutrición</h3>
+              <p class="text-muted small">Planes alimentarios personalizados y acompañamiento en hábitos saludables.</p>
+              <a href="turnos.html" class="fw-semibold small text-decoration-none" style="color: var(--color-primario-oscuro);">
+                Ver profesionales <i class="bi bi-arrow-right ms-1"></i>
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <div class="col">
+          <div class="card tarjeta-especialidad border h-100 p-4">
+            <div class="card-body p-0">
+              <div class="d-flex align-items-start justify-content-between mb-3">
+                <span class="caja-icono"><i class="bi bi-person-heart fs-4"></i></span>
+                <span class="badge rounded-pill" style="background-color: var(--color-primary-soft); color: var(--color-primario-oscuro);">3 profesionales</span>
+              </div>
+              <h3 class="h5 fw-bold mb-2">Salud Mental</h3>
+              <p class="text-muted small">Acompañamiento psicológico individual, con seguimiento continuo y confidencial.</p>
+              <a href="turnos.html" class="fw-semibold small text-decoration-none" style="color: var(--color-primario-oscuro);">
+                Ver profesionales <i class="bi bi-arrow-right ms-1"></i>
+              </a>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- BLOQUE DE AYUDA -->
+  <section class="pb-5 pb-md-6">
+    <div class="container">
+      <div class="card fondo-punteado border p-4 p-md-5">
+        <div class="card-body p-0 d-flex flex-wrap align-items-center justify-content-between gap-4">
+          <div class="d-flex align-items-start gap-3" style="max-width: 560px;">
+            <span class="icono-marca" style="width:48px;height:48px;font-size:1.3rem;"><i class="bi bi-question-circle-fill"></i></span>
+            <div>
+              <h3 class="h6 fw-bold mb-1">¿No sabés qué especialidad necesitás?</h3>
+              <p class="text-muted small mb-0">Escribinos y nuestro equipo administrativo te va a orientar para coordinar el turno con el profesional adecuado.</p>
+            </div>
+          </div>
+          <a href="../CONTACTO/contacto.html" class="btn btn-primary">Contactar al equipo</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="bg-dark text-light footer-oscuro pt-5">
+    <div class="container">
+      <div class="row gy-4 pb-5">
+
+        <div class="col-lg-4 col-md-6">
+          <a class="navbar-brand d-flex align-items-center gap-2 mb-3" href="index.html">
+            <span class="icono-marca"><i class="bi bi-heart-pulse-fill"></i></span>
+            <span class="fw-bold fs-5 text-white">Vitalis</span>
+          </a>
+          <p class="small" style="max-width: 260px;">
+            Un equipo de profesionales pensando en vos: acompañamiento cercano, información clara
+            y un sistema pensado para simplificar cada consulta.
+          </p>
+        </div>
+
+        <div class="col-lg-2 col-md-6 col-6">
+          <h6 class="fw-bold text-white mb-3">Enlaces Rápidos</h6>
+          <ul class="list-unstyled d-flex flex-column gap-2 small">
+            <li><a href="../INDEX/index.html">Inicio</a></li>
+            <li><a href="../ESPECIALIDADES/especialidades.html">Especialidades</a></li>
+            <li><a href="../NOSOTROS/nosotros.html">Nosotros</a></li>
+            <li><a href="../CONTACTO/contacto.html">Contacto administrativo</a></li>
+          </ul>
+        </div>
+
+        <div class="col-lg-3 col-md-6 col-6">
+          <h6 class="fw-bold text-white mb-3">Horarios</h6>
+          <div class="horario-footer small mb-3">
+            <strong>Consultas Externas:</strong>
+            Lunes a Viernes<br>08:00 a 20:00 hs
+          </div>
+          <div class="horario-footer small mb-3">
+            <strong>Sábados:</strong>
+            08:00 a 13:00 hs
+          </div>
+          <div class="horario-footer small">
+            <strong>Guardias Médicas:</strong>
+            <span class="activo-ahora">Activa las 24 horas</span>
+          </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6">
+          <h6 class="fw-bold text-white mb-3">Novedades y Bienestar</h6>
+          <p class="small">Sumate a nuestra lista y recibí recomendaciones prácticas de nuestro equipo médico cada mes.</p>
+          <form class="input-group">
+            <input type="email" class="form-control" placeholder="Tu correo electrónico" required>
+            <button class="btn btn-primary" type="submit" aria-label="Suscribirse">
+              <i class="bi bi-send-fill"></i>
+            </button>
+          </form>
+        </div>
+
+      </div>
+
+      <div class="border-top border-secondary-subtle py-3 d-flex flex-wrap justify-content-between align-items-center gap-2">
+        <small class="text-muted-dark">© 2026 Vitalis S.A. Todos los derechos reservados. Plataforma desarrollada íntegramente en la web.</small>
+        <div class="d-flex gap-4">
+          <a href="#" class="small">Términos de servicio</a>
+          <a href="#" class="small">Políticas de privacidad</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

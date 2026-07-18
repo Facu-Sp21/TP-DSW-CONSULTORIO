@@ -1,0 +1,125 @@
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+
+  /* Colores principales */
+  --color-primario: #0d9488;         
+  --color-primario-rgb: 13, 148, 136;
+  --color-primario-oscuro: #0f766e;   
+  --color-primario-claro: #5eead4;    
+  --color-primario-suave: #ccfbf1;    
+
+  --color-secundario: #4f46e5;         
+  --color-secundario-rgb: 79, 70, 229;
+  --color-secundario-suave: #e0e7ff;   
+
+  --color-oscuro: #0f172a;             
+  --color-oscuro-rgb: 15, 23, 42;
+
+  /* Texto */
+  --color-texto: #0f172a;
+  --color-texto-claro: #cbd5e1;         
+  --color-texto-tenue-oscuro: #64748b;   
+
+  /* Tipografías */
+  --fuente-titulos: 'Sora', 'Inter', sans-serif;
+  --fuente-texto: 'Inter', sans-serif;
+
+  /* Bordes redondeados */
+  --radio-chico: 0.5rem;
+  --radio-normal: 0.85rem;
+  --radio-grande: 1.25rem;
+  --radio-pastilla: 999px;
+
+  --degradado-marca: linear-gradient(90deg, var(--color-primario) 0%, var(--color-secundario) 100%);
+
+  --bs-primary: var(--color-primario);
+  --bs-primary-rgb: var(--color-primario-rgb);
+  --bs-primary-text-emphasis: var(--color-primario-oscuro);
+
+  --bs-secondary: var(--color-secundario);
+  --bs-secondary-rgb: var(--color-secundario-rgb);
+
+  --bs-dark: var(--color-oscuro);
+  --bs-dark-rgb: var(--color-oscuro-rgb);
+
+  --bs-body-color: var(--color-texto);
+  --bs-body-font-family: var(--fuente-texto);
+  --bs-body-bg: #ffffff;
+
+  --bs-border-radius: var(--radio-normal);
+  --bs-border-radius-sm: var(--radio-chico);
+  --bs-border-radius-lg: var(--radio-grande);
+  --bs-border-radius-pill: var(--radio-pastilla);
+
+  --bs-link-color: var(--color-primario);
+  --bs-link-hover-color: var(--color-primario-oscuro);
+}
+
+/* Tipografía de títulos */
+h1, h2, h3, h4,
+.navbar-brand,
+.font-display {
+  font-family: var(--fuente-titulos);
+}
+
+/* Botones*/
+.btn {
+  font-weight: 600;
+  border-radius: var(--radio-pastilla);
+}
+
+.btn-primary {
+  color: #ffffff;
+}
+
+/* Utilidad*/
+.texto-degradado {
+  background: var(--degradado-marca);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Badge */
+.etiqueta-superior {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background-color: var(--color-primario-suave);
+  color: var(--color-primario-oscuro);
+  font-weight: 700;
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 0.5rem 1.1rem;
+}
+
+.etiqueta-superior::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--color-primario);
+}
+
+/* Fondo punteado */
+.fondo-punteado {
+  background-color: #f8fafc;
+  background-image: radial-gradient(circle at 1px 1px, #e2e8f0 1px, transparent 1px);
+  background-size: 26px 26px;
+}
+
+/* Ícono de marca */
+.icono-marca {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radio-chico);
+  background: var(--degradado-marca);
+  color: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
