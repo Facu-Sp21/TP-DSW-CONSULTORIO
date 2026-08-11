@@ -1,0 +1,67 @@
+/* ===== Registro ===== */
+
+.registro-wrapper {
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+.registro-card {
+  width: 100%;
+  max-width: 440px;
+  background-color: #ffffff;
+  border-radius: var(--radio-grande);
+  padding: 2.5rem 2.25rem;
+  box-shadow: 0 20px 45px -15px rgba(var(--color-oscuro-rgb), 0.15);
+  border: 1px solid #eef2f7;
+}
+
+.registro-card h1 {
+  color: var(--color-texto);
+}
+
+.registro-card .form-label {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--color-texto);
+}
+
+.registro-card .form-control {
+  border-radius: var(--radio-chico);
+  padding: 0.65rem 0.9rem;
+  border: 1px solid #e2e8f0;
+}
+
+.registro-card .form-control:focus {
+  border-color: var(--color-primario);
+  box-shadow: 0 0 0 0.2rem rgba(var(--color-primario-rgb), 0.15);
+}
+
+.link-primario {
+  color: #2563eb;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.link-primario:hover {
+  color: #1d4ed8;
+  text-decoration: underline;
+}
+
+.registro-card .btn-primary {
+  background: var(--degradado-marca);
+  border: none;
+  font-size: 1rem;
+}
+
+.registro-card .btn-primary:hover {
+  opacity: 0.92;
+}
+
+.registro-card .form-check-input:checked {
+  background-color: var(--color-primario);
+  border-color: var(--color-primario);
+}
+
+.icono-marca i {
+  font-size: 1.3rem;
+}
