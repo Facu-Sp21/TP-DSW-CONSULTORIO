@@ -1,0 +1,18 @@
+services:
+  dsw-consultorio-db:
+    image: mysql:8.0
+    container_name: dsw-consultorio-db
+    environment:
+      MYSQL_ROOT_HOST: '%'
+      MYSQL_ALLOW_EMPTY_PASSWORD: 'yes'
+      MYSQL_PASSWORD: dsw
+      MYSQL_USER: dsw
+      MYSQL_DATABASE: tp-consultorio-db
+    ports:
+      - "3307:3306"
+    volumes:
+      - consultorio-dsw-data:/var/lib/mysql
+    restart: unless-stopped
+
+volumes:
+  consultorio-dsw-data:
