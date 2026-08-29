@@ -33,10 +33,10 @@ Regularidad:
 
 ## Documentación API
 
-La documentación interactiva del módulo `especialidad` está disponible en el backend:
+La documentación interactiva de la API está disponible en el backend:
 
-* Scalar UI: `http://localhost:3000/especialidad/docs`
-* OpenAPI JSON: `http://localhost:3000/especialidad/openapi.json`
+* Scalar UI: `http://localhost:3000/docs`
+* OpenAPI JSON: `http://localhost:3000/openapi.json`
 
 Si el backend corre en otro puerto, reemplazá `3000` por el puerto correspondiente.
 

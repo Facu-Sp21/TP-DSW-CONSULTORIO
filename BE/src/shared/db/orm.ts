@@ -3,7 +3,7 @@ import { SqlHighlighter } from '@mikro-orm/sql-highlighter';
 
 export const orm = await MikroORM.init({
   entities: ['./dist/src/**/*.entity.js'],
-  entitiesTs: ['./src/**/entity.ts'],
+  entitiesTs: ['./src/**/*.entity.ts'],
   dbName: 'tp-consultorio-db',
   clientUrl: 'mysql://dsw:dsw@localhost:3307/tp-consultorio-db',
   highlighter: new SqlHighlighter(),
