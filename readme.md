@@ -31,6 +31,15 @@ Regularidad:
 |Listado<br>+<br>detalle| 1. Listado de especialistas filtrado por especialidad, muestra especialistas que tengan una determinada especialidad<br> 2. Listado de turnos posibles filtrado por especialista, muestra horarios posibles para atenderse con un determinado especialista|
 |CUU/Epic|1. Reservar un turno con un especialista<br>2. El especialista realiza la consulta y genera un informe|
 
+## Documentación API
+
+La documentación interactiva del módulo `especialidad` está disponible en el backend:
+
+* Scalar UI: `http://localhost:3000/especialidad/docs`
+* OpenAPI JSON: `http://localhost:3000/especialidad/openapi.json`
+
+Si el backend corre en otro puerto, reemplazá `3000` por el puerto correspondiente.
+
 Adicionales para Aprobación
 
 Req	Detalle

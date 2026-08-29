@@ -1,7 +1,7 @@
 import {Router} from 'express';
-import {  cCreateEspecialidad, cDeleteEspecialidad, cGetAllEspecialidades ,cGetEspecialidadById, cUpdateEspecialidad } from './controller.js';
+import {  cCreateEspecialidad, cDeleteEspecialidad, cGetAllEspecialidades ,cGetEspecialidadById, cUpdateEspecialidad } from './especialidad.controller.js';
 import {validate} from '../shared/schemaValidator.js';
-import { especialidadBodySchema, especialidadParamsSchema } from './schema.js'; 
+import { especialidadBodySchema, especialidadParamsSchema } from './especialidad.schema.js'; 
 
 
 const especialidadRouter = Router();
