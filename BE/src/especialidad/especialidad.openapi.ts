@@ -228,6 +228,59 @@ export const especialidadOpenApi = {
         },
       },
     },
+    '/especialidad/{cod_especialidad}/especialistas': {
+      get: {
+        tags: ['Especialidad'],
+        summary: 'Listar especialistas de una especialidad',
+        parameters: [
+          {
+            name: 'cod_especialidad',
+            in: 'path',
+            required: true,
+            description: 'Código único de la especialidad.',
+            schema: {
+              type: 'integer',
+              minimum: 1,
+            },
+          },
+        ],
+        responses: {
+          200: {
+            description: 'Listado de especialistas de la especialidad.',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'array',
+                  items: {
+                    $ref: '#/components/schemas/Especialista',
+                  },
+                },
+              },
+            },
+          },
+          400: {
+            description: 'Parámetro inválido.',
+            content: {
+              'application/json': {
+                schema: {
+                  $ref: '#/components/schemas/ValidationError',
+                },
+              },
+            },
+          },
+          404: {
+            description: 'Especialidad no encontrada.',
+            content: {
+              'application/json': {
+                schema: {
+                  $ref: '#/components/schemas/ErrorResponse',
+                },
+              },
+            },
+          },
+        },
+      },
+    },
   },
   components: {
     schemas: {
@@ -295,6 +348,35 @@ export const especialidadOpenApi = {
           },
         },
         required: ['message', 'errors'],
+      },
+      Especialista: {
+        type: 'object',
+        properties: {
+          cod_especialista: {
+            type: 'integer',
+            description: 'Identificador autogenerado del especialista.',
+          },
+          matricula: {
+            type: 'string',
+            maxLength: 30,
+            description: 'Matrícula del especialista.',
+          },
+          nombre: {
+            type: 'string',
+            maxLength: 60,
+            description: 'Nombre del especialista.',
+          },
+          telefono: {
+            type: 'string',
+            maxLength: 30,
+            description: 'Teléfono del especialista.',
+          },
+          cod_especialidad: {
+            type: 'integer',
+            description: 'Código de la especialidad del especialista.',
+          },
+        },
+        required: ['cod_especialista', 'matricula', 'nombre', 'telefono', 'cod_especialidad'],
       },
     },
   },

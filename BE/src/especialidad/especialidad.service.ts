@@ -1,5 +1,6 @@
 import { orm } from '../shared/db/orm.js';
 import { Especialidad } from './especialidad.entity.js';
+import { Especialista } from '../especialista/especialista.entity.js';
 
 export async function sGetAllEspecialidades(): Promise<Especialidad[]> {
   return await orm.em.find(Especialidad, {});
@@ -37,4 +38,8 @@ export async function sDeleteEspecialidad(cod_especialidad: number): Promise<boo
 
   await orm.em.removeAndFlush(especialidad); 
   return true;
+}
+
+export async function sGetEspecialistasByEspecialidad(cod_especialidad: number): Promise<Especialista[]> {
+  return await orm.em.find(Especialista, { especialidad: { cod_especialidad } });
 }

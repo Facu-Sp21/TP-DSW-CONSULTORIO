@@ -1,5 +1,5 @@
 import { Entity, ManyToOne, Opt, PrimaryKey, Property } from '@mikro-orm/core';
-import { Especialidad } from '../especialidad/especialidad.entity.js';
+import type { Especialidad } from '../especialidad/especialidad.entity.js';
 
 @Entity()
 export class Especialista {
@@ -15,6 +15,6 @@ export class Especialista {
   @Property({ length: 30, nullable: false, type: 'string' })
   telefono!: string;
 
-  @ManyToOne(() => Especialidad, { fieldName: 'cod_especialidad', nullable: false })
+  @ManyToOne('Especialidad', { fieldName: 'cod_especialidad', nullable: false })
   especialidad!: Especialidad;
 }
