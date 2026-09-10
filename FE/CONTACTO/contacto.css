@@ -1,0 +1,26 @@
+.icono-contacto {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radio-chico);
+  background-color: var(--color-primario-suave);
+  color: var(--color-primario-oscuro);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.caja-emergencia {
+  background-color: var(--color-oscuro);
+  border-radius: var(--radio-normal);
+  padding: 1.1rem 1.25rem;
+}
+
+.punto-emergencia {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: var(--color-primario-claro);
+  box-shadow: 0 0 0 4px rgba(20, 184, 166, 0.25);
+  flex-shrink: 0;
+}

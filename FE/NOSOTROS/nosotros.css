@@ -1,0 +1,47 @@
+.caja-icono {
+  width: 52px;
+  height: 52px;
+  border-radius: var(--radio-chico);
+  background-color: var(--color-primario-suave);
+  color: var(--color-primario-oscuro);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.icono-circular {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--degradado-marca);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+}
+
+.avatar-iniciales {
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  background: var(--degradado-marca);
+  color: #ffffff;
+  font-family: var(--fuente-titulos);
+  font-weight: 700;
+  font-size: 1.4rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+}
+
+.tarjeta-interactiva {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.tarjeta-interactiva:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 1rem 2rem rgba(15, 23, 42, 0.08);
+}

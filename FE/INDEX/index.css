@@ -1,0 +1,35 @@
+/* Footer oscuro */
+.horario-footer strong {
+  display: block;
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.horario-footer .activo-ahora {
+  color: var(--color-primario-claro);
+  font-weight: 600;
+}
+
+.footer-oscuro a {
+  color: var(--color-texto-claro);
+  text-decoration: none;
+}
+
+.footer-oscuro a:hover {
+  color: var(--color-primario-claro);
+}
+
+.footer-oscuro .form-control {
+  background-color: #1e293b;
+  border-color: #334155;
+  color: #ffffff;
+}
+
+.footer-oscuro .form-control::placeholder {
+  color: var(--color-texto-tenue-oscuro);
+}
+
+.footer-oscuro small,
+.footer-oscuro .text-muted-dark {
+  color: var(--color-texto-tenue-oscuro) !important;
+}

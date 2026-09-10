@@ -1,0 +1,62 @@
+/* ===== Login ===== */
+
+.login-wrapper {
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 420px;
+  background-color: #ffffff;
+  border-radius: var(--radio-grande);
+  padding: 2.5rem 2.25rem;
+  box-shadow: 0 20px 45px -15px rgba(var(--color-oscuro-rgb), 0.15);
+  border: 1px solid #eef2f7;
+}
+
+.login-card h1 {
+  color: var(--color-texto);
+}
+
+.login-card .form-label {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--color-texto);
+}
+
+.login-card .form-control {
+  border-radius: var(--radio-chico);
+  padding: 0.65rem 0.9rem;
+  border: 1px solid #e2e8f0;
+}
+
+.login-card .form-control:focus {
+  border-color: var(--color-primario);
+  box-shadow: 0 0 0 0.2rem rgba(var(--color-primario-rgb), 0.15);
+}
+
+.link-primario {
+  color: #2563eb;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.link-primario:hover {
+  color: #1d4ed8;
+  text-decoration: underline;
+}
+
+.login-card .btn-primary {
+  background: var(--degradado-marca);
+  border: none;
+  font-size: 1rem;
+}
+
+.login-card .btn-primary:hover {
+  opacity: 0.92;
+}
+
+.icono-marca i {
+  font-size: 1.3rem;
+}
