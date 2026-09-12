@@ -1,29 +1,37 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { getEspecialidades } from '../../services/especialidadService';
-import type { Especialidad } from '../../services/especialidadService';
+import { Link, useSearchParams } from 'react-router-dom';
+import { getEspecialistas, getEspecialistasByEspecialidad } from '../../services/especialistaService';
+import type { Especialista } from '../../services/especialistaService';
 
-export const Especialidades: React.FC = () => {
-  const [especialidades, setEspecialidades] = useState<Especialidad[]>([]);
+export const Especialistas: React.FC = () => {
+  const [especialistas, setEspecialistas] = useState<Especialista[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [busqueda, setBusqueda] = useState<string>('');
+  
+  const [searchParams] = useSearchParams();
+  const especialidadIdParam = searchParams.get('especialidad');
 
   useEffect(() => {
-    getEspecialidades()
-      .then((data: Especialidad[]) => {
-        setEspecialidades(data);
+    setLoading(true);
+    const fetchPromise = especialidadIdParam 
+      ? getEspecialistasByEspecialidad(Number(especialidadIdParam))
+      : getEspecialistas();
+
+    fetchPromise
+      .then((data: Especialista[]) => {
+        setEspecialistas(data);
         setLoading(false);
       })
       .catch((err: { message?: string }) => {
         setError(err.message || 'Error al conectar con el servidor');
         setLoading(false);
       });
-  }, []);
+  }, [especialidadIdParam]);
 
-  // Filtrado en tiempo real según el término ingresado en el buscador
-  const especialidadesFiltradas = especialidades.filter((esp) =>
-    esp.nombre.toLowerCase().includes(busqueda.toLowerCase())
+  const especialistasFiltrados = especialistas.filter((esp) =>
+    esp.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
+    esp.matricula.toLowerCase().includes(busqueda.toLowerCase())
   );
 
   return (
@@ -43,7 +51,7 @@ export const Especialidades: React.FC = () => {
           <div className="collapse navbar-collapse" id="navMenu">
             <ul className="navbar-nav mx-auto gap-lg-1 py-2 py-lg-0">
               <li className="nav-item"><Link className="nav-link" to="/">Inicio</Link></li>
-              <li className="nav-item"><Link className="nav-link active" to="/especialidades">Especialidades</Link></li>
+              <li className="nav-item"><Link className="nav-link" to="/especialidades">Especialidades</Link></li>
               <li className="nav-item"><Link className="nav-link" to="/nosotros">Nosotros</Link></li>
               <li className="nav-item"><Link className="nav-link" to="/contacto">Contacto</Link></li>
             </ul>
@@ -55,12 +63,12 @@ export const Especialidades: React.FC = () => {
       {/* HEADER */}
       <section className="fondo-punteado py-5">
         <div className="container text-center mx-auto" style={{ maxWidth: '700px' }}>
-          <span className="etiqueta-superior rounded-pill mb-4">Nuestras especialidades</span>
+          <span className="etiqueta-superior rounded-pill mb-4">Nuestros profesionales</span>
           <h1 className="fw-bold mb-3" style={{ fontSize: 'clamp(1.9rem, 4vw, 2.6rem)', letterSpacing: '-0.02em' }}>
-            Un especialista para <span className="texto-degradado">cada etapa de tu vida</span>
+            Especialistas al cuidado de <span className="texto-degradado">tu salud</span>
           </h1>
           <p className="text-muted fs-5">
-            Encontrá al profesional indicado según lo que necesites y reservá tu turno en pocos clics.
+            Conocé al equipo médico, sus matrículas y ponete en contacto para solicitar tu atención.
           </p>
         </div>
       </section>
@@ -73,7 +81,7 @@ export const Especialidades: React.FC = () => {
             <input 
               type="text" 
               className="form-control border-0" 
-              placeholder="Buscar por especialidad, ej: Pediatría, Cardiología..." 
+              placeholder="Buscar por nombre o matrícula..." 
               value={busqueda}
               onChange={(e) => setBusqueda(e.target.value)}
             />
@@ -82,7 +90,7 @@ export const Especialidades: React.FC = () => {
         </div>
       </section>
 
-      {/* GRID DE ESPECIALIDADES */}
+      {/* GRID DE ESPECIALISTAS */}
       <section className="pb-5 pb-md-6">
         <div className="container">
           {loading && (
@@ -90,7 +98,7 @@ export const Especialidades: React.FC = () => {
               <div className="spinner-border text-primary" role="status">
                 <span className="visually-hidden">Cargando...</span>
               </div>
-              <p className="text-muted mt-2">Cargando especialidades desde la base de datos...</p>
+              <p className="text-muted mt-2">Cargando profesionales desde la base de datos...</p>
             </div>
           )}
 
@@ -100,29 +108,31 @@ export const Especialidades: React.FC = () => {
             </div>
           )}
 
-          {!loading && !error && especialidadesFiltradas.length === 0 && (
+          {!loading && !error && especialistasFiltrados.length === 0 && (
             <div className="text-center py-4 text-muted">
-              No se encontraron especialidades que coincidan con "{busqueda}".
+              No se encontraron profesionales {busqueda ? `que coincidan con "${busqueda}"` : 'disponibles'}.
             </div>
           )}
 
           {!loading && !error && (
             <div className="row g-4 row-cols-1 row-cols-md-2 row-cols-lg-3">
-              {especialidadesFiltradas.map((item) => (
-                <div className="col" key={item.cod_especialidad}>
+              {especialistasFiltrados.map((item) => (
+                <div className="col" key={item.cod_especialista}>
                   <div className="card tarjeta-especialidad border h-100 p-4">
                     <div className="card-body p-0">
                       <div className="d-flex align-items-start justify-content-between mb-3">
-                        <span className="caja-icono"><i className="bi bi-clipboard2-pulse fs-4"></i></span>
+                        <span className="caja-icono"><i className="bi bi-person-badge fs-4"></i></span>
                         <span className="badge rounded-pill" style={{ backgroundColor: 'var(--color-primary-soft)', color: 'var(--color-primario-oscuro)' }}>
-                          Código #{item.cod_especialidad}
+                          {item.matricula}
                         </span>
                       </div>
                       <h3 className="h5 fw-bold mb-2">{item.nombre}</h3>
-                      <p className="text-muted small">Consultas de rutina, diagnóstico especializado y seguimiento del paciente.</p>
-                      <Link to={`/profesionales?especialidad=${item.cod_especialidad}`} className="fw-semibold small text-decoration-none" style={{ color: 'var(--color-primario-oscuro)' }}>
-                        Ver profesionales <i className="bi bi-arrow-right ms-1"></i>
-                      </Link>
+                      <p className="text-muted small mb-3">
+                        <i className="bi bi-telephone me-2"></i>{item.telefono}
+                      </p>
+                      <button className="btn btn-primary w-full rounded-pill mt-2 w-100">
+                        Solicitar Turno
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -132,42 +142,19 @@ export const Especialidades: React.FC = () => {
         </div>
       </section>
 
-      {/* BLOQUE DE AYUDA */}
-      <section className="pb-5 pb-md-6">
-        <div className="container">
-          <div className="card fondo-punteado border p-4 p-md-5">
-            <div className="card-body p-0 d-flex flex-wrap align-items-center justify-content-between gap-4">
-              <div className="d-flex align-items-start gap-3" style={{ maxWidth: '560px' }}>
-                <span className="icono-marca" style={{ width: '48px', height: '48px', fontSize: '1.3rem' }}>
-                  <i className="bi bi-question-circle-fill"></i>
-                </span>
-                <div>
-                  <h3 className="h6 fw-bold mb-1">¿No sabés qué especialidad necesitás?</h3>
-                  <p className="text-muted small mb-0">Escribinos y nuestro equipo administrativo te va a orientar para coordinar el turno con el profesional adecuado.</p>
-                </div>
-              </div>
-              <Link to="/contacto" className="btn btn-primary">Contactar al equipo</Link>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* FOOTER */}
       <footer className="bg-dark text-light footer-oscuro pt-5">
         <div className="container">
           <div className="row gy-4 pb-5">
-
             <div className="col-lg-4 col-md-6">
               <Link className="navbar-brand d-flex align-items-center gap-2 mb-3" to="/">
                 <span className="icono-marca"><i className="bi bi-heart-pulse-fill"></i></span>
                 <span className="fw-bold fs-5 text-white">Vitalis</span>
               </Link>
               <p className="small" style={{ maxWidth: '260px' }}>
-                Un equipo de profesionales pensando en vos: acompañamiento cercano, información clara
-                y un sistema pensado para simplificar cada consulta.
+                Un equipo de profesionales pensando en vos: acompañamiento cercano e información clara.
               </p>
             </div>
-
             <div className="col-lg-2 col-md-6 col-6">
               <h6 className="fw-bold text-white mb-3">Enlaces Rápidos</h6>
               <ul className="list-unstyled d-flex flex-column gap-2 small">
@@ -177,42 +164,9 @@ export const Especialidades: React.FC = () => {
                 <li><Link to="/contacto">Contacto administrativo</Link></li>
               </ul>
             </div>
-
-            <div className="col-lg-3 col-md-6 col-6">
-              <h6 className="fw-bold text-white mb-3">Horarios</h6>
-              <div className="horario-footer small mb-3">
-                <strong>Consultas Externas:</strong><br />
-                Lunes a Viernes<br />08:00 a 20:00 hs
-              </div>
-              <div className="horario-footer small mb-3">
-                <strong>Sábados:</strong><br />
-                08:00 a 13:00 hs
-              </div>
-              <div className="horario-footer small">
-                <strong>Guardias Médicas:</strong><br />
-                <span className="activo-ahora">Activa las 24 horas</span>
-              </div>
-            </div>
-
-            <div className="col-lg-3 col-md-6">
-              <h6 className="fw-bold text-white mb-3">Novedades y Bienestar</h6>
-              <p className="small">Sumate a nuestra lista y recibí recomendaciones prácticas de nuestro equipo médico cada mes.</p>
-              <form className="input-group" onSubmit={(e) => e.preventDefault()}>
-                <input type="email" className="form-control" placeholder="Tu correo electrónico" required />
-                <button className="btn btn-primary" type="submit" aria-label="Suscribirse">
-                  <i className="bi bi-send-fill"></i>
-                </button>
-              </form>
-            </div>
-
           </div>
-
           <div className="border-top border-secondary-subtle py-3 d-flex flex-wrap justify-content-between align-items-center gap-2">
-            <small className="text-muted-dark">© 2026 Vitalis S.A. Todos los derechos reservados. Plataforma desarrollada íntegramente en la web.</small>
-            <div className="d-flex gap-4">
-              <a href="#" className="small">Términos de servicio</a>
-              <a href="#" className="small">Políticas de privacidad</a>
-            </div>
+            <small className="text-muted-dark">© 2026 Vitalis S.A. Todos los derechos reservados.</small>
           </div>
         </div>
       </footer>

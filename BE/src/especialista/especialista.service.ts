@@ -9,8 +9,9 @@ type EspecialistaInput = {
   especialidad: Especialidad;
 };
 
-export async function sGetAllEspecialistas(): Promise<Especialista[]> {
-  return await orm.em.find(Especialista, {}, { populate: ['especialidad'] });
+export async function sGetAllEspecialistas(cod_especialidad?: number): Promise<Especialista[]> {
+  const filter = cod_especialidad ? { especialidad: { cod_especialidad } } : {};
+  return await orm.em.find(Especialista, filter, { populate: ['especialidad'] });
 }
 
 export async function sGetEspecialistaById(cod_especialista: number): Promise<Especialista | null> {
