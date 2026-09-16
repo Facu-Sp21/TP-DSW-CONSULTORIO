@@ -6,7 +6,7 @@
 * 50491 - Sampaulesi, Mateo
 * 55366 - Cuadradas, Lucas
 * 54826 - Cavestri, Elian
-
+* 52509 - Alma García Morichetti 
 
 ### Repositorios
 * [frontend app](http://hyperlinkToGihubOrGitlab)
