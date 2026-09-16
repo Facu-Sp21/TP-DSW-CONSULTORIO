@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 export const Login: React.FC = () => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     email: '',
     password: '',
     recordar: false,
   });
+  const [error, setError] = useState<string | null>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value, type, checked } = e.target;
@@ -14,11 +16,21 @@ export const Login: React.FC = () => {
       ...prev,
       [id]: type === 'checkbox' ? checked : value,
     }));
+    setError(null);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Login intent:', formData);
+    const email = 'afiliado@vitalis.com';
+    const password = 'vitalis123';
+
+    if (formData.email.trim().toLowerCase() !== email || formData.password !== password) {
+      setError('El correo o la contraseña no son correctos.');
+      return;
+    }
+
+    sessionStorage.setItem('vitalis-authenticated', 'true');
+    navigate('/usuario');
   };
 
   return (
@@ -51,6 +63,8 @@ export const Login: React.FC = () => {
                 required 
               />
             </div>
+
+            {error && <div className="alert alert-danger py-2 small" role="alert">{error}</div>}
 
             <div className="mb-3">
               <label htmlFor="password" className="form-label">Contraseña</label>

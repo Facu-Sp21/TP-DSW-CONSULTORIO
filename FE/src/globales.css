@@ -360,3 +360,117 @@ h1, h2, h3, h4,
   box-shadow: 0 0 0 4px rgba(20, 184, 166, 0.25);
   flex-shrink: 0;
 }
+
+.turno-recordatorio {
+  background-color: var(--color-primario-suave);
+  border: 1px solid rgba(var(--color-primario-rgb), 0.18);
+}
+
+.booking-steps {
+  display: flex;
+  justify-content: center;
+  gap: clamp(1rem, 8vw, 6rem);
+}
+
+.booking-step {
+  display: flex;
+  align-items: center;
+  gap: .55rem;
+  color: #94a3b8;
+  font-weight: 600;
+}
+
+.booking-step span {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: #e2e8f0;
+}
+
+.booking-step.active { color: var(--color-primario-oscuro); }
+.booking-step.active span { background: var(--color-primario); color: #fff; }
+
+.selection-card {
+  display: flex;
+  align-items: center;
+  gap: .9rem;
+  border: 1px solid #e2e8f0;
+  border-radius: var(--radio-normal);
+  padding: 1rem;
+  background: #fff;
+  color: var(--color-texto);
+  transition: .2s ease;
+}
+
+.selection-card:hover, .selection-card.selected {
+  border-color: var(--color-primario);
+  background: var(--color-primario-suave);
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: .4rem;
+}
+
+.calendar-head {
+  color: #64748b;
+  font-size: .75rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.calendar-day {
+  min-height: 3rem;
+  position: relative;
+  border: 1px solid #e2e8f0;
+  border-radius: var(--radio-chico);
+  background: #fff;
+  color: var(--color-texto);
+}
+
+.calendar-day:not(:disabled):hover, .calendar-day.selected {
+  border-color: var(--color-primario);
+  background: var(--color-primario-suave);
+}
+
+.calendar-day:disabled {
+  color: #cbd5e1;
+  background: #f8fafc;
+}
+
+.calendar-day.adjacent-month {
+  color: #cbd5e1;
+  background: #f8fafc;
+}
+
+.calendar-empty {
+  border-color: transparent;
+  background: transparent;
+}
+
+.calendar-dot {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  left: 50%;
+  bottom: .35rem;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: var(--color-primario);
+}
+
+.agenda-item {
+  display: flex;
+  gap: .8rem;
+  padding-bottom: .75rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.agenda-hora {
+  color: var(--color-primario-oscuro);
+  font-weight: 700;
+  min-width: 3.25rem;
+}

@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { getEspecialistas, getEspecialistasByEspecialidad } from '../../services/especialistaService';
 import type { Especialista } from '../../services/especialistaService';
 
 export const Especialistas: React.FC = () => {
+  const navigate = useNavigate();
   const [especialistas, setEspecialistas] = useState<Especialista[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -118,7 +119,7 @@ export const Especialistas: React.FC = () => {
             <div className="row g-4 row-cols-1 row-cols-md-2 row-cols-lg-3">
               {especialistasFiltrados.map((item) => (
                 <div className="col" key={item.cod_especialista}>
-                  <div className="card tarjeta-especialidad border h-100 p-4">
+                  <div className="card tarjeta-especialidad border h-100 p-4" onDoubleClick={() => navigate('/sacar-turno')} title="Doble clic para sacar un turno">
                     <div className="card-body p-0">
                       <div className="d-flex align-items-start justify-content-between mb-3">
                         <span className="caja-icono"><i className="bi bi-person-badge fs-4"></i></span>
@@ -130,7 +131,7 @@ export const Especialistas: React.FC = () => {
                       <p className="text-muted small mb-3">
                         <i className="bi bi-telephone me-2"></i>{item.telefono}
                       </p>
-                      <button className="btn btn-primary w-full rounded-pill mt-2 w-100">
+                      <button className="btn btn-primary w-full rounded-pill mt-2 w-100" onClick={() => navigate('/sacar-turno')}>
                         Solicitar Turno
                       </button>
                     </div>

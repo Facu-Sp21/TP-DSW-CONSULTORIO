@@ -6,6 +6,8 @@ import { Nosotros } from './pages/Nosotros';
 import { Contacto } from './pages/Contacto';
 import { Login } from './pages/Login';
 import { Registro } from './pages/Registro';
+import { Calendario, Usuario } from './pages/Usuario';
+import { SacarTurno } from './pages/SacarTurno';
 
 function App() {
   return (
@@ -19,6 +21,9 @@ function App() {
         <Route path="/contacto" element={<Contacto />} />
         <Route path="/login" element={<Login />} />
         <Route path="/registro" element={<Registro />} />
+        <Route path="/usuario" element={<Usuario />} />
+        <Route path="/calendario" element={<Calendario />} />
+        <Route path="/sacar-turno" element={<SacarTurno />} />
       </Routes>
     </BrowserRouter>
   );

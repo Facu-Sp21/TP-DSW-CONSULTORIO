@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { getEspecialidades } from '../../services/especialidadService';
 import type { Especialidad } from '../../services/especialidadService';
 
 export const Especialidades: React.FC = () => {
+  const navigate = useNavigate();
   const [especialidades, setEspecialidades] = useState<Especialidad[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -110,7 +111,7 @@ export const Especialidades: React.FC = () => {
             <div className="row g-4 row-cols-1 row-cols-md-2 row-cols-lg-3">
               {especialidadesFiltradas.map((item) => (
                 <div className="col" key={item.cod_especialidad}>
-                  <div className="card tarjeta-especialidad border h-100 p-4">
+                  <div className="card tarjeta-especialidad border h-100 p-4" onDoubleClick={() => navigate(`/sacar-turno?especialidad=${item.cod_especialidad}`)} title="Doble clic para sacar un turno">
                     <div className="card-body p-0">
                       <div className="d-flex align-items-start justify-content-between mb-3">
                         <span className="caja-icono"><i className="bi bi-clipboard2-pulse fs-4"></i></span>
