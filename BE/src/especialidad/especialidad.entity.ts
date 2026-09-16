@@ -9,6 +9,9 @@ export class Especialidad {
   @Property({ length: 60, nullable: false, unique: true, type: 'string' })
   nombre!: string;
 
+  @Property({ nullable: false, type: 'number', default: 15 })
+  duracion_minutos!: number;
+
   @OneToMany('Especialista', (especialista: any) => especialista.especialidad)
   especialistas = new Collection<Especialista>(this);
 }
