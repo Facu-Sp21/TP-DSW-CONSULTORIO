@@ -1,3 +1,4 @@
+import { UniqueConstraintViolationException } from '@mikro-orm/core';
 import { orm } from '../shared/db/orm.js';
 import { Especialidad } from '../especialidad/especialidad.entity.js';
 import { alreadyExistsError } from '../shared/errorsModel.js';
@@ -11,19 +12,6 @@ type EspecialistaInput = {
   especialidad: Especialidad;
 };
 
-async function EspecialistaIsUnique(matricula: string, email: string, cod_especialista?: number) { 
-  const especialistaConMatricula = await orm.em.findOne(Especialista, { matricula });
-  const especialistaConEmail = await orm.em.findOne(Especialista, { email });
-
-  const duplicado = [especialistaConMatricula, especialistaConEmail].some(
-    (especialista) => especialista && especialista.cod_especialista !== cod_especialista,
-  );
-
-  if (duplicado) {
-    throw new alreadyExistsError('Ya existe un especialista con esa matrícula o email');
-  }
-}
-
 export async function sGetAllEspecialistas(): Promise<Especialista[]> {
   return await orm.em.find(Especialista, {}, { populate: ['especialidad'] });
 }
@@ -33,10 +21,15 @@ export async function sGetEspecialistaById(cod_especialista: number): Promise<Es
 }
 
 export async function sCreateEspecialista(input: EspecialistaInput): Promise<Especialista> {
-  await EspecialistaIsUnique(input.matricula, input.email);
-
   const especialista = orm.em.create(Especialista, input);
-  await orm.em.persistAndFlush(especialista);
+  try {
+    await orm.em.persistAndFlush(especialista);
+  } catch (error) {
+    if (error instanceof UniqueConstraintViolationException) {
+      throw new alreadyExistsError('Ya existe un especialista con esa matrícula o email');
+    }
+    throw error;
+  }
   return especialista;
 }
 
@@ -50,15 +43,20 @@ export async function sUpdateEspecialista(
     return null;
   }
 
-  await EspecialistaIsUnique(input.matricula, input.email, cod_especialista);
-
   especialista.matricula = input.matricula;
   especialista.nombre = input.nombre;
   especialista.email = input.email;
   especialista.telefono = input.telefono;
   especialista.especialidad = input.especialidad;
 
-  await orm.em.flush();
+  try {
+    await orm.em.flush();
+  } catch (error) {
+    if (error instanceof UniqueConstraintViolationException) {
+      throw new alreadyExistsError('Ya existe un especialista con esa matrícula o email');
+    }
+    throw error;
+  }
 
   return especialista;
 }

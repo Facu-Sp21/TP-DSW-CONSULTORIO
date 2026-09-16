@@ -1,4 +1,6 @@
+import { UniqueConstraintViolationException } from '@mikro-orm/core';
 import { orm } from '../shared/db/orm.js';
+import { alreadyExistsError } from '../shared/errorsModel.js';
 import { Paciente } from './paciente.entity.js';
 
 type PacienteInput = {
@@ -21,7 +23,14 @@ export async function sGetPacienteById(nro_afiliado: number): Promise<Paciente |
 
 export async function sCreatePaciente(input: PacienteInput): Promise<Paciente> {
   const paciente = orm.em.create(Paciente, input);
-  await orm.em.persistAndFlush(paciente);
+  try {
+    await orm.em.persistAndFlush(paciente);
+  } catch (error) {
+    if (error instanceof UniqueConstraintViolationException) { // ese error es de MikroORM y se lanza cuando se viola una restricción de unicidad en la base de datos
+      throw new alreadyExistsError('Ya existe un paciente con ese DNI o email');  
+    }
+    throw error;
+  }
   return paciente;
 }
 
@@ -40,7 +49,14 @@ export async function sUpdatePaciente(nro_afiliado: number, input: PacienteInput
   paciente.contrasena = input.contrasena;
   paciente.cod_os = input.cod_os ?? null;
 
-  await orm.em.flush();
+  try {
+    await orm.em.flush();
+  } catch (error) {
+    if (error instanceof UniqueConstraintViolationException) {
+      throw new alreadyExistsError('Ya existe un paciente con ese DNI o email');
+    }
+    throw error;
+  }
 
   return paciente;
 }

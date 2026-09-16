@@ -1,15 +1,8 @@
+import { UniqueConstraintViolationException } from '@mikro-orm/core';
 import { orm } from '../shared/db/orm.js';
 import { Especialidad } from './especialidad.entity.js';
 import { Especialista } from '../especialista/especialista.entity.js';
 import { alreadyExistsError } from '../shared/errorsModel.js';
-
-async function EspecialidadIsUnique(nombre: string, cod_especialidad?: number) {
-  const especialidadExistente = await orm.em.findOne(Especialidad, { nombre });
-
-  if (especialidadExistente && especialidadExistente.cod_especialidad !== cod_especialidad) {
-    throw new alreadyExistsError('Ya existe una especialidad con ese nombre');
-  }
-}
 
 export async function sGetAllEspecialidades(): Promise<Especialidad[]> {
   return await orm.em.find(Especialidad, {});
@@ -20,10 +13,15 @@ export async function sGetEspecialidadById(cod_especialidad: number): Promise<Es
 }
 
 export async function sCreateEspecialidad(nombre: string, duracion_minutos: number): Promise<Especialidad> {
-  await EspecialidadIsUnique(nombre);
-
   const especialidad = orm.em.create(Especialidad, { nombre, duracion_minutos });
-  await orm.em.persistAndFlush(especialidad);
+  try {
+    await orm.em.persistAndFlush(especialidad);
+  } catch (error) {
+    if (error instanceof UniqueConstraintViolationException) {
+      throw new alreadyExistsError('Ya existe una especialidad con ese nombre');
+    }
+    throw error;
+  }
   return especialidad;
 }
 
@@ -38,11 +36,16 @@ export async function sUpdateEspecialidad(
     return null;
   }
 
-  await EspecialidadIsUnique(nombre, cod_especialidad);
-
   especialidad.nombre = nombre;
   especialidad.duracion_minutos = duracion_minutos;
-  await orm.em.flush();
+  try {
+    await orm.em.flush();
+  } catch (error) {
+    if (error instanceof UniqueConstraintViolationException) {
+      throw new alreadyExistsError('Ya existe una especialidad con ese nombre');
+    }
+    throw error;
+  }
 
   return especialidad;
 }
