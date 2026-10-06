@@ -10,6 +10,7 @@ import { errorHandler } from './src/shared/errorHandler.js';
 import { RequestContext } from '@mikro-orm/core';
 import { apiReference } from '@scalar/express-api-reference';
 import { openApiDocument } from './src/shared/openapi.js';
+import suscripcionRoutes from './src/suscripcion/suscripcion.routes.js';
 
 const app = express();
 
@@ -23,6 +24,7 @@ app.use((req, res, next) => {
 app.use('/especialidad', especialidadRoutes);
 app.use('/especialista', especialistaRoutes);
 app.use('/afiliado', afiliadoRoutes);
+app.use('/suscripcion', suscripcionRoutes);
 
 app.get('/openapi.json', (_req, res) => {
     res.json(openApiDocument);

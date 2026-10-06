@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-
+import { suscribirse } from '../../services/suscripcionService';
 interface PublicLayoutProps {
   activo?: string; // ruta del link a resaltar, por ejemplo '/nosotros'
   children: React.ReactNode;
@@ -12,6 +12,47 @@ const ENLACES = [
   { to: '/nosotros', etiqueta: 'Nosotros' },
   { to: '/contacto', etiqueta: 'Contacto' },
 ];
+
+const Newsletter: React.FC = () => {
+  const [email, setEmail] = useState('');
+  const [estado, setEstado] = useState<'idle' | 'enviando' | 'ok' | 'error'>('idle');
+  const [mensaje, setMensaje] = useState('');
+
+  const enviar = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setEstado('enviando');
+    try {
+      const res = await suscribirse(email);
+      setMensaje(res.message);
+      setEstado('ok');
+      setEmail('');
+    } catch (err) {
+      setMensaje(err instanceof Error ? err.message : 'No pudimos registrar tu suscripción.');
+      setEstado('error');
+    }
+  };
+
+  return (
+    <>
+      <form className="input-group" onSubmit={enviar}>
+        <input
+          type="email"
+          className="form-control"
+          placeholder="Tu correo electrónico"
+          aria-label="Correo electrónico para novedades"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+        />
+        <button className="btn btn-primary" type="submit" aria-label="Suscribirse" disabled={estado === 'enviando'}>
+          <i className="bi bi-send-fill"></i>
+        </button>
+      </form>
+      {estado === 'ok' && <p className="small text-success mt-2 mb-0">{mensaje}</p>}
+      {estado === 'error' && <p className="small text-warning mt-2 mb-0">{mensaje}</p>}
+    </>
+  );
+};
 
 export const PublicLayout: React.FC<PublicLayoutProps> = ({ activo = '/', children }) => {
   return (
@@ -88,12 +129,7 @@ export const PublicLayout: React.FC<PublicLayoutProps> = ({ activo = '/', childr
             <div className="col-lg-3 col-md-6">
               <h6 className="fw-bold text-white mb-3">Novedades y Bienestar</h6>
               <p className="small">Sumate a nuestra lista y recibí recomendaciones prácticas de nuestro equipo médico cada mes.</p>
-              <form className="input-group" onSubmit={(e) => e.preventDefault()}>
-                <input type="email" className="form-control" placeholder="Tu correo electrónico" required />
-                <button className="btn btn-primary" type="submit" aria-label="Suscribirse">
-                  <i className="bi bi-send-fill"></i>
-                </button>
-              </form>
+              <Newsletter />
             </div>
 
           </div>
