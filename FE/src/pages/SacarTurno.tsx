@@ -34,12 +34,12 @@ export const SacarTurno: React.FC = () => {
   }, [especialidades, searchParams, especialidad]);
 
   useEffect(() => {
-    if (!especialidad) return;
-    setLoading(true);
-    getEspecialistasByEspecialidad(especialidad.cod_especialidad)
-      .then(setEspecialistas)
-      .catch(() => setError('No se pudieron cargar los especialistas.'))
-      .finally(() => setLoading(false));
+  if (!especialidad || especialidad.cod_especialidad === undefined) return;
+  setLoading(true);
+  getEspecialistasByEspecialidad(especialidad.cod_especialidad)
+    .then(setEspecialistas)
+    .catch(() => setError('No se pudieron cargar los especialistas.'))
+    .finally(() => setLoading(false));
   }, [especialidad]);
 
   const { calendarDays, maxDate } = useMemo(() => {

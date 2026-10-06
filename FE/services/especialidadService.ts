@@ -1,22 +1,30 @@
 import { apiFetch } from './api';
 
 export interface Especialidad {
-  cod_especialidad: number;
+  cod_especialidad?: number;
   nombre: string;
-}
-
-export interface Especialista {
-  cod_especialista: number;
-  matricula: string;
-  nombre: string;
-  telefono: string;
-  cod_especialidad: number;
 }
 
 export const getEspecialidades = () => {
   return apiFetch<Especialidad[]>('/especialidad');
 };
 
-export const getEspecialistasByEspecialidad = (codEspecialidad: number) => {
-  return apiFetch<Especialista[]>(`/especialidad/${codEspecialidad}/especialistas`);
+export const createEspecialidad = (data: { nombre: string }) => {
+  return apiFetch<Especialidad>('/especialidad', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+};
+
+export const updateEspecialidad = (cod_especialidad: number, data: { nombre: string }) => {
+  return apiFetch<Especialidad>(`/especialidad/${cod_especialidad}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  });
+};
+
+export const deleteEspecialidad = (cod_especialidad: number) => {
+  return apiFetch<void>(`/especialidad/${cod_especialidad}`, {
+    method: 'DELETE',
+  });
 };
