@@ -16,6 +16,9 @@ export interface AfiliadoResponse {
   obraSocialId?: number;
 }
 
+// alias export para mantener compatibilidad con el Admin Dashboard
+export type Afiliado = AfiliadoResponse;
+
 export const registrarAfiliado = (data: RegistrarAfiliadoDTO) => {
   return apiFetch<AfiliadoResponse>('/afiliado', {
     method: 'POST',
@@ -23,6 +26,21 @@ export const registrarAfiliado = (data: RegistrarAfiliadoDTO) => {
   });
 };
 
+export const createAfiliado = registrarAfiliado;
+
 export const getAfiliados = () => {
   return apiFetch<AfiliadoResponse[]>('/afiliado');
+};
+
+export const updateAfiliado = (id: number, data: Partial<RegistrarAfiliadoDTO>) => {
+  return apiFetch<AfiliadoResponse>(`/afiliado/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  });
+};
+
+export const deleteAfiliado = (id: number) => {
+  return apiFetch<void>(`/afiliado/${id}`, {
+    method: 'DELETE',
+  });
 };

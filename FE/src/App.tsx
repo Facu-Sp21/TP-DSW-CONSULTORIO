@@ -8,6 +8,7 @@ import { Login } from './pages/Login';
 import { Registro } from './pages/Registro';
 import { Calendario, Usuario } from './pages/Usuario';
 import { SacarTurno } from './pages/SacarTurno';
+import { Administrativo } from './pages/Administrativo';
 
 function App() {
   return (
@@ -24,6 +25,7 @@ function App() {
         <Route path="/usuario" element={<Usuario />} />
         <Route path="/calendario" element={<Calendario />} />
         <Route path="/sacar-turno" element={<SacarTurno />} />
+        <Route path="/administrativo" element={<Administrativo />} />
       </Routes>
     </BrowserRouter>
   );
