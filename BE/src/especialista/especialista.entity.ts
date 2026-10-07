@@ -6,11 +6,14 @@ export class Especialista {
   @PrimaryKey({ type: 'number', autoincrement: true, unique: true })
   cod_especialista!: number & Opt;
 
-  @Property({ length: 30, nullable: false, type: 'string' })
+  @Property({ length: 30, nullable: false, type: 'string', unique: true })
   matricula!: string;
 
   @Property({ length: 60, nullable: false, type: 'string' })
   nombre!: string;
+
+  @Property({ length: 120, nullable: false, type: 'string', unique: true })
+  email!: string;
 
   @Property({ length: 30, nullable: false, type: 'string' })
   telefono!: string;

@@ -6,6 +6,8 @@
   "main": "app.js",
   "scripts": {
     "build": "tsc -p ./tsconfig.json",
+    "test": "jest --runInBand",
+    "test:watch": "jest --watch",
     "start:dev": "tsc-watch --noClear -p ./tsconfig.json --onSuccess \"node ./dist/server.js\""
   },
   "keywords": [],
@@ -24,7 +26,10 @@
   "devDependencies": {
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
+    "@types/jest": "^30.0.0",
     "@types/node": "^25.9.1",
+    "jest": "^30.5.0",
+    "ts-jest": "^29.4.12",
     "tsc-watch": "7.2.0",
     "typescript": "5.9.3"
   },

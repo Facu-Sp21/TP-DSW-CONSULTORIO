@@ -1,30 +1,30 @@
-export const especialistaOpenApi = {
+export const pacienteOpenApi = {
   openapi: '3.1.0',
   info: {
-    title: 'API de Especialistas',
+    title: 'API de Pacientes',
     version: '1.0.0',
-    description: 'Documentación del módulo de especialistas del consultorio.',
+    description: 'Documentación del módulo de pacientes del consultorio.',
   },
   tags: [
     {
-      name: 'Especialista',
-      description: 'Operaciones CRUD para administrar especialistas médicos.',
+      name: 'Paciente',
+      description: 'Operaciones CRUD para administrar pacientes.',
     },
   ],
   paths: {
-    '/especialista': {
+    '/paciente': {
       get: {
-        tags: ['Especialista'],
-        summary: 'Listar especialistas',
+        tags: ['Paciente'],
+        summary: 'Listar pacientes',
         responses: {
           200: {
-            description: 'Listado de especialistas.',
+            description: 'Listado de pacientes.',
             content: {
               'application/json': {
                 schema: {
                   type: 'array',
                   items: {
-                    $ref: '#/components/schemas/Especialista',
+                    $ref: '#/components/schemas/Paciente',
                   },
                 },
               },
@@ -33,25 +33,25 @@ export const especialistaOpenApi = {
         },
       },
       post: {
-        tags: ['Especialista'],
-        summary: 'Crear un especialista',
+        tags: ['Paciente'],
+        summary: 'Crear un paciente',
         requestBody: {
           required: true,
           content: {
             'application/json': {
               schema: {
-                $ref: '#/components/schemas/EspecialistaInput',
+                $ref: '#/components/schemas/PacienteInput',
               },
             },
           },
         },
         responses: {
           201: {
-            description: 'Especialista creado correctamente.',
+            description: 'Paciente creado correctamente.',
             content: {
               'application/json': {
                 schema: {
-                  $ref: '#/components/schemas/Especialista',
+                  $ref: '#/components/schemas/Paciente',
                 },
               },
             },
@@ -66,29 +66,19 @@ export const especialistaOpenApi = {
               },
             },
           },
-          404: {
-            description: 'La especialidad informada no existe.',
-            content: {
-              'application/json': {
-                schema: {
-                  $ref: '#/components/schemas/ErrorResponse',
-                },
-              },
-            },
-          },
         },
       },
     },
-    '/especialista/{cod_especialista}': {
+    '/paciente/{nro_afiliado}': {
       get: {
-        tags: ['Especialista'],
-        summary: 'Obtener un especialista por id',
+        tags: ['Paciente'],
+        summary: 'Obtener un paciente por id',
         parameters: [
           {
-            name: 'cod_especialista',
+            name: 'nro_afiliado',
             in: 'path',
             required: true,
-            description: 'Código único del especialista.',
+            description: 'Número de afiliado del paciente.',
             schema: {
               type: 'integer',
               minimum: 1,
@@ -97,11 +87,11 @@ export const especialistaOpenApi = {
         ],
         responses: {
           200: {
-            description: 'Especialista encontrado.',
+            description: 'Paciente encontrado.',
             content: {
               'application/json': {
                 schema: {
-                  $ref: '#/components/schemas/Especialista',
+                  $ref: '#/components/schemas/Paciente',
                 },
               },
             },
@@ -117,7 +107,7 @@ export const especialistaOpenApi = {
             },
           },
           404: {
-            description: 'Especialista no encontrado.',
+            description: 'Paciente no encontrado.',
             content: {
               'application/json': {
                 schema: {
@@ -129,14 +119,14 @@ export const especialistaOpenApi = {
         },
       },
       put: {
-        tags: ['Especialista'],
-        summary: 'Actualizar un especialista',
+        tags: ['Paciente'],
+        summary: 'Actualizar un paciente',
         parameters: [
           {
-            name: 'cod_especialista',
+            name: 'nro_afiliado',
             in: 'path',
             required: true,
-            description: 'Código único del especialista.',
+            description: 'Número de afiliado del paciente.',
             schema: {
               type: 'integer',
               minimum: 1,
@@ -148,18 +138,18 @@ export const especialistaOpenApi = {
           content: {
             'application/json': {
               schema: {
-                $ref: '#/components/schemas/EspecialistaInput',
+                $ref: '#/components/schemas/PacienteInput',
               },
             },
           },
         },
         responses: {
           200: {
-            description: 'Especialista actualizado correctamente.',
+            description: 'Paciente actualizado correctamente.',
             content: {
               'application/json': {
                 schema: {
-                  $ref: '#/components/schemas/Especialista',
+                  $ref: '#/components/schemas/Paciente',
                 },
               },
             },
@@ -175,7 +165,7 @@ export const especialistaOpenApi = {
             },
           },
           404: {
-            description: 'Especialista o especialidad no encontrada.',
+            description: 'Paciente no encontrado.',
             content: {
               'application/json': {
                 schema: {
@@ -187,14 +177,14 @@ export const especialistaOpenApi = {
         },
       },
       delete: {
-        tags: ['Especialista'],
-        summary: 'Eliminar un especialista',
+        tags: ['Paciente'],
+        summary: 'Eliminar un paciente',
         parameters: [
           {
-            name: 'cod_especialista',
+            name: 'nro_afiliado',
             in: 'path',
             required: true,
-            description: 'Código único del especialista.',
+            description: 'Número de afiliado del paciente.',
             schema: {
               type: 'integer',
               minimum: 1,
@@ -203,7 +193,7 @@ export const especialistaOpenApi = {
         ],
         responses: {
           204: {
-            description: 'Especialista eliminado correctamente.',
+            description: 'Paciente eliminado correctamente.',
           },
           400: {
             description: 'Parámetro inválido.',
@@ -216,7 +206,7 @@ export const especialistaOpenApi = {
             },
           },
           404: {
-            description: 'Especialista no encontrado.',
+            description: 'Paciente no encontrado.',
             content: {
               'application/json': {
                 schema: {
@@ -231,73 +221,133 @@ export const especialistaOpenApi = {
   },
   components: {
     schemas: {
-      Especialista: {
+      Paciente: {
         type: 'object',
         properties: {
-          cod_especialista: {
+          nro_afiliado: {
             type: 'integer',
-            description: 'Identificador autogenerado del especialista.',
+            description: 'Identificador autogenerado del paciente.',
           },
-          matricula: {
+          dni: {
             type: 'string',
-            maxLength: 30,
-            description: 'Matrícula profesional del especialista.',
-            example: 'MP 12345',
+            maxLength: 20,
+            description: 'DNI del paciente.',
+            example: '38123456',
           },
           nombre: {
             type: 'string',
             maxLength: 60,
-            description: 'Nombre completo del especialista.',
-            example: 'Laura Gómez',
-          },
-          email: {
-            type: 'string',
-            maxLength: 120,
-            description: 'Email único del especialista.',
-            example: 'laura@example.com',
+            description: 'Nombre completo del paciente.',
+            example: 'María Fernández',
           },
           telefono: {
             type: 'string',
             maxLength: 30,
-            description: 'Teléfono de contacto del especialista.',
+            description: 'Teléfono de contacto del paciente.',
             example: '341 555-1234',
           },
-          especialidad: {
-            $ref: '#/components/schemas/Especialidad',
+          direccion: {
+            type: 'string',
+            maxLength: 100,
+            description: 'Dirección del paciente.',
+            example: 'San Luis 1234',
+          },
+          email: {
+            type: 'string',
+            maxLength: 120,
+            description: 'Email del paciente.',
+            example: 'maria@example.com',
+          },
+          contrasena: {
+            type: 'string',
+            maxLength: 100,
+            description: 'Contraseña del paciente.',
+          },
+          cod_os: {
+            type: ['integer', 'null'],
+            description: 'Código de obra social del paciente, si corresponde.',
+            minimum: 1,
           },
         },
-        required: ['cod_especialista', 'matricula', 'nombre', 'email', 'telefono', 'especialidad'],
+        required: ['nro_afiliado', 'dni', 'nombre', 'telefono', 'direccion', 'email', 'contrasena'],
       },
-      EspecialistaInput: {
+      PacienteInput: {
         type: 'object',
         properties: {
-          matricula: {
+          dni: {
             type: 'string',
-            maxLength: 30,
-            example: 'MP 12345',
+            maxLength: 20,
+            example: '38123456',
           },
           nombre: {
             type: 'string',
             maxLength: 60,
-            example: 'Laura Gómez',
-          },
-          email: {
-            type: 'string',
-            maxLength: 120,
-            example: 'laura@example.com',
+            example: 'María Fernández',
           },
           telefono: {
             type: 'string',
             maxLength: 30,
             example: '341 555-1234',
           },
-          cod_especialidad: {
+          direccion: {
+            type: 'string',
+            maxLength: 100,
+            example: 'San Luis 1234',
+          },
+          email: {
+            type: 'string',
+            maxLength: 120,
+            example: 'maria@example.com',
+          },
+          contrasena: {
+            type: 'string',
+            maxLength: 100,
+            example: 'secreta123',
+          },
+          cod_os: {
             type: 'integer',
             minimum: 1,
-            example: 1,
+            example: 2,
           },
         },
-        required: ['matricula', 'nombre', 'email', 'telefono', 'cod_especialidad'],
+        required: ['dni', 'nombre', 'telefono', 'direccion', 'email', 'contrasena'],
+      },
+      ErrorResponse: {
+        type: 'object',
+        properties: {
+          message: {
+            type: 'string',
+            example: 'Paciente no encontrado',
+          },
+        },
+        required: ['message'],
+      },
+      ValidationError: {
+        type: 'object',
+        properties: {
+          message: {
+            type: 'string',
+            example: 'Validation error',
+          },
+          errors: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                path: {
+                  type: 'string',
+                  example: 'nombre',
+                },
+                message: {
+                  type: 'string',
+                  example: 'El nombre del paciente es obligatorio',
+                },
+              },
+              required: ['path', 'message'],
+            },
+          },
+        },
+        required: ['message', 'errors'],
       },
     },
   },
