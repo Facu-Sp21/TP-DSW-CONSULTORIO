@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import { EspecialistaNav } from '../../components/EspecialistaNav';
 import { formatearFecha, hoyISO, sumarDias } from '../../../services/fechas';
-import { getAgenda } from '../../../services/agendaService';
+import { getAgenda, marcarAusente } from '../../../services/agendaService';
 import type { EstadoTurno, TurnoAgenda } from '../../../services/agendaService';
 
 // TEMPORAL: cuando exista el login (Elian), este código sale de la sesión del especialista.
@@ -14,7 +15,12 @@ const ESTADOS: Record<EstadoTurno, { clase: string; texto: string }> = {
 };
 
 export const EspecialistaAgenda: React.FC = () => {
-  const [fecha, setFecha] = useState(hoyISO());
+  // Al volver de atender un turno, la URL trae ?fecha=AAAA-MM-DD para reabrir el mismo día
+  const [searchParams] = useSearchParams();
+  const fechaDeUrl = searchParams.get('fecha');
+  const [fecha, setFecha] = useState(fechaDeUrl && /^\d{4}-\d{2}-\d{2}$/.test(fechaDeUrl) ? fechaDeUrl : hoyISO());
+  const [version, setVersion] = useState(0); // al aumentarlo, se vuelve a pedir la agenda
+  const [errorAccion, setErrorAccion] = useState<string | null>(null);
   // Guardamos el resultado junto con la fecha a la que pertenece
   const [resultado, setResultado] = useState<{ fecha: string; turnos: TurnoAgenda[]; error: string | null } | null>(null);
 
@@ -24,7 +30,7 @@ export const EspecialistaAgenda: React.FC = () => {
       .then((turnos) => vigente && setResultado({ fecha, turnos, error: null }))
       .catch((err: Error) => vigente && setResultado({ fecha, turnos: [], error: err.message }));
     return () => { vigente = false; };
-  }, [fecha]);
+  }, [fecha, version]);
 
   // Si lo que tenemos guardado es de otra fecha, todavía estamos cargando la nueva
   const cargando = resultado?.fecha !== fecha;
@@ -32,6 +38,17 @@ export const EspecialistaAgenda: React.FC = () => {
   const error = cargando ? null : resultado.error;
   const pendientes = turnos.filter((t) => t.estado === 'PENDIENTE').length;
   const atendidos = turnos.filter((t) => t.estado === 'ATENDIDO').length;
+
+  const ausente = async (turno: TurnoAgenda) => {
+    if (!window.confirm(`¿Marcar a ${turno.paciente.nombre} como ausente?`)) return;
+    setErrorAccion(null);
+    try {
+      await marcarAusente(turno.id);
+      setVersion((v) => v + 1);
+    } catch (err) {
+      setErrorAccion(err instanceof Error ? err.message : 'No se pudo actualizar el turno.');
+    }
+  };
 
   return (
     <div className="min-vh-100 bg-light">
@@ -41,7 +58,7 @@ export const EspecialistaAgenda: React.FC = () => {
         <div className="mb-4">
           <span className="etiqueta-superior rounded-pill mb-3">Panel del profesional</span>
           <h1 className="fw-bold mb-1">Mi agenda</h1>
-          <p className="text-muted mb-0">Elegí un día para ver los turnos de tus pacientes.</p>
+          <p className="text-muted mb-0">Elegí un día para ver y atender a tus pacientes.</p>
         </div>
 
         <div className="card border-0 shadow-sm p-3 mb-4">
@@ -83,6 +100,7 @@ export const EspecialistaAgenda: React.FC = () => {
           )}
 
           {error && <div className="alert alert-danger" role="alert">No pudimos cargar la agenda. {error}</div>}
+          {errorAccion && <div className="alert alert-danger" role="alert">{errorAccion}</div>}
 
           {!cargando && !error && turnos.length === 0 && (
             <div className="fondo-punteado rounded p-4 text-center">
@@ -99,7 +117,18 @@ export const EspecialistaAgenda: React.FC = () => {
                   <strong>{t.paciente.nombre}</strong>
                   <small className="d-block text-muted">DNI {t.paciente.dni} · Tel. {t.paciente.telefono}</small>
                 </div>
-                <span className={`badge rounded-pill ms-auto ${ESTADOS[t.estado].clase}`}>{ESTADOS[t.estado].texto}</span>
+                <div className="d-flex align-items-center gap-2 ms-auto">
+                  <span className={`badge rounded-pill ${ESTADOS[t.estado].clase}`}>{ESTADOS[t.estado].texto}</span>
+                  {t.estado === 'PENDIENTE' && (
+                    <>
+                      <Link className="btn btn-sm btn-primary" to={`/especialista/turno/${t.id}`}>Atender</Link>
+                      <button className="btn btn-sm btn-outline-warning" onClick={() => ausente(t)}>Ausente</button>
+                    </>
+                  )}
+                  {t.estado === 'ATENDIDO' && (
+                    <Link className="btn btn-sm btn-outline-success" to={`/especialista/turno/${t.id}`}>Ver informe</Link>
+                  )}
+                </div>
               </div>
             ))}
           </div>

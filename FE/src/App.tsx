@@ -11,6 +11,7 @@ import { SacarTurno } from './pages/SacarTurno';
 import { Legal } from './pages/Legal';
 import { Administrativo } from './pages/Administrativo';
 import { EspecialistaAgenda } from './pages/especialista/EspecialistaAgenda';
+import { EspecialistaTurno } from './pages/especialista/EspecialistaTurno';
 
 function App() {
   return (
@@ -31,6 +32,7 @@ function App() {
         <Route path="/privacidad" element={<Legal tipo="privacidad" />} />
         <Route path="/administrativo" element={<Administrativo />} />
         <Route path="/especialista" element={<EspecialistaAgenda />} />
+        <Route path="/especialista/turno/:id" element={<EspecialistaTurno />} />
       </Routes>
     </BrowserRouter>
   );
