@@ -9,7 +9,8 @@ type EspecialistaInput = {
   nombre: string;
   email: string;
   telefono: string;
-  especialidad: Especialidad;
+  contrasena?: string;
+  especialidad?: Especialidad | null;
 };
 
 export async function sGetAllEspecialistas(cod_especialidad?: number): Promise<Especialista[]> {
@@ -22,7 +23,7 @@ export async function sGetEspecialistaById(cod_especialista: number): Promise<Es
 }
 
 export async function sCreateEspecialista(input: EspecialistaInput): Promise<Especialista> {
-  const especialista = orm.em.create(Especialista, input);
+  const especialista = orm.em.create(Especialista, input as any);
   try {
     await orm.em.persistAndFlush(especialista);
   } catch (error) {
@@ -48,7 +49,11 @@ export async function sUpdateEspecialista(
   especialista.nombre = input.nombre;
   especialista.email = input.email;
   especialista.telefono = input.telefono;
-  especialista.especialidad = input.especialidad;
+  especialista.especialidad = input.especialidad ?? null;
+  
+  if (input.contrasena && input.contrasena.trim() !== '') {
+    especialista.contrasena = input.contrasena;
+  }
 
   try {
     await orm.em.flush();
