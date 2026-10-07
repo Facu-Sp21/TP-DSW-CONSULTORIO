@@ -10,6 +10,21 @@ export const pacienteBodySchema = z.object({
   cod_os: z.coerce.number().int().positive().optional(),
 });
 
+export const pacienteUpdateBodySchema = z.object({
+  nombre: z.string().max(60).optional(),
+  dni: z.string().max(20).optional(),
+  email: z.string().max(120).email('El email del paciente no es válido').optional(),
+  telefono: z.string().max(30).optional(),
+  direccion: z.string().max(100).optional(),
+  contrasena: z
+    .union([
+      z.string().min(4, 'La contraseña debe tener al menos 4 caracteres').max(100),
+      z.literal(''),
+    ])
+    .optional(),
+  cod_os: z.coerce.number().int().positive().optional().nullable(),
+});
+
 export const pacienteParamsSchema = z.object({
   nro_afiliado: z.coerce.number().int().positive(), // coerce convierte el valor a numero ya que viene como string del req.params
 });

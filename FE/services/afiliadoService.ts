@@ -1,26 +1,31 @@
 import { apiFetch } from './api';
 
 export interface RegistrarAfiliadoDTO {
-  nombreCompleto: string;
+  nombre: string;
   dni: string;
   email: string;
-  password?: string;
-  obraSocialId?: number;
+  telefono: string;
+  direccion: string;
+  contrasena: string;
+  cod_os?: number;
 }
 
 export interface AfiliadoResponse {
+  nro_afiliado: number;
   id: number;
-  nombreCompleto: string;
+  nombre: string;
+  nombreCompleto?: string;
   dni: string;
   email: string;
-  obraSocialId?: number;
+  telefono: string;
+  direccion: string;
+  cod_os?: number | null;
 }
 
-// alias export para mantener compatibilidad con el Admin Dashboard
 export type Afiliado = AfiliadoResponse;
 
 export const registrarAfiliado = (data: RegistrarAfiliadoDTO) => {
-  return apiFetch<AfiliadoResponse>('/afiliado', {
+  return apiFetch<AfiliadoResponse>('/paciente', {
     method: 'POST',
     body: JSON.stringify(data),
   });
@@ -28,19 +33,24 @@ export const registrarAfiliado = (data: RegistrarAfiliadoDTO) => {
 
 export const createAfiliado = registrarAfiliado;
 
-export const getAfiliados = () => {
-  return apiFetch<AfiliadoResponse[]>('/afiliado');
+export const getAfiliados = async () => {
+  const data = await apiFetch<any[]>('/paciente');
+  return data.map((p) => ({
+    ...p,
+    id: p.nro_afiliado,
+    nombreCompleto: p.nombre,
+  })) as AfiliadoResponse[];
 };
 
 export const updateAfiliado = (id: number, data: Partial<RegistrarAfiliadoDTO>) => {
-  return apiFetch<AfiliadoResponse>(`/afiliado/${id}`, {
+  return apiFetch<AfiliadoResponse>(`/paciente/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data),
   });
 };
 
 export const deleteAfiliado = (id: number) => {
-  return apiFetch<void>(`/afiliado/${id}`, {
+  return apiFetch<void>(`/paciente/${id}`, {
     method: 'DELETE',
   });
 };

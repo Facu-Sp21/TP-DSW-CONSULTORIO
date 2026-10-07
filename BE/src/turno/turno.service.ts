@@ -8,8 +8,8 @@ import { esTurnoValido } from './turno.calendar.js';
 
 // Actualizamos el Input para usar fecha y hora separadas
 type TurnoInput = {
-  fecha: string;        // 'YYYY-MM-DD'
-  hora_inicio: string;  // 'HH:mm'
+  fecha: string; // 'YYYY-MM-DD'
+  hora_inicio: string; // 'HH:mm'
   paciente: Paciente;
   especialista: Especialista;
 };
@@ -26,9 +26,9 @@ type TurnoFilters = {
  * Lanza excepción si el paciente o el médico ya están ocupados.
  */
 async function ensureTurnoDisponible(
-  fecha: string, 
-  hora_inicio: string, 
-  especialista: Especialista, 
+  fecha: string,
+  hora_inicio: string,
+  especialista: Especialista,
   paciente: Paciente,
   cod_turno_ignoralo?: number // Para no chocarse consigo mismo en un UPDATE
 ) {
@@ -42,43 +42,43 @@ async function ensureTurnoDisponible(
       ],
       fecha,
     },
-    { populate: ['especialista.especialidad', 'paciente'] },
+    { populate: ['especialista.especialidad', 'paciente'] }
   );
 
-  const duracionNuevo = especialista.especialidad.duracion_minutos;
+  const duracionNuevo = especialista.especialidad?.duracion_minutos ?? 0;
   const nuevoInicio = horaAMinutos(hora_inicio);
   const nuevoFin = nuevoInicio + duracionNuevo;
 
   for (const turnoGuardado of turnosDelDia) {
-      // Ignoramos el turno actual si estamos haciendo un update
-      if (cod_turno_ignoralo && turnoGuardado.cod_turno === cod_turno_ignoralo) continue;
+    // Ignoramos el turno actual si estamos haciendo un update
+    if (cod_turno_ignoralo && turnoGuardado.cod_turno === cod_turno_ignoralo) continue;
 
-      const duracionGuardada = turnoGuardado.especialista.especialidad.duracion_minutos;
-      const ocupadoInicio = horaAMinutos(turnoGuardado.hora_inicio);
-      const ocupadoFin = ocupadoInicio + duracionGuardada;
+    const duracionGuardada = turnoGuardado.especialista.especialidad?.duracion_minutos ?? 0;
+    const ocupadoInicio = horaAMinutos(turnoGuardado.hora_inicio);
+    const ocupadoFin = ocupadoInicio + duracionGuardada;
 
-      if (chocaEnMinutos(nuevoInicio, nuevoFin, ocupadoInicio, ocupadoFin)) {
-        if (turnoGuardado.especialista.cod_especialista === especialista.cod_especialista) {
-            throw new alreadyExistsError('El especialista ya tiene un turno asignado en ese horario');
-        }
-        if (turnoGuardado.paciente.nro_afiliado === paciente.nro_afiliado) {
-            throw new alreadyExistsError('El paciente ya tiene un turno asignado en ese horario');
-        }
+    if (chocaEnMinutos(nuevoInicio, nuevoFin, ocupadoInicio, ocupadoFin)) {
+      if (turnoGuardado.especialista.cod_especialista === especialista.cod_especialista) {
+        throw new alreadyExistsError('El especialista ya tiene un turno asignado en ese horario');
       }
+      if (turnoGuardado.paciente.nro_afiliado === paciente.nro_afiliado) {
+        throw new alreadyExistsError('El paciente ya tiene un turno asignado en ese horario');
+      }
+    }
   }
 }
 
 /**
  * Genera la grilla de turnos visual para el frontend
  */
-export async function sGetHorariosDisponibles(fecha: string, especialista: Especialista): Promise<string[]> {
-  const duracion_minutos = especialista.especialidad.duracion_minutos;
-  
+export async function sGetHorariosDisponibles(
+  fecha: string,
+  especialista: Especialista
+): Promise<string[]> {
+  const duracion_minutos = especialista.especialidad?.duracion_minutos ?? 0;
+
   // OJO: Acá definimos un horario fijo comercial para el ejemplo.
-  // En un sistema real, el "08:00" y "17:00" deberían leerse de una tabla 
-  // de "HorariosLaborales" del especialista.
   const slotsPosibles = generarSlots('08:00', '17:00', duracion_minutos);
-  
   if (slotsPosibles.length === 0) return [];
 
   // Traemos solo los turnos de ese médico ese día
@@ -88,23 +88,23 @@ export async function sGetHorariosDisponibles(fecha: string, especialista: Espec
       especialista: { cod_especialista: especialista.cod_especialista },
       fecha,
     },
-    { populate: ['especialista.especialidad'] },
+    { populate: ['especialista.especialidad'] }
   );
 
   // Filtramos la grilla generada contra la base de datos
-  return slotsPosibles.filter(slot => {
+  return slotsPosibles.filter((slot) => {
     const slotInicio = horaAMinutos(slot);
     const slotFin = slotInicio + duracion_minutos;
 
     // Verificamos si este slot choca con algún turno ya guardado
-    const estaOcupado = turnosOcupados.some(turnoG => {
-      const duracionOcupada = turnoG.especialista.especialidad.duracion_minutos;
+    const estaOcupado = turnosOcupados.some((turnoG) => {
+      const duracionOcupada = turnoG.especialista.especialidad?.duracion_minutos ?? 0;
       const ocuInicio = horaAMinutos(turnoG.hora_inicio);
       const ocuFin = ocuInicio + duracionOcupada;
       return chocaEnMinutos(slotInicio, slotFin, ocuInicio, ocuFin);
     });
 
-    return !estaOcupado; // Si NO está ocupado, lo mantenemos en el array de devueltos
+    return !estaOcupado; // Si NO está ocupado, lo mantenemos
   });
 }
 
@@ -113,7 +113,6 @@ export async function sGetHorariosDisponibles(fecha: string, especialista: Espec
  */
 export async function sGetTurnos(filters: TurnoFilters = {}): Promise<Turno[]> {
   const where: Record<string, any> = {};
-
   if (filters.nro_afiliado) where.paciente = filters.nro_afiliado;
   if (filters.cod_especialista) where.especialista = filters.cod_especialista;
   if (filters.fecha) where.fecha = filters.fecha;
@@ -129,11 +128,10 @@ export async function sGetTurnoById(cod_turno: number): Promise<Turno | null> {
  * Crear un nuevo turno
  */
 export async function sCreateTurno(input: TurnoInput): Promise<Turno> {
-  const duracion = input.especialista.especialidad.duracion_minutos;
-
+  const duracion = input.especialista.especialidad?.duracion_minutos ?? 0;
   if (!esTurnoValido(input.fecha, input.hora_inicio, duracion)) {
     throw new BadRequestError(
-      'El horario debe coincidir con la duración de la consulta y estar dentro de la atención de 08:00 a 17:00',
+      'El horario debe coincidir con la duración de la consulta y estar dentro de la atención de 08:00 a 17:00'
     );
   }
 
@@ -153,29 +151,35 @@ export async function sCreateTurno(input: TurnoInput): Promise<Turno> {
 /**
  * Actualizar turno (ej: cambiar el día o la hora)
  */
-export async function sUpdateTurno(cod_turno: number, input: TurnoInput): Promise<Turno | null> {
+export async function sUpdateTurno(
+  cod_turno: number,
+  input: TurnoInput
+): Promise<Turno | null> {
   const turno = await orm.em.findOne(Turno, { cod_turno });
-
   if (!turno) return null;
 
-  const duracion = input.especialista.especialidad.duracion_minutos;
-
+  const duracion = input.especialista.especialidad?.duracion_minutos ?? 0;
   if (!esTurnoValido(input.fecha, input.hora_inicio, duracion)) {
     throw new BadRequestError(
-      'El horario debe coincidir con la duración de la consulta y estar dentro de la atención de 08:00 a 17:00',
+      'El horario debe coincidir con la duración de la consulta y estar dentro de la atención de 08:00 a 17:00'
     );
   }
 
   // Pasamos el cod_turno para que no crea que choca consigo mismo
-  await ensureTurnoDisponible(input.fecha, input.hora_inicio, input.especialista, input.paciente, cod_turno);
-  
+  await ensureTurnoDisponible(
+    input.fecha,
+    input.hora_inicio,
+    input.especialista,
+    input.paciente,
+    cod_turno
+  );
+
   turno.fecha = input.fecha;
   turno.hora_inicio = input.hora_inicio;
   turno.paciente = input.paciente;
   turno.especialista = input.especialista;
 
   await orm.em.flush();
-
   return turno;
 }
 

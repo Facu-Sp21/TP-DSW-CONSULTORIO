@@ -34,20 +34,26 @@ export async function sCreatePaciente(input: PacienteInput): Promise<Paciente> {
   return paciente;
 }
 
-export async function sUpdatePaciente(nro_afiliado: number, input: PacienteInput): Promise<Paciente | null> {
+export async function sUpdatePaciente(
+  nro_afiliado: number, 
+  input: Partial<PacienteInput>
+): Promise<Paciente | null> {
   const paciente = await orm.em.findOne(Paciente, { nro_afiliado });
 
   if (!paciente) {
     return null;
   }
 
-  paciente.dni = input.dni;
-  paciente.nombre = input.nombre;
-  paciente.telefono = input.telefono;
-  paciente.direccion = input.direccion;
-  paciente.email = input.email;
-  paciente.contrasena = input.contrasena;
-  paciente.cod_os = input.cod_os ?? null;
+  if (input.dni !== undefined) paciente.dni = input.dni;
+  if (input.nombre !== undefined) paciente.nombre = input.nombre;
+  if (input.telefono !== undefined) paciente.telefono = input.telefono;
+  if (input.direccion !== undefined) paciente.direccion = input.direccion;
+  if (input.email !== undefined) paciente.email = input.email;
+  if (input.cod_os !== undefined) paciente.cod_os = input.cod_os ?? null;
+
+  if (input.contrasena && input.contrasena.trim() !== '') {
+    paciente.contrasena = input.contrasena;
+  }
 
   try {
     await orm.em.flush();

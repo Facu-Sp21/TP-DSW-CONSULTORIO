@@ -18,6 +18,9 @@ export class Especialista {
   @Property({ length: 30, nullable: false, type: 'string' })
   telefono!: string;
 
-  @ManyToOne('Especialidad', { fieldName: 'cod_especialidad', nullable: false })
-  especialidad!: Especialidad;
+  @Property({ length: 255, nullable: false, type: 'string' })
+  contrasena!: string;
+
+  @ManyToOne('Especialidad', { fieldName: 'cod_especialidad', nullable: true })
+  especialidad?: Especialidad | null;
 }
