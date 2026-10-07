@@ -13,3 +13,7 @@ export function sumarDias(fecha: string, dias: number): string {
   d.setDate(d.getDate() + dias);
   return aISO(d);
 }
+
+/** '2026-10-09' -> 'viernes, 9 de octubre' */
+export const formatearFecha = (fecha: string) =>
+  new Intl.DateTimeFormat('es-AR', { weekday: 'long', day: 'numeric', month: 'long' }).format(new Date(`${fecha}T12:00:00`));

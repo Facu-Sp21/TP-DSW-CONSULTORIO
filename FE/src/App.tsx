@@ -10,6 +10,7 @@ import { Calendario, Usuario } from './pages/Usuario';
 import { SacarTurno } from './pages/SacarTurno';
 import { Legal } from './pages/Legal';
 import { Administrativo } from './pages/Administrativo';
+import { EspecialistaAgenda } from './pages/especialista/EspecialistaAgenda';
 
 function App() {
   return (
@@ -29,6 +30,7 @@ function App() {
         <Route path="/terminos" element={<Legal tipo="terminos" />} />
         <Route path="/privacidad" element={<Legal tipo="privacidad" />} />
         <Route path="/administrativo" element={<Administrativo />} />
+        <Route path="/especialista" element={<EspecialistaAgenda />} />
       </Routes>
     </BrowserRouter>
   );
