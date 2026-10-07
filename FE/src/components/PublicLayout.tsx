@@ -137,8 +137,8 @@ export const PublicLayout: React.FC<PublicLayoutProps> = ({ activo = '/', childr
           <div className="border-top border-secondary-subtle py-3 d-flex flex-wrap justify-content-between align-items-center gap-2">
             <small className="text-muted-dark">© 2026 Vitalis S.A. Todos los derechos reservados. Plataforma desarrollada íntegramente en la web.</small>
             <div className="d-flex gap-4">
-              <a href="#" className="small">Términos de servicio</a>
-              <a href="#" className="small">Políticas de privacidad</a>
+              <Link to="/terminos" className="small">Términos de servicio</Link>
+              <Link to="/privacidad" className="small">Políticas de privacidad</Link>
             </div>
           </div>
         </div>
