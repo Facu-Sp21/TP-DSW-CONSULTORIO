@@ -17,7 +17,9 @@
     "@mikro-orm/sql-highlighter": "1.0.1",
     "@scalar/express-api-reference": "0.10.16",
     "cors": "^2.8.6",
+    "dotenv": "^18.0.5",
     "express": "5.2.1",
+    "nodemailer": "^10.0.13",
     "reflect-metadata": "0.2.2",
     "zod": "4.4.3"
   },
@@ -25,6 +27,7 @@
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/node": "^25.9.1",
+    "@types/nodemailer": "^8.0.2",
     "tsc-watch": "7.2.0",
     "typescript": "5.9.3"
   },

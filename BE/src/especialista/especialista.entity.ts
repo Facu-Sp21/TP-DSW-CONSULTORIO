@@ -1,6 +1,7 @@
-import { Entity, ManyToOne, Opt, PrimaryKey, Property } from '@mikro-orm/core';
+import { Entity, ManyToOne, Opt, PrimaryKey, Property, ManyToMany, Collection, OneToMany } from '@mikro-orm/core';
 import type { Especialidad } from '../especialidad/especialidad.entity.js';
-
+import type {ObraSocial} from '../ObraSocial/obraSocial.entity.js';
+import type { Turno } from '../Turno/turno.entity.js';
 @Entity()
 export class Especialista {
   @PrimaryKey({ type: 'number', autoincrement: true, unique: true })
@@ -17,4 +18,12 @@ export class Especialista {
 
   @ManyToOne('Especialidad', { fieldName: 'cod_especialidad', nullable: false })
   especialidad!: Especialidad;
+
+  @ManyToMany('ObraSocial', (unObraSocial: ObraSocial) => unObraSocial.especialistas,{owner:true})
+  obrasSociales = new Collection<ObraSocial>(this);
+
+  @OneToMany('Turno', (unTurno: Turno) => unTurno.especialista)
+  turnos = new Collection<Turno>(this);
+  
 }
+

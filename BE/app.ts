@@ -5,11 +5,14 @@ import cors from 'cors';
 
 import especialidadRoutes from './src/especialidad/especialidad.routes.js';
 import especialistaRoutes from './src/especialista/especialista.routes.js';
-import afiliadoRoutes from './src/Afiliado/routes.js';
+import afiliadoRoutes from './src/Afiliado/afiliado.routes.js';
+import turnoRoutes from './src/Turno/turno.routes.js';
 import { errorHandler } from './src/shared/errorHandler.js';
 import { RequestContext } from '@mikro-orm/core';
 import { apiReference } from '@scalar/express-api-reference';
 import { openApiDocument } from './src/shared/openapi.js';
+import obraSocialRoutes from './src/ObraSocial/obraSocial.routes.js';
+import './src/Email/email.service.js';
 
 const app = express();
 
@@ -23,6 +26,9 @@ app.use((req, res, next) => {
 app.use('/especialidad', especialidadRoutes);
 app.use('/especialista', especialistaRoutes);
 app.use('/afiliado', afiliadoRoutes);
+app.use('/obra-social', obraSocialRoutes);
+app.use('/turno', turnoRoutes);
+
 
 app.get('/openapi.json', (_req, res) => {
     res.json(openApiDocument);
