@@ -11,9 +11,10 @@
     "forceConsistentCasingInFileNames": true,
     "strict": true,
     "alwaysStrict": true,
+    "types": ["node", "jest"],
     "skipLibCheck": true,
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true
   },
-  "include": ["app.ts", "server.ts", "src/**/*"]
+  "include": ["app.ts", "server.ts", "src/**/*", "tests/**/*"]
 }

@@ -3,6 +3,8 @@ import {orm, syncSchema} from './src/shared/db/orm.js';
 import express from 'express';
 import especialidadRoutes from './src/especialidad/especialidad.routes.js';
 import especialistaRoutes from './src/especialista/especialista.routes.js';
+import pacienteRoutes from './src/paciente/paciente.routes.js';
+import turnoRoutes from './src/turno/turno.routes.js';
 import { errorHandler } from './src/shared/errorHandler.js';
 import { RequestContext } from '@mikro-orm/core';
 import { apiReference } from '@scalar/express-api-reference';
@@ -18,6 +20,8 @@ app.use((req, res, next) => { // esto es para que cada request tenga su propio c
 
 app.use('/especialidad', especialidadRoutes);
 app.use('/especialista', especialistaRoutes);
+app.use('/paciente', pacienteRoutes);
+app.use('/turno', turnoRoutes);
 
 app.get('/openapi.json', (_req, res) => {
     res.json(openApiDocument);
