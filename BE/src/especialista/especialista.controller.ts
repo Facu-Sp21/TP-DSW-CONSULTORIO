@@ -27,7 +27,7 @@ export async function cGetEspecialistaById(req: Request, res: Response) {
 }
 
 export async function cCreateEspecialista(req: Request, res: Response) {
-  const { matricula, nombre, telefono, cod_especialidad } = res.locals.body;
+  const { matricula, nombre, email, telefono, cod_especialidad } = res.locals.body;
   const especialidad = await sGetEspecialidadById(cod_especialidad);
 
   if (!especialidad) {
@@ -37,6 +37,7 @@ export async function cCreateEspecialista(req: Request, res: Response) {
   const nuevoEspecialista = await sCreateEspecialista({
     matricula,
     nombre,
+    email,
     telefono,
     especialidad,
   });
@@ -46,7 +47,7 @@ export async function cCreateEspecialista(req: Request, res: Response) {
 
 export async function cUpdateEspecialista(req: Request, res: Response) {
   const cod_especialista = res.locals.params.cod_especialista;
-  const { matricula, nombre, telefono, cod_especialidad } = res.locals.body;
+  const { matricula, nombre, email, telefono, cod_especialidad } = res.locals.body;
   const especialidad = await sGetEspecialidadById(cod_especialidad);
 
   if (!especialidad) {
@@ -56,6 +57,7 @@ export async function cUpdateEspecialista(req: Request, res: Response) {
   const especialista = await sUpdateEspecialista(cod_especialista, {
     matricula,
     nombre,
+    email,
     telefono,
     especialidad,
   });

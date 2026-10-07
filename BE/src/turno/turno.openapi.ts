@@ -1,30 +1,52 @@
-export const especialidadOpenApi = {
+export const turnoOpenApi = {
   openapi: '3.1.0',
   info: {
-    title: 'API de Especialidades',
+    title: 'API de Turnos',
     version: '1.0.0',
-    description: 'Documentación del módulo de especialidades del consultorio.',
+    description: 'Documentación del módulo de turnos del consultorio.',
   },
   tags: [
     {
-      name: 'Especialidad',
-      description: 'Operaciones CRUD para administrar especialidades médicas.',
+      name: 'Turno',
+      description: 'Operaciones CRUD para administrar turnos.',
     },
   ],
   paths: {
-    '/especialidad': {
+    '/turno': {
       get: {
-        tags: ['Especialidad'],
-        summary: 'Listar especialidades',
+        tags: ['Turno'],
+        summary: 'Listar turnos',
+        parameters: [
+          {
+            name: 'nro_afiliado',
+            in: 'query',
+            required: false,
+            description: 'Filtra los turnos de un paciente.',
+            schema: {
+              type: 'integer',
+              minimum: 1,
+            },
+          },
+          {
+            name: 'cod_especialista',
+            in: 'query',
+            required: false,
+            description: 'Filtra los turnos de un especialista.',
+            schema: {
+              type: 'integer',
+              minimum: 1,
+            },
+          },
+        ],
         responses: {
           200: {
-            description: 'Listado de especialidades.',
+            description: 'Listado de turnos.',
             content: {
               'application/json': {
                 schema: {
                   type: 'array',
                   items: {
-                    $ref: '#/components/schemas/Especialidad',
+                    $ref: '#/components/schemas/Turno',
                   },
                 },
               },
@@ -33,25 +55,25 @@ export const especialidadOpenApi = {
         },
       },
       post: {
-        tags: ['Especialidad'],
-        summary: 'Crear una especialidad',
+        tags: ['Turno'],
+        summary: 'Crear un turno',
         requestBody: {
           required: true,
           content: {
             'application/json': {
               schema: {
-                $ref: '#/components/schemas/EspecialidadInput',
+                $ref: '#/components/schemas/TurnoInput',
               },
             },
           },
         },
         responses: {
           201: {
-            description: 'Especialidad creada correctamente.',
+            description: 'Turno creado correctamente.',
             content: {
               'application/json': {
                 schema: {
-                  $ref: '#/components/schemas/Especialidad',
+                  $ref: '#/components/schemas/Turno',
                 },
               },
             },
@@ -66,8 +88,18 @@ export const especialidadOpenApi = {
               },
             },
           },
+          404: {
+            description: 'Paciente o especialista no encontrado.',
+            content: {
+              'application/json': {
+                schema: {
+                  $ref: '#/components/schemas/ErrorResponse',
+                },
+              },
+            },
+          },
           409: {
-            description: 'El recurso ya existe.',
+            description: 'El especialista ya tiene un turno en ese horario.',
             content: {
               'application/json': {
                 schema: {
@@ -79,16 +111,45 @@ export const especialidadOpenApi = {
         },
       },
     },
-    '/especialidad/{cod_especialidad}': {
+    '/turno/disponibles': {
       get: {
-        tags: ['Especialidad'],
-        summary: 'Obtener una especialidad por id',
+        tags: ['Turno'],
+        summary: 'Listar horarios disponibles de un especialista en una fecha',
         parameters: [
           {
-            name: 'cod_especialidad',
+            name: 'cod_especialista',
+            in: 'query',
+            required: true,
+            schema: { type: 'integer', minimum: 1 },
+          },
+          {
+            name: 'fecha',
+            in: 'query',
+            required: true,
+            description: 'Fecha local de atención.',
+            schema: { type: 'string', format: 'date', example: '2026-10-01' },
+          },
+        ],
+        responses: {
+          200: {
+            description: 'Horarios sin reservas y ajustados a la duración de la especialidad.',
+          },
+          404: {
+            description: 'Especialista no encontrado.',
+          },
+        },
+      },
+    },
+    '/turno/{cod_turno}': {
+      get: {
+        tags: ['Turno'],
+        summary: 'Obtener un turno por id',
+        parameters: [
+          {
+            name: 'cod_turno',
             in: 'path',
             required: true,
-            description: 'Código único de la especialidad.',
+            description: 'Código único del turno.',
             schema: {
               type: 'integer',
               minimum: 1,
@@ -97,11 +158,11 @@ export const especialidadOpenApi = {
         ],
         responses: {
           200: {
-            description: 'Especialidad encontrada.',
+            description: 'Turno encontrado.',
             content: {
               'application/json': {
                 schema: {
-                  $ref: '#/components/schemas/Especialidad',
+                  $ref: '#/components/schemas/Turno',
                 },
               },
             },
@@ -117,7 +178,7 @@ export const especialidadOpenApi = {
             },
           },
           404: {
-            description: 'Especialidad no encontrada.',
+            description: 'Turno no encontrado.',
             content: {
               'application/json': {
                 schema: {
@@ -129,14 +190,14 @@ export const especialidadOpenApi = {
         },
       },
       put: {
-        tags: ['Especialidad'],
-        summary: 'Actualizar una especialidad',
+        tags: ['Turno'],
+        summary: 'Actualizar un turno',
         parameters: [
           {
-            name: 'cod_especialidad',
+            name: 'cod_turno',
             in: 'path',
             required: true,
-            description: 'Código único de la especialidad.',
+            description: 'Código único del turno.',
             schema: {
               type: 'integer',
               minimum: 1,
@@ -148,18 +209,18 @@ export const especialidadOpenApi = {
           content: {
             'application/json': {
               schema: {
-                $ref: '#/components/schemas/EspecialidadInput',
+                $ref: '#/components/schemas/TurnoInput',
               },
             },
           },
         },
         responses: {
           200: {
-            description: 'Especialidad actualizada correctamente.',
+            description: 'Turno actualizado correctamente.',
             content: {
               'application/json': {
                 schema: {
-                  $ref: '#/components/schemas/Especialidad',
+                  $ref: '#/components/schemas/Turno',
                 },
               },
             },
@@ -175,7 +236,17 @@ export const especialidadOpenApi = {
             },
           },
           404: {
-            description: 'Especialidad no encontrada.',
+            description: 'Turno, paciente o especialista no encontrado.',
+            content: {
+              'application/json': {
+                schema: {
+                  $ref: '#/components/schemas/ErrorResponse',
+                },
+              },
+            },
+          },
+          409: {
+            description: 'El especialista ya tiene un turno en ese horario.',
             content: {
               'application/json': {
                 schema: {
@@ -187,14 +258,14 @@ export const especialidadOpenApi = {
         },
       },
       delete: {
-        tags: ['Especialidad'],
-        summary: 'Eliminar una especialidad',
+        tags: ['Turno'],
+        summary: 'Eliminar un turno',
         parameters: [
           {
-            name: 'cod_especialidad',
+            name: 'cod_turno',
             in: 'path',
             required: true,
-            description: 'Código único de la especialidad.',
+            description: 'Código único del turno.',
             schema: {
               type: 'integer',
               minimum: 1,
@@ -203,7 +274,7 @@ export const especialidadOpenApi = {
         ],
         responses: {
           204: {
-            description: 'Especialidad eliminada correctamente.',
+            description: 'Turno eliminado correctamente.',
           },
           400: {
             description: 'Parámetro inválido.',
@@ -216,60 +287,7 @@ export const especialidadOpenApi = {
             },
           },
           404: {
-            description: 'Especialidad no encontrada.',
-            content: {
-              'application/json': {
-                schema: {
-                  $ref: '#/components/schemas/ErrorResponse',
-                },
-              },
-            },
-          },
-        },
-      },
-    },
-    '/especialidad/{cod_especialidad}/especialistas': {
-      get: {
-        tags: ['Especialidad'],
-        summary: 'Listar especialistas de una especialidad',
-        parameters: [
-          {
-            name: 'cod_especialidad',
-            in: 'path',
-            required: true,
-            description: 'Código único de la especialidad.',
-            schema: {
-              type: 'integer',
-              minimum: 1,
-            },
-          },
-        ],
-        responses: {
-          200: {
-            description: 'Listado de especialistas de la especialidad.',
-            content: {
-              'application/json': {
-                schema: {
-                  type: 'array',
-                  items: {
-                    $ref: '#/components/schemas/Especialista',
-                  },
-                },
-              },
-            },
-          },
-          400: {
-            description: 'Parámetro inválido.',
-            content: {
-              'application/json': {
-                schema: {
-                  $ref: '#/components/schemas/ValidationError',
-                },
-              },
-            },
-          },
-          404: {
-            description: 'Especialidad no encontrada.',
+            description: 'Turno no encontrado.',
             content: {
               'application/json': {
                 schema: {
@@ -284,52 +302,66 @@ export const especialidadOpenApi = {
   },
   components: {
     schemas: {
-      Especialidad: {
+      Turno: {
         type: 'object',
         properties: {
-          cod_especialidad: {
+          cod_turno: {
             type: 'integer',
-            description: 'Identificador autogenerado de la especialidad.',
+            description: 'Identificador autogenerado del turno.',
           },
-          nombre: {
+          fecha: {
             type: 'string',
-            maxLength: 60,
-            description: 'Nombre de la especialidad.',
-            example: 'Cardiología',
+            format: 'date',
+            description: 'Fecha del turno en formato YYYY-MM-DD.',
+            example: '2026-08-29',
           },
-          duracion_minutos: {
-            type: 'integer',
-            minimum: 1,
-            description: 'Duración de cada turno de la especialidad, en minutos.',
-            example: 15,
+          hora_inicio: {
+            type: 'string',
+            pattern: '^([01]\\d|2[0-3]):([0-5]\\d)$',
+            description: 'Hora de inicio del turno en formato HH:mm.',
+            example: '14:30',
+          },
+          paciente: {
+            $ref: '#/components/schemas/Paciente',
+          },
+          especialista: {
+            $ref: '#/components/schemas/Especialista',
           },
         },
-        required: ['cod_especialidad', 'nombre', 'duracion_minutos'],
+        required: ['cod_turno', 'fecha', 'hora_inicio', 'paciente', 'especialista'],
       },
-      EspecialidadInput: {
+      TurnoInput: {
         type: 'object',
         properties: {
-          nombre: {
+          fecha: {
             type: 'string',
-            maxLength: 60,
-            description: 'Nombre de la especialidad.',
-            example: 'Pediatría',
+            format: 'date',
+            example: '2026-08-29',
           },
-          duracion_minutos: {
+          hora_inicio: {
+            type: 'string',
+            pattern: '^([01]\\d|2[0-3]):([0-5]\\d)$',
+            example: '14:30',
+          },
+          nro_afiliado: {
             type: 'integer',
             minimum: 1,
-            description: 'Duración de cada turno, en minutos.',
-            example: 15,
+            example: 1,
+          },
+          cod_especialista: {
+            type: 'integer',
+            minimum: 1,
+            example: 1,
           },
         },
-        required: ['nombre', 'duracion_minutos'],
+        required: ['fecha', 'hora_inicio', 'nro_afiliado', 'cod_especialista'],
       },
       ErrorResponse: {
         type: 'object',
         properties: {
           message: {
             type: 'string',
-            example: 'Especialidad no encontrada',
+            example: 'Turno no encontrado',
           },
         },
         required: ['message'],
@@ -348,11 +380,11 @@ export const especialidadOpenApi = {
               properties: {
                 path: {
                   type: 'string',
-                  example: 'nombre',
+                  example: 'hora_inicio',
                 },
                 message: {
                   type: 'string',
-                  example: 'El nombre de la especialidad es obligatorio',
+                  example: 'No se pueden reservar turnos en fechas u horarios pasados',
                 },
               },
               required: ['path', 'message'],
@@ -360,35 +392,6 @@ export const especialidadOpenApi = {
           },
         },
         required: ['message', 'errors'],
-      },
-      Especialista: {
-        type: 'object',
-        properties: {
-          cod_especialista: {
-            type: 'integer',
-            description: 'Identificador autogenerado del especialista.',
-          },
-          matricula: {
-            type: 'string',
-            maxLength: 30,
-            description: 'Matrícula del especialista.',
-          },
-          nombre: {
-            type: 'string',
-            maxLength: 60,
-            description: 'Nombre del especialista.',
-          },
-          telefono: {
-            type: 'string',
-            maxLength: 30,
-            description: 'Teléfono del especialista.',
-          },
-          cod_especialidad: {
-            type: 'integer',
-            description: 'Código de la especialidad del especialista.',
-          },
-        },
-        required: ['cod_especialista', 'matricula', 'nombre', 'telefono', 'cod_especialidad'],
       },
     },
   },

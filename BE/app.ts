@@ -5,6 +5,8 @@ import cors from 'cors';
 
 import especialidadRoutes from './src/especialidad/especialidad.routes.js';
 import especialistaRoutes from './src/especialista/especialista.routes.js';
+import pacienteRoutes from './src/paciente/paciente.routes.js';
+import turnoRoutes from './src/turno/turno.routes.js';
 import afiliadoRoutes from './src/Afiliado/routes.js';
 import { errorHandler } from './src/shared/errorHandler.js';
 import { RequestContext } from '@mikro-orm/core';
@@ -23,6 +25,8 @@ app.use((req, res, next) => {
 
 app.use('/especialidad', especialidadRoutes);
 app.use('/especialista', especialistaRoutes);
+app.use('/paciente', pacienteRoutes);
+app.use('/turno', turnoRoutes);
 app.use('/afiliado', afiliadoRoutes);
 app.use('/suscripcion', suscripcionRoutes);
 
