@@ -1,6 +1,7 @@
 import { Entity, ManyToOne, Opt, PrimaryKey, Property } from '@mikro-orm/core';
 import type { Paciente } from '../paciente/paciente.entity.js';
 import type { Especialista } from '../especialista/especialista.entity.js';
+import type { EstadoTurno } from './turno.estado.js'; // NUEVO
 
 @Entity()
 export class Turno {
@@ -13,7 +14,11 @@ export class Turno {
 
   // Formato estricto: 'HH:mm' (ej: '17:00')
   @Property({ nullable: false, type: 'time' })
-  hora_inicio!: string; 
+  hora_inicio!: string;
+  
+  // PENDIENTE al crearse; pasa a ATENDIDO o AUSENTE desde el panel del especialista
+  @Property({ length: 10, nullable: false, type: 'string', default: 'PENDIENTE' })
+  estado: EstadoTurno & Opt = 'PENDIENTE';
 
   @ManyToOne('Paciente', { fieldName: 'nro_afiliado', nullable: false })
   paciente!: Paciente;
