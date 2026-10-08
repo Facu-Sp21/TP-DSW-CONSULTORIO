@@ -1,12 +1,13 @@
 import { apiFetch } from './api';
 
-// ---------------------------------------------------------------------------
-// 1) Lo que devuelve el backend de turnos (formato real, ver BE/src/turno)
-// ---------------------------------------------------------------------------
+// 1) Lo que devuelve el backend (formato real, ver BE/src/turno y BE/src/historiaClinica) // 
+export type EstadoTurno = 'PENDIENTE' | 'ATENDIDO' | 'AUSENTE';
+
 interface TurnoApi {
   cod_turno: number;
   fecha: string; // 'AAAA-MM-DD'
-  hora_inicio: string; // 'HH:MM:SS' en los GET (ojo: el POST lo devuelve como 'HH:MM')
+  hora_inicio: string; // 'HH:MM:SS' en los GET
+  estado: EstadoTurno;
   paciente: {
     nro_afiliado: number;
     dni: string;
@@ -16,12 +17,15 @@ interface TurnoApi {
   };
 }
 
-// ---------------------------------------------------------------------------
-// 2) El modelo que usan las pantallas del especialista
-//    (si el backend cambia, solo se toca la función "aTurnoAgenda")
-// ---------------------------------------------------------------------------
-export type EstadoTurno = 'PENDIENTE' | 'ATENDIDO' | 'AUSENTE';
+interface HistoriaApi {
+  cod_historia: number;
+  paciente: number; // sin cargar: llega solo el número de afiliado
+  turno: { cod_turno: number; fecha: string };
+  diagnostico: string;
+  indicaciones?: string | null;
+}
 
+// El modelo que usan las pantallas del especialista (si el backend cambia, solo se tocan las funciones de conversión de abajo) //
 export interface PacienteAgenda {
   id: number;
   nombre: string;
@@ -41,29 +45,18 @@ export interface EntradaHistoria {
   id: number;
   pacienteId: number;
   turnoId: number;
-  fecha: string; // AAAA-MM-DD
+  fecha: string; // AAAA-MM-DD (la del turno)
   diagnostico: string;
   indicaciones: string | null;
 }
 
-// ---------------------------------------------------------------------------
-// 3) Datos de prueba SOLO para lo que el backend todavía no tiene:
-//    el estado del turno y la historia clínica. Viven en memoria (al recargar la página se pierden).
-// ---------------------------------------------------------------------------
-const estados = new Map<number, EstadoTurno>();
-const historia: EntradaHistoria[] = [];
-
-const esperar = (ms = 250) => new Promise((resolver) => setTimeout(resolver, ms));
-
-// ---------------------------------------------------------------------------
-// 4) Conversión: formato del backend -> formato de las pantallas
-// ---------------------------------------------------------------------------
+// Conversión: formato del backend -> formato de las pantallas //
 function aTurnoAgenda(t: TurnoApi): TurnoAgenda {
   return {
     id: t.cod_turno,
     fecha: t.fecha,
     hora: t.hora_inicio.slice(0, 5), // '09:30:00' -> '09:30'
-    estado: estados.get(t.cod_turno) ?? 'PENDIENTE',
+    estado: t.estado,
     paciente: {
       id: t.paciente.nro_afiliado,
       nombre: t.paciente.nombre,
@@ -73,45 +66,42 @@ function aTurnoAgenda(t: TurnoApi): TurnoAgenda {
   };
 }
 
-// ---------------------------------------------------------------------------
-// 5) Funciones que usan las pantallas
-// ---------------------------------------------------------------------------
+function aEntradaHistoria(h: HistoriaApi): EntradaHistoria {
+  return {
+    id: h.cod_historia,
+    pacienteId: h.paciente,
+    turnoId: h.turno.cod_turno,
+    fecha: h.turno.fecha,
+    diagnostico: h.diagnostico,
+    indicaciones: h.indicaciones ?? null,
+  };
+}
 
-/** REAL: turnos de un especialista en un día. */
+// Funciones que usan las pantallas (todas hablan con el backend) // 
+
+/** Turnos de un especialista en un día. */
 export async function getAgenda(codEspecialista: number, fecha: string): Promise<TurnoAgenda[]> {
   const turnos = await apiFetch<TurnoApi[]>(`/turno?cod_especialista=${codEspecialista}&fecha=${fecha}`);
   return turnos.map(aTurnoAgenda).sort((a, b) => a.hora.localeCompare(b.hora));
 }
 
-/** REAL: un turno por su código. */
+/** Un turno por su código. */
 export async function getTurno(id: number): Promise<TurnoAgenda> {
   return aTurnoAgenda(await apiFetch<TurnoApi>(`/turno/${id}`));
 }
 
-/** PRUEBA: historia clínica de un paciente (más nueva primero). */
+/** Historia clínica de un paciente (la más nueva primero, el backend ya la devuelve ordenada). */
 export async function getHistoria(pacienteId: number): Promise<EntradaHistoria[]> {
-  await esperar();
-  return historia.filter((h) => h.pacienteId === pacienteId).sort((a, b) => b.fecha.localeCompare(a.fecha));
+  const entradas = await apiFetch<HistoriaApi[]>(`/historia-clinica?nro_afiliado=${pacienteId}`);
+  return entradas.map(aEntradaHistoria);
 }
 
-/** PRUEBA: el especialista termina la consulta. */
+/** El especialista termina la consulta: el turno queda ATENDIDO y se guarda la historia clínica. */
 export async function atenderTurno(id: number, datos: { diagnostico: string; indicaciones?: string }): Promise<void> {
-  const turno = await getTurno(id);
-  if (turno.estado !== 'PENDIENTE') throw new Error('Este turno ya no está pendiente de atención');
-  estados.set(id, 'ATENDIDO');
-  historia.push({
-    id: historia.length + 1,
-    pacienteId: turno.paciente.id,
-    turnoId: id,
-    fecha: turno.fecha,
-    diagnostico: datos.diagnostico,
-    indicaciones: datos.indicaciones ?? null,
-  });
+  await apiFetch(`/turno/${id}/atender`, { method: 'POST', body: JSON.stringify(datos) });
 }
 
-/** PRUEBA: el paciente no se presentó. */
+/** El paciente no se presentó. */
 export async function marcarAusente(id: number): Promise<void> {
-  const turno = await getTurno(id);
-  if (turno.estado !== 'PENDIENTE') throw new Error('Solo se puede marcar ausente un turno pendiente');
-  estados.set(id, 'AUSENTE');
+  await apiFetch(`/turno/${id}/ausente`, { method: 'POST' });
 }

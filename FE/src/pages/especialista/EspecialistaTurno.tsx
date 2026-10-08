@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { EspecialistaNav } from '../../components/EspecialistaNav';
-import { formatearFecha } from '../../../services/fechas';
+import { formatearFecha, hoyISO } from '../../../services/fechas';
 import { atenderTurno, getHistoria, getTurno } from '../../../services/agendaService';
 import type { EntradaHistoria, TurnoAgenda } from '../../../services/agendaService';
 
@@ -36,7 +36,7 @@ export const EspecialistaTurno: React.FC = () => {
   const turno = cargando ? null : resultado.turno;
   const historia = cargando ? [] : resultado.historia;
   const error = cargando ? null : resultado.error;
-
+  const esFuturo = turno ? turno.fecha > hoyISO() : false; // el backend no deja atender turnos futuros
   const informe = turno ? historia.find((h) => h.turnoId === turno.id) : undefined; // lo cargado en ESTA consulta
   const previas = historia.filter((h) => h.turnoId !== turno?.id); // consultas anteriores
 
@@ -90,7 +90,11 @@ export const EspecialistaTurno: React.FC = () => {
               {turno.estado === 'PENDIENTE' && (
                 <form className="card border-0 shadow-sm p-4" onSubmit={guardar}>
                   <h2 className="h5 fw-bold mb-3">Informe de la consulta</h2>
-
+                    {esFuturo && (
+                    <div className="alert alert-info small">
+                      Este turno es de una fecha futura: vas a poder cargar el informe el día de la consulta.
+                    </div>
+                  )}
                   <label className="form-label fw-semibold" htmlFor="diagnostico">Diagnóstico</label>
                   <textarea
                     id="diagnostico"
@@ -101,6 +105,7 @@ export const EspecialistaTurno: React.FC = () => {
                     required
                     value={diagnostico}
                     onChange={(e) => setDiagnostico(e.target.value)}
+                    disabled={esFuturo}
                   />
 
                   <label className="form-label fw-semibold" htmlFor="indicaciones">
@@ -113,11 +118,12 @@ export const EspecialistaTurno: React.FC = () => {
                     maxLength={2000}
                     value={indicaciones}
                     onChange={(e) => setIndicaciones(e.target.value)}
+                    disabled={esFuturo}
                   />
 
                   {errorGuardar && <div className="alert alert-danger" role="alert">{errorGuardar}</div>}
 
-                  <button className="btn btn-primary ms-auto" type="submit" disabled={guardando}>
+                  <button className="btn btn-primary ms-auto" type="submit" disabled={guardando || esFuturo}>
                     {guardando ? 'Guardando…' : <><i className="bi bi-check2-circle me-2"></i>Finalizar consulta</>}
                   </button>
                 </form>
