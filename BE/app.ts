@@ -13,6 +13,7 @@ import { RequestContext } from '@mikro-orm/core';
 import { apiReference } from '@scalar/express-api-reference';
 import { openApiDocument } from './src/shared/openapi.js';
 import suscripcionRoutes from './src/suscripcion/suscripcion.routes.js';
+import historiaClinicaRoutes from './src/historiaClinica/historiaClinica.routes.js'; 
 
 const app = express();
 
@@ -27,6 +28,7 @@ app.use('/especialidad', especialidadRoutes);
 app.use('/especialista', especialistaRoutes);
 app.use('/paciente', pacienteRoutes);
 app.use('/turno', turnoRoutes);
+app.use('/historia-clinica', historiaClinicaRoutes);
 app.use('/afiliado', afiliadoRoutes);
 app.use('/suscripcion', suscripcionRoutes);
 

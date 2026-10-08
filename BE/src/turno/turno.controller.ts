@@ -9,6 +9,8 @@ import {
   sGetTurnos,
   sGetTurnoById,
   sUpdateTurno,
+  sAtenderTurno,
+  sMarcarAusente,
 } from './turno.service.js';
 
 export async function cGetTurnos(req: Request, res: Response) {
@@ -104,4 +106,25 @@ export async function cDeleteTurno(req: Request, res: Response) {
   }
 
   res.status(204).send();
+}
+
+export async function cAtenderTurno(req: Request, res: Response) {
+  const turno = await sAtenderTurno(res.locals.params.cod_turno, res.locals.body);
+
+  if (!turno) {
+    throw new NotFoundError('Turno no encontrado');
+  }
+
+  // Devolvemos solo lo necesario: no hace falta (ni conviene) mandar los datos completos del paciente
+  res.json({ cod_turno: turno.cod_turno, estado: turno.estado });
+}
+
+export async function cMarcarAusente(req: Request, res: Response) {
+  const turno = await sMarcarAusente(res.locals.params.cod_turno);
+
+  if (!turno) {
+    throw new NotFoundError('Turno no encontrado');
+  }
+
+  res.json({ cod_turno: turno.cod_turno, estado: turno.estado });
 }
