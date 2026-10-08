@@ -119,11 +119,15 @@ export const EspecialistaAgenda: React.FC = () => {
                 </div>
                 <div className="d-flex align-items-center gap-2 ms-auto">
                   <span className={`badge rounded-pill ${ESTADOS[t.estado].clase}`}>{ESTADOS[t.estado].texto}</span>
-                  {t.estado === 'PENDIENTE' && (
+                    {t.estado === 'PENDIENTE' && t.fecha <= hoyISO() && (
                     <>
                       <Link className="btn btn-sm btn-primary" to={`/especialista/turno/${t.id}`}>Atender</Link>
                       <button className="btn btn-sm btn-outline-warning" onClick={() => ausente(t)}>Ausente</button>
                     </>
+                  )}
+                  {/* Un turno futuro todavía no se puede atender: solo se puede ver */}
+                  {t.estado === 'PENDIENTE' && t.fecha > hoyISO() && (
+                    <Link className="btn btn-sm btn-outline-primary" to={`/especialista/turno/${t.id}`}>Ver</Link>
                   )}
                   {t.estado === 'ATENDIDO' && (
                     <Link className="btn btn-sm btn-outline-success" to={`/especialista/turno/${t.id}`}>Ver informe</Link>
