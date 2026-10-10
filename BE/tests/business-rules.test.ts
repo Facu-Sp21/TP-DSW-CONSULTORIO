@@ -25,6 +25,7 @@ describe('reglas de negocio', () => {
   };
 
   const especialistaBase = {
+    dni: '30123456',
     matricula: 'MP-12345',
     nombre: 'Laura Gómez',
     email: 'laura@example.com',
@@ -48,10 +49,12 @@ describe('reglas de negocio', () => {
     await expect(sCreatePaciente(pacienteBase)).rejects.toThrow('Ya existe un paciente con ese DNI o email');
   });
 
-  it('rechaza crear un especialista con matrícula o email duplicados', async () => {
+  it('rechaza crear un especialista con DNI, matrícula o email duplicados', async () => {
     (orm.em.persistAndFlush as jest.Mock).mockRejectedValue(new UniqueConstraintViolationException(new Error()));
 
-    await expect(sCreateEspecialista(especialistaBase)).rejects.toThrow('Ya existe un especialista con esa matrícula o email');
+    await expect(sCreateEspecialista(especialistaBase)).rejects.toThrow(
+      'Ya existe un especialista con ese DNI, matrícula o email',
+    );
   });
 
   it('rechaza crear una especialidad con nombre duplicado', async () => {

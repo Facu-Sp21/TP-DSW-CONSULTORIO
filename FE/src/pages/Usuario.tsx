@@ -1,28 +1,31 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { getUsuarioActual, isAuthenticated, logout } from '../../services/authService';
+import { getTurnosPaciente } from '../../services/turnoService';
 
 export interface Turno {
-  id: string;
+  id: number;
   especialidad: string;
   especialista: string;
   fecha: string;
   hora: string;
 }
 
-const initialTurnos: Turno[] = [
-  { id: 'demo-1', especialidad: 'Clínica médica', especialista: 'Dra. Laura Fernández', fecha: '2026-09-17', hora: '10:30' },
-];
+const toTurno = (turno: {
+  cod_turno?: number;
+  fecha: string;
+  hora_inicio: string;
+  especialista?: { nombre: string; especialidad?: { nombre: string } };
+}) => ({
+  id: turno.cod_turno!,
+  especialidad: turno.especialista?.especialidad?.nombre ?? 'Especialidad',
+  especialista: turno.especialista?.nombre ?? 'Especialista',
+  fecha: turno.fecha,
+  hora: turno.hora_inicio.slice(0, 5),
+});
 
-export function getTurnos(): Turno[] {
-  const saved = localStorage.getItem('vitalis-turnos');
-  if (!saved) return initialTurnos;
-  try {
-    const parsed = JSON.parse(saved);
-    return Array.isArray(parsed) ? parsed : initialTurnos;
-  } catch {
-    return initialTurnos;
-  }
-}
+const isFutureTurno = (turno: Turno) =>
+  new Date(`${turno.fecha}T${turno.hora}:00`).getTime() > Date.now();
 
 const formatDate = (date: string) => new Intl.DateTimeFormat('es-AR', {
   weekday: 'long', day: 'numeric', month: 'long',
@@ -58,7 +61,7 @@ export function buildMonthCalendar(year: number, month: number): CalendarDay[] {
 export const UserNavigation: React.FC = () => {
   const navigate = useNavigate();
   const cerrarSesion = () => {
-    sessionStorage.removeItem('vitalis-authenticated');
+    logout();
     navigate('/login');
   };
 
@@ -89,10 +92,20 @@ export const UserNavigation: React.FC = () => {
 };
 
 export const Usuario: React.FC = () => {
-  const turnos = useMemo(getTurnos, []);
+  const [turnos, setTurnos] = useState<Turno[]>([]);
   const location = useLocation();
   const [showFeedback, setShowFeedback] = useState(Boolean(location.state?.bookingSuccess));
-  if (sessionStorage.getItem('vitalis-authenticated') !== 'true') return <Navigate to="/login" replace />;
+  const usuario = getUsuarioActual();
+  const nombreUsuario = usuario?.nombre?.trim() || 'usuario';
+
+  useEffect(() => {
+    if (!usuario?.id) return;
+    getTurnosPaciente(usuario.id)
+      .then((turnosApi) => setTurnos(turnosApi.map(toTurno).filter(isFutureTurno)))
+      .catch(() => setTurnos([]));
+  }, [usuario?.id]);
+
+  if (!isAuthenticated()) return <Navigate to="/login" replace />;
 
   const today = new Date();
   const weekStart = new Date(today);
@@ -119,7 +132,7 @@ export const Usuario: React.FC = () => {
         <div className="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
           <div>
             <span className="etiqueta-superior rounded-pill mb-3">Mi espacio de salud</span>
-            <h1 className="fw-bold mb-1">Hola, Martín</h1>
+            <h1 className="fw-bold mb-1">Hola, {nombreUsuario}</h1>
             <p className="text-muted mb-0">Gestioná tus próximos turnos de forma simple.</p>
           </div>
           <Link to="/sacar-turno" className="btn btn-primary px-4">
@@ -165,8 +178,17 @@ const TurnoCard: React.FC<{ turno: Turno }> = ({ turno }) => (
 
 export const Calendario: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
-  const turnos = useMemo(() => sortTurnos(getTurnos()), []);
-  if (sessionStorage.getItem('vitalis-authenticated') !== 'true') return <Navigate to="/login" replace />;
+  const [turnos, setTurnos] = useState<Turno[]>([]);
+  const usuario = getUsuarioActual();
+
+  useEffect(() => {
+    if (!usuario?.id) return;
+    getTurnosPaciente(usuario.id)
+      .then((turnosApi) => setTurnos(turnosApi.map(toTurno).filter(isFutureTurno)))
+      .catch(() => setTurnos([]));
+  }, [usuario?.id]);
+
+  if (!isAuthenticated()) return <Navigate to="/login" replace />;
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);

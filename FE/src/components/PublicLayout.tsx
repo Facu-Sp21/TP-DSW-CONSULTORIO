@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { suscribirse } from '../../services/suscripcionService';
+import { getUsuarioActual, logout } from '../../services/authService';
 interface PublicLayoutProps {
   activo?: string; // ruta del link a resaltar, por ejemplo '/nosotros'
+  administrativo?: boolean;
   children: React.ReactNode;
 }
 
@@ -54,7 +56,15 @@ const Newsletter: React.FC = () => {
   );
 };
 
-export const PublicLayout: React.FC<PublicLayoutProps> = ({ activo = '/', children }) => {
+export const PublicLayout: React.FC<PublicLayoutProps> = ({ activo = '/', administrativo = false, children }) => {
+  const navigate = useNavigate();
+  const usuario = getUsuarioActual();
+
+  const cerrarSesion = () => {
+    logout();
+    navigate('/login');
+  };
+
   return (
     <>
       <nav className="navbar navbar-expand-lg bg-white sticky-top border-bottom py-3">
@@ -69,22 +79,36 @@ export const PublicLayout: React.FC<PublicLayoutProps> = ({ activo = '/', childr
                 </button>
       
                 <div className="collapse navbar-collapse" id="navMenu">
-                    <ul className="navbar-nav mx-auto gap-lg-1 py-2 py-lg-0">
+                  {administrativo ? (
+                    <div className="ms-auto d-flex align-items-center gap-3">
+                      <span className="small text-muted">
+                        Legajo: <strong className="text-dark">{usuario?.legajo ?? '—'}</strong>
+                      </span>
+                      <button type="button" className="btn btn-outline-danger rounded-pill px-4" onClick={cerrarSesion}>
+                        <i className="bi bi-box-arrow-right me-1"></i>Salir
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      <ul className="navbar-nav mx-auto gap-lg-1 py-2 py-lg-0">
                         {ENLACES.map((e) => (
-                         <li className="nav-item" key={e.to}>
+                          <li className="nav-item" key={e.to}>
                             <Link className={`nav-link ${activo === e.to ? 'active' : ''}`} to={e.to}>
-                                {e.etiqueta}
+                              {e.etiqueta}
                             </Link>
-                        </li>
+                          </li>
                         ))}
-                    </ul>
-                  <Link to="/login" className="btn btn-outline-primary rounded-pill px-4">Iniciar Sesión</Link>
+                      </ul>
+                      <Link to="/login" className="btn btn-outline-primary rounded-pill px-4">Iniciar Sesión</Link>
+                    </>
+                  )}
                 </div>
               </div>
             </nav>
 
       {children}
 
+      {activo !== '/administrativo' && (
       <footer className="bg-dark text-light footer-oscuro pt-5">
         <div className="container">
           <div className="row gy-4 pb-5">
@@ -143,6 +167,7 @@ export const PublicLayout: React.FC<PublicLayoutProps> = ({ activo = '/', childr
           </div>
         </div>
       </footer>
+      )}
     </>
   );
 };

@@ -2,9 +2,11 @@ import { UniqueConstraintViolationException } from '@mikro-orm/core';
 import { orm } from '../shared/db/orm.js';
 import { Especialidad } from '../especialidad/especialidad.entity.js';
 import { alreadyExistsError } from '../shared/errorsModel.js';
+import { hashPassword } from '../shared/auth/password.js';
 import { Especialista } from './especialista.entity.js';
 
 type EspecialistaInput = {
+  dni: string;
   matricula: string;
   nombre: string;
   email: string;
@@ -22,13 +24,21 @@ export async function sGetEspecialistaById(cod_especialista: number): Promise<Es
   return await orm.em.findOne(Especialista, { cod_especialista }, { populate: ['especialidad'] });
 }
 
+// Usado internamente por el login, para comparar la contraseña
+export async function sGetEspecialistaByEmail(email: string): Promise<Especialista | null> {
+  return await orm.em.findOne(Especialista, { email });
+}
+
 export async function sCreateEspecialista(input: EspecialistaInput): Promise<Especialista> {
-  const especialista = orm.em.create(Especialista, input as any);
+  const especialista = orm.em.create(Especialista, {
+    ...input,
+    contrasena: await hashPassword(input.contrasena ?? ''),
+  } as any);
   try {
     await orm.em.persistAndFlush(especialista);
   } catch (error) {
     if (error instanceof UniqueConstraintViolationException) {
-      throw new alreadyExistsError('Ya existe un especialista con esa matrícula o email');
+      throw new alreadyExistsError('Ya existe un especialista con ese DNI, matrícula o email');
     }
     throw error;
   }
@@ -46,20 +56,21 @@ export async function sUpdateEspecialista(
   }
 
   especialista.matricula = input.matricula;
+  especialista.dni = input.dni;
   especialista.nombre = input.nombre;
   especialista.email = input.email;
   especialista.telefono = input.telefono;
   especialista.especialidad = input.especialidad ?? null;
   
   if (input.contrasena && input.contrasena.trim() !== '') {
-    especialista.contrasena = input.contrasena;
+    especialista.contrasena = await hashPassword(input.contrasena);
   }
 
   try {
     await orm.em.flush();
   } catch (error) {
     if (error instanceof UniqueConstraintViolationException) {
-      throw new alreadyExistsError('Ya existe un especialista con esa matrícula o email');
+      throw new alreadyExistsError('Ya existe un especialista con ese DNI, matrícula o email');
     }
     throw error;
   }

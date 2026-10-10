@@ -2,6 +2,7 @@ import { apiFetch } from './api';
 
 export interface Especialista {
   cod_especialista?: number;
+  dni: string;
   matricula: string;
   nombre: string;
   telefono: string;

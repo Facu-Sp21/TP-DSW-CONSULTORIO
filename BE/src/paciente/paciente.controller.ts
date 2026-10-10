@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { NotFoundError } from '../shared/errorsModel.js';
+import { ForbiddenError, NotFoundError } from '../shared/errorsModel.js';
 import {
   sCreatePaciente,
   sDeletePaciente,
@@ -8,6 +8,13 @@ import {
   sUpdatePaciente,
 } from './paciente.service.js';
 
+// Si el que hace la request es un paciente, solo puede operar sobre su propio registro
+function verificarPropioPaciente(req: Request, nro_afiliado: number) {
+  if (req.user?.rol === 'paciente' && req.user.id !== nro_afiliado) {
+    throw new ForbiddenError('No podés acceder a los datos de otro paciente');
+  }
+}
+
 export async function cGetAllPacientes(req: Request, res: Response) {
   const pacientes = await sGetAllPacientes();
   res.json(pacientes);
@@ -15,6 +22,8 @@ export async function cGetAllPacientes(req: Request, res: Response) {
 
 export async function cGetPacienteById(req: Request, res: Response) {
   const nro_afiliado = res.locals.params.nro_afiliado;
+  verificarPropioPaciente(req, nro_afiliado);
+
   const paciente = await sGetPacienteById(nro_afiliado);
 
   if (!paciente) {
@@ -31,6 +40,8 @@ export async function cCreatePaciente(req: Request, res: Response) {
 
 export async function cUpdatePaciente(req: Request, res: Response) {
   const nro_afiliado = res.locals.params.nro_afiliado;
+  verificarPropioPaciente(req, nro_afiliado);
+
   const paciente = await sUpdatePaciente(nro_afiliado, res.locals.body);
 
   if (!paciente) {
@@ -42,6 +53,8 @@ export async function cUpdatePaciente(req: Request, res: Response) {
 
 export async function cDeletePaciente(req: Request, res: Response) {
   const nro_afiliado = res.locals.params.nro_afiliado;
+  verificarPropioPaciente(req, nro_afiliado);
+
   const deleted = await sDeletePaciente(nro_afiliado);
 
   if (!deleted) {
