@@ -36,3 +36,15 @@ export class alreadyExistsError extends AppError {
     super(message, 409);
   }
 }
+
+export class UnauthorizedError extends AppError {
+  constructor(message = "No autenticado") {
+    super(message, 401);
+  }
+}
+
+export class ForbiddenError extends AppError {
+  constructor(message = "No tenés permiso para realizar esta acción") {
+    super(message, 403);
+  }
+}

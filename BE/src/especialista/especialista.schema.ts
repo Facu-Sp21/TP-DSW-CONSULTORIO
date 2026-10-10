@@ -1,6 +1,7 @@
 import z from 'zod';
 
 export const especialistaBodySchema = z.object({
+  dni: z.string().max(20).min(1, 'El DNI es obligatorio'),
   matricula: z.string().max(30).min(1, 'La matrícula es obligatoria'),
   nombre: z.string().max(60).min(1, 'El nombre es obligatorio'),
   email: z.string().max(120).email('El email no es válido'),

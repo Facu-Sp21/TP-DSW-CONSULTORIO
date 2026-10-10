@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { NotFoundError } from '../shared/errorsModel.js';
+import { ForbiddenError, NotFoundError } from '../shared/errorsModel.js';
 import { sGetEspecialidadById } from '../especialidad/especialidad.service.js';
 import {
   sCreateEspecialista,
@@ -25,7 +25,7 @@ export async function cGetEspecialistaById(req: Request, res: Response) {
 }
 
 export async function cCreateEspecialista(req: Request, res: Response) {
-  const { matricula, nombre, email, telefono, contrasena, cod_especialidad } = res.locals.body;
+  const { dni, matricula, nombre, email, telefono, contrasena, cod_especialidad } = res.locals.body;
   let especialidad = null;
 
   if (cod_especialidad) {
@@ -38,6 +38,7 @@ export async function cCreateEspecialista(req: Request, res: Response) {
   const claveFinal = contrasena || `doc${matricula.replace(/[^a-zA-Z0-9]/g, '')}`;
 
   const nuevoEspecialista = await sCreateEspecialista({
+    dni,
     matricula,
     nombre,
     email,
@@ -52,7 +53,12 @@ export async function cCreateEspecialista(req: Request, res: Response) {
 export async function cUpdateEspecialista(req: Request, res: Response) {
   // Aseguramos que tome bien el ID de los parámetros validados por tu middleware
   const cod_especialista = Number(res.locals.params.cod_especialista);
-  const { matricula, nombre, email, telefono, contrasena, cod_especialidad } = res.locals.body;
+
+  if (req.user?.rol === 'especialista' && req.user.id !== cod_especialista) {
+    throw new ForbiddenError('No podés editar los datos de otro especialista');
+  }
+
+  const { dni, matricula, nombre, email, telefono, contrasena, cod_especialidad } = res.locals.body;
   let especialidad = null;
 
   if (cod_especialidad) {
@@ -63,6 +69,7 @@ export async function cUpdateEspecialista(req: Request, res: Response) {
   }
 
   const especialista = await sUpdateEspecialista(cod_especialista, {
+    dni,
     matricula,
     nombre,
     email,

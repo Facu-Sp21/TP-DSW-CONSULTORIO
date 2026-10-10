@@ -30,6 +30,10 @@ export const getTurnos = () => {
   return apiFetch<TurnoAdmin[]>('/turno');
 };
 
+export const getTurnosPaciente = (nroAfiliado: number) => {
+  return apiFetch<TurnoAdmin[]>(`/turno?nro_afiliado=${nroAfiliado}`);
+};
+
 export const createTurno = (data: CreateTurnoPayload) => {
   return apiFetch<TurnoAdmin>('/turno', {
     method: 'POST',

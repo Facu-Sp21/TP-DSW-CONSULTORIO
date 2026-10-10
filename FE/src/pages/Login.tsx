@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { login, rutaSegunRol } from '../../services/authService';
 
 export const Login: React.FC = () => {
   const navigate = useNavigate();
@@ -9,6 +10,7 @@ export const Login: React.FC = () => {
     recordar: false,
   });
   const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value, type, checked } = e.target;
@@ -19,18 +21,19 @@ export const Login: React.FC = () => {
     setError(null);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const email = 'afiliado@vitalis.com';
-    const password = 'vitalis123';
+    setError(null);
+    setIsSubmitting(true);
 
-    if (formData.email.trim().toLowerCase() !== email || formData.password !== password) {
-      setError('El correo o la contraseña no son correctos.');
-      return;
+    try {
+      const { user } = await login(formData.email, formData.password);
+      navigate(rutaSegunRol(user.rol));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'El correo o la contraseña no son correctos.');
+    } finally {
+      setIsSubmitting(false);
     }
-
-    sessionStorage.setItem('vitalis-authenticated', 'true');
-    navigate('/usuario');
   };
 
   return (
@@ -95,8 +98,8 @@ export const Login: React.FC = () => {
               <Link to="/recuperar-password" className="small link-primario">¿Olvidaste tu contraseña?</Link>
             </div>
 
-            <button type="submit" className="btn btn-primary w-100 py-2 mb-3">
-              Iniciar sesión
+            <button type="submit" className="btn btn-primary w-100 py-2 mb-3" disabled={isSubmitting}>
+              {isSubmitting ? 'Ingresando...' : 'Iniciar sesión'}
             </button>
 
             <p className="text-center text-muted small mb-0">

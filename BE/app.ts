@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import 'reflect-metadata';
 import { orm, syncSchema } from './src/shared/db/orm.js';
 import express from 'express';
@@ -7,7 +8,8 @@ import especialidadRoutes from './src/especialidad/especialidad.routes.js';
 import especialistaRoutes from './src/especialista/especialista.routes.js';
 import pacienteRoutes from './src/paciente/paciente.routes.js';
 import turnoRoutes from './src/turno/turno.routes.js';
-import afiliadoRoutes from './src/Afiliado/routes.js';
+import administrativoRoutes from './src/Administrativo/administrativo.routes.js';
+import authRoutes from './src/auth/auth.routes.js';
 import { errorHandler } from './src/shared/errorHandler.js';
 import { RequestContext } from '@mikro-orm/core';
 import { apiReference } from '@scalar/express-api-reference';
@@ -29,8 +31,9 @@ app.use('/especialista', especialistaRoutes);
 app.use('/paciente', pacienteRoutes);
 app.use('/turno', turnoRoutes);
 app.use('/historia-clinica', historiaClinicaRoutes);
-app.use('/afiliado', afiliadoRoutes);
 app.use('/suscripcion', suscripcionRoutes);
+app.use('/administrativo', administrativoRoutes);
+app.use('/auth', authRoutes);
 
 app.get('/openapi.json', (_req, res) => {
     res.json(openApiDocument);

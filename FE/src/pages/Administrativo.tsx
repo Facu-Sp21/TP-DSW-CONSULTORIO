@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
+import { Navigate } from 'react-router-dom';
 import { PublicLayout } from '../components/PublicLayout';
+import { getUsuarioActual, isAuthenticated } from '../../services/authService';
 // Servicios de Backend
 import {
   type Especialidad,
@@ -30,6 +32,8 @@ import {
 } from '../../services/turnoService';
 
 export const Administrativo: React.FC = () => {
+  const usuario = getUsuarioActual();
+
   // PESTAÑA ACTIVA
   const [tabActiva, setTabActiva] = useState<
     'especialidades' | 'especialistas' | 'afiliados' | 'turnos'
@@ -42,11 +46,13 @@ export const Administrativo: React.FC = () => {
   // ESTADOS DE ESPECIALIDADES
   const [especialidades, setEspecialidades] = useState<Especialidad[]>([]);
   const [nombreEspecialidad, setNombreEspecialidad] = useState('');
+  const [duracionEspecialidad, setDuracionEspecialidad] = useState('30');
   const [editEspecialidadId, setEditEspecialidadId] = useState<number | null>(null);
   const [editNombreEspecialidad, setEditNombreEspecialidad] = useState('');
 
   // ESTADOS DE ESPECIALISTAS
   const [especialistas, setEspecialistas] = useState<Especialista[]>([]);
+  const [dniEspecialista, setDniEspecialista] = useState('');
   const [nombreEspecialista, setNombreEspecialista] = useState('');
   const [matriculaEspecialista, setMatriculaEspecialista] = useState('');
   const [telefonoEspecialista, setTelefonoEspecialista] = useState('');
@@ -55,12 +61,15 @@ export const Administrativo: React.FC = () => {
   const [codEspecialidadSel, setCodEspecialidadSel] = useState<number | ''>('');
   
   const [editEspecialistaId, setEditEspecialistaId] = useState<number | null>(null);
+  const [editDniEspecialista, setEditDniEspecialista] = useState('');
   const [editNombreEspecialista, setEditNombreEspecialista] = useState('');
   const [editMatriculaEspecialista, setEditMatriculaEspecialista] = useState('');
   const [editTelefonoEspecialista, setEditTelefonoEspecialista] = useState('');
   const [editEmailEspecialista, setEditEmailEspecialista] = useState('');
   const [editContrasenaEspecialista, setEditContrasenaEspecialista] = useState('');
   const [editCodEspecialidadSel, setEditCodEspecialidadSel] = useState<number | ''>('');
+  const [mostrarBusquedaEspecialista, setMostrarBusquedaEspecialista] = useState(false);
+  const [busquedaDniEspecialista, setBusquedaDniEspecialista] = useState('');
 
   // ESTADOS DE AFILIADOS / PACIENTES
   const [afiliados, setAfiliados] = useState<Afiliado[]>([]);
@@ -78,6 +87,8 @@ export const Administrativo: React.FC = () => {
   const [editTelefonoAfiliado, setEditTelefonoAfiliado] = useState('');
   const [editDireccionAfiliado, setEditDireccionAfiliado] = useState('');
   const [editContrasenaAfiliado, setEditContrasenaAfiliado] = useState('');
+  const [mostrarBusquedaPaciente, setMostrarBusquedaPaciente] = useState(false);
+  const [busquedaDniPaciente, setBusquedaDniPaciente] = useState('');
 
   // ESTADOS DE TURNOS
   const [turnos, setTurnos] = useState<TurnoAdmin[]>([]);
@@ -100,6 +111,14 @@ export const Administrativo: React.FC = () => {
     const codEsp = esp.cod_especialidad || esp.codEspecialidad || esp.especialidad?.cod_especialidad;
     return Number(codEsp) === Number(espEspecialidadSel);
   });
+
+  const normalizarDni = (dni: unknown) => String(dni ?? '').replace(/\D/g, '');
+  const especialistasFiltradosPorDni = especialistas.filter((esp) =>
+    normalizarDni(esp.dni).includes(normalizarDni(busquedaDniEspecialista)),
+  );
+  const afiliadosFiltradosPorDni = afiliados.filter((afiliado) =>
+    normalizarDni(afiliado.dni).includes(normalizarDni(busquedaDniPaciente)),
+  );
 
   // FILTRAR HORARIOS: Oculta por completo los que ya están ocupados
   const horariosDisponibles = horariosBase.filter((hora) => {
@@ -139,13 +158,25 @@ export const Administrativo: React.FC = () => {
     cargarDatos();
   }, []);
 
+  if (!isAuthenticated() || usuario?.rol !== 'administrativo') {
+    return <Navigate to="/login" replace />;
+  }
+
   // HANDLERS DE ESPECIALIDADES
   const handleCrearEspecialidad = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!nombreEspecialidad.trim()) return;
+    const duracionMinutos = Number(duracionEspecialidad);
+    if (!nombreEspecialidad.trim() || !Number.isInteger(duracionMinutos) || duracionMinutos <= 0) {
+      alert('Ingresá un nombre y una duración válida en minutos.');
+      return;
+    }
     try {
-      await createEspecialidad({ nombre: nombreEspecialidad.trim() });
+      await createEspecialidad({
+        nombre: nombreEspecialidad.trim(),
+        duracion_minutos: duracionMinutos,
+      });
       setNombreEspecialidad('');
+      setDuracionEspecialidad('30');
       cargarDatos();
     } catch (err: any) {
       alert(err.message || 'Error al crear especialidad');
@@ -183,16 +214,18 @@ export const Administrativo: React.FC = () => {
     e.preventDefault();
     if (isSubmitting) return;
     if (
+      !dniEspecialista.trim() ||
       !nombreEspecialista.trim() ||
       !matriculaEspecialista.trim() ||
       !contrasenaEspecialista.trim()
     ) {
-      alert('Nombre, matrícula y contraseña son requeridos.');
+      alert('DNI, nombre, matrícula y contraseña son requeridos.');
       return;
     }
     try {
       setIsSubmitting(true);
       await createEspecialista({
+        dni: dniEspecialista.trim(),
         nombre: nombreEspecialista.trim(),
         matricula: matriculaEspecialista.trim(),
         telefono: telefonoEspecialista.trim(),
@@ -201,6 +234,7 @@ export const Administrativo: React.FC = () => {
         cod_especialidad: codEspecialidadSel === '' ? undefined : Number(codEspecialidadSel),
       } as any);
       setNombreEspecialista('');
+      setDniEspecialista('');
       setMatriculaEspecialista('');
       setTelefonoEspecialista('');
       setEmailEspecialista('');
@@ -216,6 +250,7 @@ export const Administrativo: React.FC = () => {
 
   const handleStartEditarEspecialista = (esp: Especialista) => {
     setEditEspecialistaId(esp.cod_especialista!);
+    setEditDniEspecialista(esp.dni || '');
     setEditNombreEspecialista(esp.nombre);
     setEditMatriculaEspecialista(esp.matricula);
     setEditTelefonoEspecialista(esp.telefono || '');
@@ -228,6 +263,7 @@ export const Administrativo: React.FC = () => {
     if (!editNombreEspecialista.trim() || !editMatriculaEspecialista.trim()) return;
     try {
       const dataUpdate: any = {
+        dni: editDniEspecialista.trim(),
         nombre: editNombreEspecialista.trim(),
         matricula: editMatriculaEspecialista.trim(),
         telefono: editTelefonoEspecialista.trim(),
@@ -369,7 +405,7 @@ export const Administrativo: React.FC = () => {
   };
 
   return (
-    <PublicLayout activo="/administrativo">
+    <PublicLayout activo="/administrativo" administrativo>
       {/* HEADER */}
       <section className="fondo-punteado py-5">
         <div className="container text-center mx-auto" style={{ maxWidth: 700 }}>
@@ -382,9 +418,7 @@ export const Administrativo: React.FC = () => {
           >
             Panel <span className="texto-degradado">Administrativo</span>
           </h1>
-          <p className="text-muted fs-5">
-            Gestión global de especialidades, profesionales, pacientes y asignación de turnos.
-          </p>
+
         </div>
       </section>
 
@@ -468,6 +502,22 @@ export const Administrativo: React.FC = () => {
                             placeholder="Ej: Pediatría, Cardiología..."
                             value={nombreEspecialidad}
                             onChange={(e) => setNombreEspecialidad(e.target.value)}
+                            required
+                          />
+                        </div>
+                        <div className="mb-3">
+                          <label htmlFor="duracionEspecialidad" className="form-label small fw-bold text-muted">
+                            Minutos por turno
+                          </label>
+                          <input
+                            type="number"
+                            id="duracionEspecialidad"
+                            className="form-control"
+                            min="1"
+                            step="1"
+                            placeholder="Ej: 30"
+                            value={duracionEspecialidad}
+                            onChange={(e) => setDuracionEspecialidad(e.target.value)}
                             required
                           />
                         </div>
@@ -573,6 +623,17 @@ export const Administrativo: React.FC = () => {
                       </h2>
                       <form onSubmit={handleCrearEspecialista}>
                         <div className="mb-2">
+                          <label className="form-label small fw-bold text-muted">DNI</label>
+                          <input
+                            type="text"
+                            className="form-control"
+                            placeholder="Ej: 30123456"
+                            value={dniEspecialista}
+                            onChange={(e) => setDniEspecialista(e.target.value)}
+                            required
+                          />
+                        </div>
+                        <div className="mb-2">
                           <label className="form-label small fw-bold text-muted">Nombre Completo</label>
                           <input
                             type="text"
@@ -657,19 +718,46 @@ export const Administrativo: React.FC = () => {
                   </div>
                   <div className="col-lg-8">
                     <div className="card border p-4 shadow-sm">
-                      <h2 className="h5 fw-bold mb-3">Especialistas Registrados</h2>
+                      <div className="d-flex justify-content-between align-items-center mb-3 gap-2">
+                        <h2 className="h5 fw-bold mb-0">Especialistas Registrados</h2>
+                        <button
+                          type="button"
+                          className="btn btn-outline-primary btn-sm"
+                          aria-label="Buscar especialista por DNI"
+                          title="Buscar por DNI"
+                          onClick={() => {
+                            setMostrarBusquedaEspecialista((visible) => !visible);
+                            if (mostrarBusquedaEspecialista) setBusquedaDniEspecialista('');
+                          }}
+                        >
+                          <i className="bi bi-search" />
+                        </button>
+                      </div>
+                      {mostrarBusquedaEspecialista && (
+                        <div className="input-group input-group-sm mb-3">
+                          <span className="input-group-text"><i className="bi bi-person-vcard" /></span>
+                          <input
+                            type="search"
+                            className="form-control"
+                            placeholder="Buscar especialista por DNI"
+                            value={busquedaDniEspecialista}
+                            onChange={(e) => setBusquedaDniEspecialista(e.target.value)}
+                            autoFocus
+                          />
+                        </div>
+                      )}
                       <div className="table-responsive">
                         <table className="table table-hover align-middle mb-0">
                           <thead className="table-light">
                             <tr>
                               <th>Nombre</th>
-                              <th>Matrícula / Tel. / Email</th>
+                              <th>DNI / Matrícula / Tel. / Email</th>
                               <th>Especialidad</th>
                               <th className="text-end" style={{ width: 120 }}>Acciones</th>
                             </tr>
                           </thead>
                           <tbody>
-                            {especialistas.map((esp: any) => {
+                            {especialistasFiltradosPorDni.map((esp: any) => {
                               const encontrada = especialidades.find(
                                 (e) =>
                                   Number(e.cod_especialidad) === Number(esp.cod_especialidad || esp.codEspecialidad)
@@ -693,6 +781,14 @@ export const Administrativo: React.FC = () => {
                                   <td>
                                     {editEspecialistaId === esp.cod_especialista ? (
                                       <>
+                                        <input
+                                          type="text"
+                                          className="form-control form-control-sm mb-1"
+                                          value={editDniEspecialista}
+                                          placeholder="DNI"
+                                          onChange={(e) => setEditDniEspecialista(e.target.value)}
+                                          required
+                                        />
                                         <input
                                           type="text"
                                           className="form-control form-control-sm mb-1"
@@ -724,6 +820,9 @@ export const Administrativo: React.FC = () => {
                                       </>
                                     ) : (
                                       <div>
+                                        <span className="badge bg-light text-dark border me-1">
+                                          DNI: {esp.dni}
+                                        </span>
                                         <span className="badge bg-light text-dark border">
                                           {esp.matricula}
                                         </span>
@@ -808,10 +907,12 @@ export const Administrativo: React.FC = () => {
                                 </tr>
                               );
                             })}
-                            {especialistas.length === 0 && (
+                            {especialistasFiltradosPorDni.length === 0 && (
                               <tr>
                                 <td colSpan={4} className="text-center text-muted py-4">
-                                  No hay especialistas registrados.
+                                  {especialistas.length === 0
+                                    ? 'No hay especialistas registrados.'
+                                    : 'No se encontraron especialistas con ese DNI.'}
                                 </td>
                               </tr>
                             )}
@@ -906,7 +1007,34 @@ export const Administrativo: React.FC = () => {
                   </div>
                   <div className="col-lg-8">
                     <div className="card border p-4 shadow-sm">
-                      <h2 className="h5 fw-bold mb-3">Pacientes Registrados</h2>
+                      <div className="d-flex justify-content-between align-items-center mb-3 gap-2">
+                        <h2 className="h5 fw-bold mb-0">Pacientes Registrados</h2>
+                        <button
+                          type="button"
+                          className="btn btn-outline-primary btn-sm"
+                          aria-label="Buscar paciente por DNI"
+                          title="Buscar por DNI"
+                          onClick={() => {
+                            setMostrarBusquedaPaciente((visible) => !visible);
+                            if (mostrarBusquedaPaciente) setBusquedaDniPaciente('');
+                          }}
+                        >
+                          <i className="bi bi-search" />
+                        </button>
+                      </div>
+                      {mostrarBusquedaPaciente && (
+                        <div className="input-group input-group-sm mb-3">
+                          <span className="input-group-text"><i className="bi bi-person-vcard" /></span>
+                          <input
+                            type="search"
+                            className="form-control"
+                            placeholder="Buscar paciente por DNI"
+                            value={busquedaDniPaciente}
+                            onChange={(e) => setBusquedaDniPaciente(e.target.value)}
+                            autoFocus
+                          />
+                        </div>
+                      )}
                       <div className="table-responsive">
                         <table className="table table-hover align-middle mb-0">
                           <thead className="table-light">
@@ -918,7 +1046,7 @@ export const Administrativo: React.FC = () => {
                             </tr>
                           </thead>
                           <tbody>
-                            {afiliados.map((a: any) => {
+                            {afiliadosFiltradosPorDni.map((a: any) => {
                               const id = a.nro_afiliado || a.id;
                               return (
                                 <tr key={id}>
@@ -1040,10 +1168,12 @@ export const Administrativo: React.FC = () => {
                                 </tr>
                               );
                             })}
-                            {afiliados.length === 0 && (
+                            {afiliadosFiltradosPorDni.length === 0 && (
                               <tr>
                                 <td colSpan={4} className="text-center text-muted py-4">
-                                  No hay pacientes registrados.
+                                  {afiliados.length === 0
+                                    ? 'No hay pacientes registrados.'
+                                    : 'No se encontraron pacientes con ese DNI.'}
                                 </td>
                               </tr>
                             )}

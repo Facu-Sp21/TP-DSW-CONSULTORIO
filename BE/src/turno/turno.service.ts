@@ -119,7 +119,7 @@ export async function sGetTurnos(filters: TurnoFilters = {}): Promise<Turno[]> {
   if (filters.cod_especialista) where.especialista = filters.cod_especialista;
   if (filters.fecha) where.fecha = filters.fecha;
 
-  return await orm.em.find(Turno, where, { populate: ['paciente', 'especialista'] });
+  return await orm.em.find(Turno, where, { populate: ['paciente', 'especialista.especialidad'] });
 }
 
 export async function sGetTurnoById(cod_turno: number): Promise<Turno | null> {
