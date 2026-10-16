@@ -13,6 +13,8 @@ type EspecialistaInput = {
   telefono: string;
   contrasena?: string;
   especialidad?: Especialidad | null;
+  estado?: boolean;
+  consulta_particular?: number;
 };
 
 export async function sGetAllEspecialistas(cod_especialidad?: number): Promise<Especialista[]> {
@@ -61,6 +63,8 @@ export async function sUpdateEspecialista(
   especialista.email = input.email;
   especialista.telefono = input.telefono;
   especialista.especialidad = input.especialidad ?? null;
+  if (input.estado !== undefined) especialista.estado = input.estado;
+  if (input.consulta_particular !== undefined) especialista.consulta_particular = input.consulta_particular;
   
   if (input.contrasena && input.contrasena.trim() !== '') {
     especialista.contrasena = await hashPassword(input.contrasena);

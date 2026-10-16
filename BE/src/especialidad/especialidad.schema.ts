@@ -3,6 +3,7 @@ import z from 'zod';
 export const especialidadBodySchema = z.object({  //este schema se va a usar para validar el body de las peticiones POST y PUT
   nombre: z.string().max(60).nonempty('El nombre de la especialidad es obligatorio'),
   duracion_minutos: z.coerce.number().int().positive(),
+  estado: z.boolean().optional(),
 });
 
 export const especialidadParamsSchema = z.object({  //creo un schema solo para validar el parametro

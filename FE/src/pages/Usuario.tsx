@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { getUsuarioActual, isAuthenticated, logout } from '../../services/authService';
-import { getTurnosPaciente } from '../../services/turnoService';
+import { cancelarTurno, getTurnosPaciente } from '../../services/turnoService';
 
 export interface Turno {
   id: number;
@@ -9,12 +9,14 @@ export interface Turno {
   especialista: string;
   fecha: string;
   hora: string;
+  estado: string;
 }
 
 const toTurno = (turno: {
   cod_turno?: number;
   fecha: string;
   hora_inicio: string;
+  estado?: string;
   especialista?: { nombre: string; especialidad?: { nombre: string } };
 }) => ({
   id: turno.cod_turno!,
@@ -22,9 +24,11 @@ const toTurno = (turno: {
   especialista: turno.especialista?.nombre ?? 'Especialista',
   fecha: turno.fecha,
   hora: turno.hora_inicio.slice(0, 5),
+  estado: turno.estado ?? 'PENDIENTE',
 });
 
 const isFutureTurno = (turno: Turno) =>
+  turno.estado !== 'CANCELADO' &&
   new Date(`${turno.fecha}T${turno.hora}:00`).getTime() > Date.now();
 
 const formatDate = (date: string) => new Intl.DateTimeFormat('es-AR', {
@@ -198,6 +202,12 @@ export const Calendario: React.FC = () => {
   const calendarDays = buildMonthCalendar(firstDay.getFullYear(), firstDay.getMonth());
   const selectedTurnos = selectedDate ? turnos.filter((turno) => turno.fecha === selectedDate) : [];
 
+  const cancelar = async (id: number) => {
+    if (!window.confirm('¿Querés cancelar este turno?')) return;
+    await cancelarTurno(id);
+    setTurnos((actuales) => actuales.filter((turno) => turno.id !== id));
+  };
+
   return (
     <div className="min-vh-100 bg-light">
       <UserNavigation />
@@ -237,7 +247,15 @@ export const Calendario: React.FC = () => {
                   {(selectedDate ? selectedTurnos : turnos).map((turno) => (
                     <div className="agenda-item" key={turno.id}>
                       <span className="agenda-hora">{turno.hora}</span>
-                      <div><strong>{turno.especialidad}</strong><small className="d-block text-muted">{turno.especialista}</small><small className="d-block text-primary">{formatDate(turno.fecha)}</small></div>
+                      <div>
+                        <strong>{turno.especialidad}</strong>
+                        <small className="d-block text-muted">{turno.especialista}</small>
+                        <small className="d-block text-primary">{formatDate(turno.fecha)} · {turno.hora} hs</small>
+                        <span className="badge text-bg-primary mt-1">{turno.estado === 'CONFIRMADO' ? 'Confirmado' : 'Pendiente'}</span>
+                      </div>
+                      <button type="button" className="btn btn-sm btn-outline-danger ms-auto" onClick={() => cancelar(turno.id)}>
+                        Cancelar
+                      </button>
                     </div>
                   ))}
                 </div>

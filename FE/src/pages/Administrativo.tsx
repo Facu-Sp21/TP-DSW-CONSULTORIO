@@ -47,8 +47,10 @@ export const Administrativo: React.FC = () => {
   const [especialidades, setEspecialidades] = useState<Especialidad[]>([]);
   const [nombreEspecialidad, setNombreEspecialidad] = useState('');
   const [duracionEspecialidad, setDuracionEspecialidad] = useState('30');
+  const [estadoEspecialidad, setEstadoEspecialidad] = useState(true);
   const [editEspecialidadId, setEditEspecialidadId] = useState<number | null>(null);
   const [editNombreEspecialidad, setEditNombreEspecialidad] = useState('');
+  const [editEstadoEspecialidad, setEditEstadoEspecialidad] = useState(true);
 
   // ESTADOS DE ESPECIALISTAS
   const [especialistas, setEspecialistas] = useState<Especialista[]>([]);
@@ -58,6 +60,8 @@ export const Administrativo: React.FC = () => {
   const [telefonoEspecialista, setTelefonoEspecialista] = useState('');
   const [emailEspecialista, setEmailEspecialista] = useState('');
   const [contrasenaEspecialista, setContrasenaEspecialista] = useState('');
+  const [estadoEspecialista, setEstadoEspecialista] = useState(true);
+  const [consultaParticularEspecialista, setConsultaParticularEspecialista] = useState<number | ''>(0);
   const [codEspecialidadSel, setCodEspecialidadSel] = useState<number | ''>('');
   
   const [editEspecialistaId, setEditEspecialistaId] = useState<number | null>(null);
@@ -67,6 +71,8 @@ export const Administrativo: React.FC = () => {
   const [editTelefonoEspecialista, setEditTelefonoEspecialista] = useState('');
   const [editEmailEspecialista, setEditEmailEspecialista] = useState('');
   const [editContrasenaEspecialista, setEditContrasenaEspecialista] = useState('');
+  const [editEstadoEspecialista, setEditEstadoEspecialista] = useState(true);
+  const [editConsultaParticularEspecialista, setEditConsultaParticularEspecialista] = useState<number | ''>(0);
   const [editCodEspecialidadSel, setEditCodEspecialidadSel] = useState<number | ''>('');
   const [mostrarBusquedaEspecialista, setMostrarBusquedaEspecialista] = useState(false);
   const [busquedaDniEspecialista, setBusquedaDniEspecialista] = useState('');
@@ -174,9 +180,11 @@ export const Administrativo: React.FC = () => {
       await createEspecialidad({
         nombre: nombreEspecialidad.trim(),
         duracion_minutos: duracionMinutos,
+        estado: estadoEspecialidad,
       });
       setNombreEspecialidad('');
       setDuracionEspecialidad('30');
+      setEstadoEspecialidad(true);
       cargarDatos();
     } catch (err: any) {
       alert(err.message || 'Error al crear especialidad');
@@ -186,12 +194,16 @@ export const Administrativo: React.FC = () => {
   const handleStartEditarEspecialidad = (esp: Especialidad) => {
     setEditEspecialidadId(esp.cod_especialidad!);
     setEditNombreEspecialidad(esp.nombre);
+    setEditEstadoEspecialidad(esp.estado ?? true);
   };
 
   const handleGuardarEditarEspecialidad = async (cod: number) => {
     if (!editNombreEspecialidad.trim()) return;
     try {
-      await updateEspecialidad(cod, { nombre: editNombreEspecialidad.trim() });
+      await updateEspecialidad(cod, {
+        nombre: editNombreEspecialidad.trim(),
+        estado: editEstadoEspecialidad,
+      });
       setEditEspecialidadId(null);
       cargarDatos();
     } catch (err: any) {
@@ -217,7 +229,9 @@ export const Administrativo: React.FC = () => {
       !dniEspecialista.trim() ||
       !nombreEspecialista.trim() ||
       !matriculaEspecialista.trim() ||
-      !contrasenaEspecialista.trim()
+      !contrasenaEspecialista.trim() ||
+      consultaParticularEspecialista === '' ||
+      consultaParticularEspecialista < 0
     ) {
       alert('DNI, nombre, matrícula y contraseña son requeridos.');
       return;
@@ -232,13 +246,17 @@ export const Administrativo: React.FC = () => {
         email: emailEspecialista.trim() || undefined,
         contrasena: contrasenaEspecialista.trim(),
         cod_especialidad: codEspecialidadSel === '' ? undefined : Number(codEspecialidadSel),
-      } as any);
+        estado: estadoEspecialista,
+        consulta_particular: Number(consultaParticularEspecialista),
+      });
       setNombreEspecialista('');
       setDniEspecialista('');
       setMatriculaEspecialista('');
       setTelefonoEspecialista('');
       setEmailEspecialista('');
       setContrasenaEspecialista('');
+      setEstadoEspecialista(true);
+      setConsultaParticularEspecialista(0);
       setCodEspecialidadSel('');
       cargarDatos();
     } catch (err: any) {
@@ -256,6 +274,8 @@ export const Administrativo: React.FC = () => {
     setEditTelefonoEspecialista(esp.telefono || '');
     setEditEmailEspecialista(esp.email || '');
     setEditContrasenaEspecialista('');
+    setEditEstadoEspecialista(esp.estado ?? true);
+    setEditConsultaParticularEspecialista(esp.consulta_particular ?? 0);
     setEditCodEspecialidadSel(esp.cod_especialidad || '');
   };
 
@@ -269,6 +289,8 @@ export const Administrativo: React.FC = () => {
         telefono: editTelefonoEspecialista.trim(),
         email: editEmailEspecialista.trim() || undefined,
         cod_especialidad: editCodEspecialidadSel === '' ? undefined : Number(editCodEspecialidadSel),
+        estado: editEstadoEspecialista,
+        consulta_particular: Number(editConsultaParticularEspecialista),
       };
       if (editContrasenaEspecialista.trim()) {
         dataUpdate.contrasena = editContrasenaEspecialista.trim();
@@ -521,6 +543,18 @@ export const Administrativo: React.FC = () => {
                             required
                           />
                         </div>
+                        <div className="form-check mb-3">
+                          <input
+                            className="form-check-input"
+                            type="checkbox"
+                            id="estadoEspecialidad"
+                            checked={estadoEspecialidad}
+                            onChange={(e) => setEstadoEspecialidad(e.target.checked)}
+                          />
+                          <label className="form-check-label small" htmlFor="estadoEspecialidad">
+                            Especialidad activa
+                          </label>
+                        </div>
                         <button type="submit" className="btn btn-primary w-100">
                           <i className="bi bi-check-lg me-1"></i>Guardar Especialidad
                         </button>
@@ -549,14 +583,33 @@ export const Administrativo: React.FC = () => {
                                 </td>
                                 <td>
                                   {editEspecialidadId === esp.cod_especialidad ? (
-                                    <input
-                                      type="text"
-                                      className="form-control form-control-sm"
-                                      value={editNombreEspecialidad}
-                                      onChange={(e) => setEditNombreEspecialidad(e.target.value)}
-                                    />
+                                    <>
+                                      <input
+                                        type="text"
+                                        className="form-control form-control-sm mb-1"
+                                        value={editNombreEspecialidad}
+                                        onChange={(e) => setEditNombreEspecialidad(e.target.value)}
+                                      />
+                                      <div className="form-check">
+                                        <input
+                                          className="form-check-input"
+                                          type="checkbox"
+                                          id={`estado-especialidad-${esp.cod_especialidad}`}
+                                          checked={editEstadoEspecialidad}
+                                          onChange={(e) => setEditEstadoEspecialidad(e.target.checked)}
+                                        />
+                                        <label className="form-check-label small" htmlFor={`estado-especialidad-${esp.cod_especialidad}`}>
+                                          Activa
+                                        </label>
+                                      </div>
+                                    </>
                                   ) : (
-                                    <span className="fw-semibold">{esp.nombre}</span>
+                                    <>
+                                      <span className="fw-semibold">{esp.nombre}</span>
+                                      <span className={`badge ms-2 ${esp.estado === false ? 'text-bg-secondary' : 'text-bg-success'}`}>
+                                        {esp.estado === false ? 'Inactiva' : 'Activa'}
+                                      </span>
+                                    </>
                                   )}
                                 </td>
                                 <td className="text-end">
@@ -684,6 +737,37 @@ export const Administrativo: React.FC = () => {
                             value={contrasenaEspecialista}
                             onChange={(e) => setContrasenaEspecialista(e.target.value)}
                             required
+                          />
+                        </div>
+                        <div className="form-check mb-2">
+                          <input
+                            className="form-check-input"
+                            type="checkbox"
+                            id="estadoEspecialista"
+                            checked={estadoEspecialista}
+                            onChange={(e) => setEstadoEspecialista(e.target.checked)}
+                          />
+                          <label className="form-check-label small" htmlFor="estadoEspecialista">
+                            Especialista activo
+                          </label>
+                        </div>
+                        <div className="mb-3">
+                          <label className="form-label small fw-bold text-muted" htmlFor="consultaParticularEspecialista">
+                            Precio de consulta particular
+                          </label>
+                          <input
+                            className="form-control"
+                            type="number"
+                            id="consultaParticularEspecialista"
+                            min="0"
+                            step="0.01"
+                            placeholder="Ej: 15000.00"
+                            value={consultaParticularEspecialista}
+                            onChange={(e) =>
+                              setConsultaParticularEspecialista(
+                                e.target.value === '' ? '' : Number(e.target.value),
+                              )
+                            }
                           />
                         </div>
                         <div className="mb-3">
@@ -817,6 +901,36 @@ export const Administrativo: React.FC = () => {
                                           value={editContrasenaEspecialista}
                                           onChange={(e) => setEditContrasenaEspecialista(e.target.value)}
                                         />
+                                        <div className="form-check mt-2">
+                                          <input
+                                            className="form-check-input"
+                                            type="checkbox"
+                                            id={`estado-especialista-${esp.cod_especialista}`}
+                                            checked={editEstadoEspecialista}
+                                            onChange={(e) => setEditEstadoEspecialista(e.target.checked)}
+                                          />
+                                          <label className="form-check-label small" htmlFor={`estado-especialista-${esp.cod_especialista}`}>
+                                            Activo
+                                          </label>
+                                        </div>
+                                        <div className="mt-2">
+                                          <input
+                                            className="form-control form-control-sm"
+                                            type="number"
+                                            id={`particular-especialista-${esp.cod_especialista}`}
+                                            min="0"
+                                            step="0.01"
+                                            value={editConsultaParticularEspecialista}
+                                            onChange={(e) =>
+                                              setEditConsultaParticularEspecialista(
+                                                e.target.value === '' ? '' : Number(e.target.value),
+                                              )
+                                            }
+                                          />
+                                          <label className="form-label small text-muted" htmlFor={`particular-especialista-${esp.cod_especialista}`}>
+                                            Precio consulta particular
+                                          </label>
+                                        </div>
                                       </>
                                     ) : (
                                       <div>
@@ -836,6 +950,11 @@ export const Administrativo: React.FC = () => {
                                             {esp.email}
                                           </small>
                                         )}
+                                        <small className="text-muted d-block">
+                                          {esp.estado === false ? 'Inactivo' : 'Activo'} · {Number(esp.consulta_particular ?? 0) > 0
+                                            ? `Particular: $${Number(esp.consulta_particular).toFixed(2)}`
+                                            : 'Sin consulta particular'}
+                                        </small>
                                       </div>
                                     )}
                                   </td>

@@ -63,6 +63,7 @@ export async function cCreateTurno(req: Request, res: Response) {
     hora_inicio,
     paciente,
     especialista,
+    obraSocial: paciente.obraSocial,
   });
 
   res.status(201).json(nuevoTurno);
@@ -88,6 +89,7 @@ export async function cUpdateTurno(req: Request, res: Response) {
     hora_inicio,
     paciente,
     especialista,
+    obraSocial: paciente.obraSocial,
   });
 
   if (!turno) {

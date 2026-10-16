@@ -5,7 +5,6 @@ import { Turno } from './turno.entity.js';
 import { alreadyExistsError, BadRequestError } from '../shared/errorsModel.js';
 import { chocaEnMinutos, generarSlots, horaAMinutos } from './turno.availability.js';
 import { esTurnoValido } from './turno.calendar.js';
-import { HistoriaClinica } from '../historiaClinica/historiaClinica.entity.js'; 
 import { motivoQueImpideCerrar } from './turno.estado.js'; 
 
 // Actualizamos el Input para usar fecha y hora separadas
@@ -14,6 +13,7 @@ type TurnoInput = {
   hora_inicio: string; // 'HH:mm'
   paciente: Paciente;
   especialista: Especialista;
+  obraSocial?: Paciente['obraSocial'];
 };
 
 // Actualizamos los filtros
@@ -51,7 +51,7 @@ async function ensureTurnoDisponible(
   const nuevoInicio = horaAMinutos(hora_inicio);
   const nuevoFin = nuevoInicio + duracionNuevo;
 
-  for (const turnoGuardado of turnosDelDia) {
+  for (const turnoGuardado of turnosDelDia.filter((turno) => turno.estado !== 'CANCELADO')) {
     // Ignoramos el turno actual si estamos haciendo un update
     if (cod_turno_ignoralo && turnoGuardado.cod_turno === cod_turno_ignoralo) continue;
 
@@ -99,7 +99,7 @@ export async function sGetHorariosDisponibles(
     const slotFin = slotInicio + duracion_minutos;
 
     // Verificamos si este slot choca con algún turno ya guardado
-    const estaOcupado = turnosOcupados.some((turnoG) => {
+    const estaOcupado = turnosOcupados.filter((turnoG) => turnoG.estado !== 'CANCELADO').some((turnoG) => {
       const duracionOcupada = turnoG.especialista.especialidad?.duracion_minutos ?? 0;
       const ocuInicio = horaAMinutos(turnoG.hora_inicio);
       const ocuFin = ocuInicio + duracionOcupada;
@@ -119,11 +119,11 @@ export async function sGetTurnos(filters: TurnoFilters = {}): Promise<Turno[]> {
   if (filters.cod_especialista) where.especialista = filters.cod_especialista;
   if (filters.fecha) where.fecha = filters.fecha;
 
-  return await orm.em.find(Turno, where, { populate: ['paciente', 'especialista.especialidad'] });
+  return await orm.em.find(Turno, where, { populate: ['paciente.obraSocial', 'especialista.especialidad', 'obraSocial'] });
 }
 
 export async function sGetTurnoById(cod_turno: number): Promise<Turno | null> {
-  return await orm.em.findOne(Turno, { cod_turno }, { populate: ['paciente', 'especialista'] });
+  return await orm.em.findOne(Turno, { cod_turno }, { populate: ['paciente.obraSocial', 'especialista', 'obraSocial'] });
 }
 
 /**
@@ -144,6 +144,7 @@ export async function sCreateTurno(input: TurnoInput): Promise<Turno> {
     hora_inicio: input.hora_inicio,
     paciente: input.paciente,
     especialista: input.especialista,
+    obraSocial: input.obraSocial ?? null,
   });
 
   await orm.em.persistAndFlush(turno);
@@ -183,6 +184,7 @@ export async function sUpdateTurno(
   turno.hora_inicio = input.hora_inicio;
   turno.paciente = input.paciente;
   turno.especialista = input.especialista;
+  turno.obraSocial = input.obraSocial ?? null;
 
   await orm.em.flush();
   return turno;
@@ -191,16 +193,16 @@ export async function sUpdateTurno(
 export async function sDeleteTurno(cod_turno: number): Promise<boolean> {
   const turno = await orm.em.findOne(Turno, { cod_turno });
   if (!turno) return false;
-  if (turno.estado !== 'PENDIENTE') {
-    throw new BadRequestError('No se puede eliminar un turno que ya fue atendido o marcado como ausente');
+  if (turno.estado === 'CANCELADO') {
+    throw new BadRequestError('El turno ya está cancelado');
   }
-  await orm.em.removeAndFlush(turno);
+  turno.estado = 'CANCELADO';
+  await orm.em.flush();
   return true;
 }
 
 /**
- * El especialista termina la consulta: el turno pasa a ATENDIDO y queda registrada
- * una entrada en la historia clínica del paciente (ambas cosas se guardan juntas).
+ * La confirmación automática se implementará cuando se integre el envío de correo.
  */
 export async function sAtenderTurno(
   cod_turno: number,
@@ -212,28 +214,10 @@ export async function sAtenderTurno(
   const motivo = motivoQueImpideCerrar(turno.estado, turno.fecha);
   if (motivo) throw new BadRequestError(motivo);
 
-  turno.estado = 'ATENDIDO';
-  orm.em.create(HistoriaClinica, {
-    paciente: turno.paciente,
-    especialista: turno.especialista,
-    turno,
-    diagnostico: datos.diagnostico,
-    indicaciones: datos.indicaciones || undefined,
-  });
-
-  await orm.em.flush();
-  return turno;
+  throw new BadRequestError('La confirmación del turno se realizará mediante correo electrónico');
 }
 
-/** El paciente no se presentó a la consulta. */
+/** La ausencia ya no modifica el estado: el turno solo puede cancelarse. */
 export async function sMarcarAusente(cod_turno: number): Promise<Turno | null> {
-  const turno = await orm.em.findOne(Turno, { cod_turno });
-  if (!turno) return null;
-
-  const motivo = motivoQueImpideCerrar(turno.estado, turno.fecha);
-  if (motivo) throw new BadRequestError(motivo);
-
-  turno.estado = 'AUSENTE';
-  await orm.em.flush();
-  return turno;
+  return sGetTurnoById(cod_turno);
 }
