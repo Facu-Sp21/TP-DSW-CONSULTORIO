@@ -25,7 +25,7 @@ export async function cGetEspecialistaById(req: Request, res: Response) {
 }
 
 export async function cCreateEspecialista(req: Request, res: Response) {
-  const { dni, matricula, nombre, email, telefono, contrasena, cod_especialidad } = res.locals.body;
+  const { dni, matricula, nombre, email, telefono, contrasena, cod_especialidad, estado, consulta_particular } = res.locals.body;
   let especialidad = null;
 
   if (cod_especialidad) {
@@ -45,6 +45,8 @@ export async function cCreateEspecialista(req: Request, res: Response) {
     telefono,
     contrasena: claveFinal,
     especialidad,
+    estado,
+    consulta_particular,
   });
 
   res.status(201).json(nuevoEspecialista);
@@ -58,7 +60,7 @@ export async function cUpdateEspecialista(req: Request, res: Response) {
     throw new ForbiddenError('No podés editar los datos de otro especialista');
   }
 
-  const { dni, matricula, nombre, email, telefono, contrasena, cod_especialidad } = res.locals.body;
+  const { dni, matricula, nombre, email, telefono, contrasena, cod_especialidad, estado, consulta_particular } = res.locals.body;
   let especialidad = null;
 
   if (cod_especialidad) {
@@ -76,6 +78,8 @@ export async function cUpdateEspecialista(req: Request, res: Response) {
     telefono,
     contrasena,
     especialidad,
+    estado,
+    consulta_particular,
   });
 
   if (!especialista) {

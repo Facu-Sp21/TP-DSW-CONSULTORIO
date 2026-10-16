@@ -4,13 +4,14 @@ export interface Especialidad {
   cod_especialidad?: number;
   nombre: string;
   duracion_minutos?: number;
+  estado?: boolean;
 }
 
 export const getEspecialidades = () => {
   return apiFetch<Especialidad[]>('/especialidad');
 };
 
-export const createEspecialidad = (data: { nombre: string; duracion_minutos?: number }) => {
+export const createEspecialidad = (data: { nombre: string; duracion_minutos?: number; estado?: boolean }) => {
   return apiFetch<Especialidad>('/especialidad', {
     method: 'POST',
     body: JSON.stringify({
@@ -22,7 +23,7 @@ export const createEspecialidad = (data: { nombre: string; duracion_minutos?: nu
 
 export const updateEspecialidad = (
   cod_especialidad: number, 
-  data: { nombre: string; duracion_minutos?: number }
+  data: { nombre: string; duracion_minutos?: number; estado?: boolean }
 ) => {
   return apiFetch<Especialidad>(`/especialidad/${cod_especialidad}`, {
     method: 'PUT',

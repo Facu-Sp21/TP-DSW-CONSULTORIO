@@ -1,5 +1,6 @@
-import { Entity, ManyToOne, Opt, PrimaryKey, Property } from '@mikro-orm/core';
+import { Collection, Entity, ManyToMany, ManyToOne, Opt, PrimaryKey, Property } from '@mikro-orm/core';
 import type { Especialidad } from '../especialidad/especialidad.entity.js';
+import type { ObraSocial } from '../ObraSocial/obraSocial.entity.js';
 
 @Entity()
 export class Especialista {
@@ -24,6 +25,18 @@ export class Especialista {
   @Property({ length: 255, nullable: false, type: 'string' })
   contrasena!: string;
 
+  @Property({ nullable: false, type: 'boolean', default: true })
+  estado: boolean = true;
+
+  @Property({ nullable: false, type: 'number', default: 0 })
+  consulta_particular: number = 0;
+
   @ManyToOne('Especialidad', { fieldName: 'cod_especialidad', nullable: true })
   especialidad?: Especialidad | null;
+
+  @ManyToMany('ObraSocial', (obraSocial: ObraSocial) => obraSocial.especialistas, {
+    owner: true,
+    pivotTable: 'obra_social_especialista',
+  })
+  obrasSociales = new Collection<ObraSocial>(this);
 }

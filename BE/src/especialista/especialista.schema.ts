@@ -8,6 +8,8 @@ export const especialistaBodySchema = z.object({
   telefono: z.string().max(30).min(1, 'El teléfono es obligatorio'),
   contrasena: z.string().min(4, 'La contraseña debe tener al menos 4 caracteres').optional(),
   cod_especialidad: z.coerce.number().int().positive().nullable().optional(),
+  estado: z.boolean().optional(),
+  consulta_particular: z.coerce.number().finite().nonnegative().optional(),
 });
 
 export const especialistaParamsSchema = z.object({

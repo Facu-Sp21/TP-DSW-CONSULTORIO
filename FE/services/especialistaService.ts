@@ -9,6 +9,8 @@ export interface Especialista {
   email?: string;
   contrasena?: string;
   cod_especialidad?: number;
+  estado?: boolean;
+  consulta_particular?: number;
 }
 
 export const getEspecialistas = () => {

@@ -177,7 +177,7 @@ describe('sGetTurnos', () => {
     expect(orm.em.find).toHaveBeenCalledWith(
       expect.anything(),
       { paciente: 10, especialista: 2 },
-      { populate: ['paciente', 'especialista'] },
+      { populate: ['paciente.obraSocial', 'especialista.especialidad', 'obraSocial'] },
     );
   });
 });
