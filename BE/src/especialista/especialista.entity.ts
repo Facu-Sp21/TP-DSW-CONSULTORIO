@@ -7,17 +7,23 @@ export class Especialista {
   @PrimaryKey({ type: 'number', autoincrement: true, unique: true })
   cod_especialista!: number & Opt;
 
-  @Property({ length: 30, nullable: false, type: 'string' })
+  @Property({ length: 20, nullable: false, type: 'string', unique: true })
+  dni!: string;
+  
+  @Property({ length: 30, nullable: false, type: 'string', unique: true })
   matricula!: string;
 
   @Property({ length: 60, nullable: false, type: 'string' })
   nombre!: string;
 
+  @Property({ length: 120, nullable: false, type: 'string', unique: true })
+  email!: string;
+
   @Property({ length: 30, nullable: false, type: 'string' })
   telefono!: string;
 
-  @ManyToOne('Especialidad', { fieldName: 'cod_especialidad', nullable: false })
-  especialidad!: Especialidad;
+  //@ManyToOne('Especialidad', { fieldName: 'cod_especialidad', nullable: false })
+  //especialidad!: Especialidad;
 
   @ManyToMany('ObraSocial', (unObraSocial: ObraSocial) => unObraSocial.especialistas,{owner:true})
   obrasSociales = new Collection<ObraSocial>(this);
@@ -25,5 +31,12 @@ export class Especialista {
   @OneToMany('Turno', (unTurno: Turno) => unTurno.especialista)
   turnos = new Collection<Turno>(this);
   
+  @Property({ length: 255, nullable: false, type: 'string' })
+  contrasena!: string;
+  
+  @ManyToOne('Especialidad', { fieldName: 'cod_especialidad', nullable: true })
+  especialidad?: Especialidad | null;
+  
 }
+
 

@@ -238,6 +238,12 @@ export const especialistaOpenApi = {
             type: 'integer',
             description: 'Identificador autogenerado del especialista.',
           },
+          dni: {
+            type: 'string',
+            maxLength: 20,
+            description: 'DNI único del especialista.',
+            example: '30123456',
+          },
           matricula: {
             type: 'string',
             maxLength: 30,
@@ -250,6 +256,12 @@ export const especialistaOpenApi = {
             description: 'Nombre completo del especialista.',
             example: 'Laura Gómez',
           },
+          email: {
+            type: 'string',
+            maxLength: 120,
+            description: 'Email único del especialista.',
+            example: 'laura@example.com',
+          },
           telefono: {
             type: 'string',
             maxLength: 30,
@@ -260,11 +272,16 @@ export const especialistaOpenApi = {
             $ref: '#/components/schemas/Especialidad',
           },
         },
-        required: ['cod_especialista', 'matricula', 'nombre', 'telefono', 'especialidad'],
+        required: ['cod_especialista', 'dni', 'matricula', 'nombre', 'email', 'telefono', 'especialidad'],
       },
       EspecialistaInput: {
         type: 'object',
         properties: {
+          dni: {
+            type: 'string',
+            maxLength: 20,
+            example: '30123456',
+          },
           matricula: {
             type: 'string',
             maxLength: 30,
@@ -274,6 +291,11 @@ export const especialistaOpenApi = {
             type: 'string',
             maxLength: 60,
             example: 'Laura Gómez',
+          },
+          email: {
+            type: 'string',
+            maxLength: 120,
+            example: 'laura@example.com',
           },
           telefono: {
             type: 'string',
@@ -286,7 +308,7 @@ export const especialistaOpenApi = {
             example: 1,
           },
         },
-        required: ['matricula', 'nombre', 'telefono', 'cod_especialidad'],
+        required: ['dni', 'matricula', 'nombre', 'email', 'telefono', 'cod_especialidad'],
       },
     },
   },

@@ -297,8 +297,14 @@ export const especialidadOpenApi = {
             description: 'Nombre de la especialidad.',
             example: 'Cardiología',
           },
+          duracion_minutos: {
+            type: 'integer',
+            minimum: 1,
+            description: 'Duración de cada turno de la especialidad, en minutos.',
+            example: 15,
+          },
         },
-        required: ['cod_especialidad', 'nombre'],
+        required: ['cod_especialidad', 'nombre', 'duracion_minutos'],
       },
       EspecialidadInput: {
         type: 'object',
@@ -309,8 +315,14 @@ export const especialidadOpenApi = {
             description: 'Nombre de la especialidad.',
             example: 'Pediatría',
           },
+          duracion_minutos: {
+            type: 'integer',
+            minimum: 1,
+            description: 'Duración de cada turno, en minutos.',
+            example: 15,
+          },
         },
-        required: ['nombre'],
+        required: ['nombre', 'duracion_minutos'],
       },
       ErrorResponse: {
         type: 'object',

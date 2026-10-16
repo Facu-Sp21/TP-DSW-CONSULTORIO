@@ -5,7 +5,9 @@ import { getEspecialidades } from '../../services/especialidadService';
 import type { Especialidad } from '../../services/especialidadService';
 import { getEspecialistasByEspecialidad } from '../../services/especialistaService';
 import type { Especialista } from '../../services/especialistaService';
-import { getTurnos, type Turno } from './Usuario';
+import { isAuthenticated } from '../../services/authService';
+import { getUsuarioActual } from '../../services/authService';
+import { createTurno } from '../../services/turnoService';
 
 export const SacarTurno: React.FC = () => {
   const navigate = useNavigate();
@@ -34,12 +36,12 @@ export const SacarTurno: React.FC = () => {
   }, [especialidades, searchParams, especialidad]);
 
   useEffect(() => {
-    if (!especialidad) return;
-    setLoading(true);
-    getEspecialistasByEspecialidad(especialidad.cod_especialidad)
-      .then(setEspecialistas)
-      .catch(() => setError('No se pudieron cargar los especialistas.'))
-      .finally(() => setLoading(false));
+  if (!especialidad || especialidad.cod_especialidad === undefined) return;
+  setLoading(true);
+  getEspecialistasByEspecialidad(especialidad.cod_especialidad)
+    .then(setEspecialistas)
+    .catch(() => setError('No se pudieron cargar los especialistas.'))
+    .finally(() => setLoading(false));
   }, [especialidad]);
 
   const { calendarDays, maxDate } = useMemo(() => {
@@ -51,19 +53,21 @@ export const SacarTurno: React.FC = () => {
     return { calendarDays: buildMonthCalendar(first.getFullYear(), first.getMonth()), maxDate: limit };
   }, []);
 
-  if (sessionStorage.getItem('vitalis-authenticated') !== 'true') return <Navigate to="/login" replace />;
+  if (!isAuthenticated()) return <Navigate to="/login" replace />;
 
   const finish = (event: React.FormEvent) => {
     event.preventDefault();
-    const newTurno: Turno = {
-      id: crypto.randomUUID(),
-      especialidad: especialidad?.nombre ?? '',
-      especialista: especialista?.nombre ?? '',
+    const usuario = getUsuarioActual();
+    if (!usuario || !especialista?.cod_especialista) return;
+
+    createTurno({
       fecha,
-      hora,
-    };
-    localStorage.setItem('vitalis-turnos', JSON.stringify([...getTurnos(), newTurno]));
-    navigate('/usuario', { state: { bookingSuccess: true } });
+      hora_inicio: hora,
+      cod_especialista: especialista.cod_especialista,
+      nro_afiliado: usuario.id,
+    })
+      .then(() => navigate('/usuario', { state: { bookingSuccess: true } }))
+      .catch((err) => setError(err instanceof Error ? err.message : 'No se pudo confirmar el turno.'));
   };
 
   return (

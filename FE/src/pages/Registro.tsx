@@ -1,17 +1,31 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { createPaciente } from '../../services/pacienteService';
+import { login, rutaSegunRol } from '../../services/authService';
+
+const getTodayInputValue = () => {
+  const today = new Date();
+  const month = String(today.getMonth() + 1).padStart(2, '0');
+  const day = String(today.getDate()).padStart(2, '0');
+  return `${today.getFullYear()}-${month}-${day}`;
+};
 
 export const Registro: React.FC = () => {
+  const navigate = useNavigate();
+  const todayInputValue = getTodayInputValue();
   const [formData, setFormData] = useState({
     nombre: '',
     apellido: '',
     dni: '',
     fechaNacimiento: '',
     telefono: '',
+    direccion: '',
     emailRegistro: '',
     passwordRegistro: '',
     confirmarPassword: '',
   });
+  const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value } = e.target;
@@ -19,11 +33,43 @@ export const Registro: React.FC = () => {
       ...prev,
       [id]: value,
     }));
+    setError(null);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Registro intent:', formData);
+    setError(null);
+
+    if (formData.passwordRegistro !== formData.confirmarPassword) {
+      setError('Las contraseñas no coinciden.');
+      return;
+    }
+
+    if (formData.fechaNacimiento > todayInputValue) {
+      setError('La fecha de nacimiento no puede ser posterior a la fecha de hoy.');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      // El backend guarda un único campo "nombre", así que combinamos nombre + apellido
+      await createPaciente({
+        nombre: `${formData.nombre} ${formData.apellido}`.trim(),
+        dni: formData.dni,
+        telefono: formData.telefono,
+        direccion: formData.direccion,
+        email: formData.emailRegistro,
+        contrasena: formData.passwordRegistro,
+      });
+
+      // Una vez creada la cuenta, logueamos automáticamente al paciente
+      const { user } = await login(formData.emailRegistro, formData.passwordRegistro);
+      navigate(rutaSegunRol(user.rol));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'No pudimos crear tu cuenta. Intentá de nuevo.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -91,6 +137,7 @@ export const Registro: React.FC = () => {
                   className="form-control" 
                   id="fechaNacimiento" 
                   value={formData.fechaNacimiento} 
+                  max={todayInputValue}
                   onChange={handleChange} 
                   required 
                 />
@@ -111,6 +158,19 @@ export const Registro: React.FC = () => {
             </div>
 
             <div className="mb-3">
+              <label htmlFor="direccion" className="form-label">Dirección</label>
+              <input 
+                type="text" 
+                className="form-control" 
+                id="direccion" 
+                placeholder="Av. Siempre Viva 742" 
+                value={formData.direccion} 
+                onChange={handleChange} 
+                required 
+              />
+            </div>
+
+            <div className="mb-3">
               <label htmlFor="emailRegistro" className="form-label">Correo electrónico</label>
               <input 
                 type="email" 
@@ -122,6 +182,8 @@ export const Registro: React.FC = () => {
                 required 
               />
             </div>
+
+            {error && <div className="alert alert-danger py-2 small" role="alert">{error}</div>}
 
             <div className="row">
               <div className="col-6 mb-3">
@@ -150,8 +212,8 @@ export const Registro: React.FC = () => {
               </div>
             </div>
 
-            <button type="submit" className="btn btn-primary w-100 py-2 mb-3">
-              Crear cuenta
+            <button type="submit" className="btn btn-primary w-100 py-2 mb-3" disabled={isSubmitting}>
+              {isSubmitting ? 'Creando cuenta...' : 'Crear cuenta'}
             </button>
 
             <p className="text-center text-muted small mb-0">
