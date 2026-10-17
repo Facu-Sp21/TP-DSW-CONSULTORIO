@@ -1,5 +1,5 @@
-import { Entity, PrimaryKey, Property, OneToMany,Collection,Opt,ManyToMany } from '@mikro-orm/core';
-import type { Afiliado } from '../Afiliado/afiliado.entity.js';
+import { Collection, Entity, ManyToMany, OneToMany, Opt, PrimaryKey, Property } from '@mikro-orm/core';
+import type { Paciente } from '../paciente/paciente.entity.js';
 import type { Especialista } from '../especialista/especialista.entity.js';
 @Entity()
 export class ObraSocial
@@ -11,10 +11,11 @@ export class ObraSocial
   nombre!: string;
 
 
-  @OneToMany('Afiliado', (unAfiliado: Afiliado) => unAfiliado.obraSocial)
-  pacientes= new Collection<Afiliado>(this);
+
+  @OneToMany('Paciente', (unPaciente: Paciente) => unPaciente.obraSocial)
+  pacientes = new Collection<Paciente>(this);
 
   @ManyToMany('Especialista', (unEspecialista: Especialista) => unEspecialista.obrasSociales)
- especialistas = new Collection<Especialista>(this);
+  especialistas = new Collection<Especialista>(this);
 
 }

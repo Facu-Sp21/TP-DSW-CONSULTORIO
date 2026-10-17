@@ -3,6 +3,7 @@ import { orm } from '../shared/db/orm.js';
 import { alreadyExistsError } from '../shared/errorsModel.js';
 import { hashPassword } from '../shared/auth/password.js';
 import { Paciente } from './paciente.entity.js';
+import { ObraSocial } from '../ObraSocial/obraSocial.entity.js';
 
 type PacienteInput = {
   dni: string;
@@ -15,11 +16,11 @@ type PacienteInput = {
 };
 
 export async function sGetAllPacientes(): Promise<Paciente[]> {
-  return await orm.em.find(Paciente, {});
+  return await orm.em.find(Paciente, {}, { populate: ['obraSocial'] });
 }
 
 export async function sGetPacienteById(nro_afiliado: number): Promise<Paciente | null> {
-  return await orm.em.findOne(Paciente, { nro_afiliado });
+  return await orm.em.findOne(Paciente, { nro_afiliado }, { populate: ['obraSocial'] });
 }
 
 // Usado internamente por el login, para comparar la contraseña
@@ -28,8 +29,16 @@ export async function sGetPacienteByEmail(email: string): Promise<Paciente | nul
 }
 
 export async function sCreatePaciente(input: PacienteInput): Promise<Paciente> {
+  const obraSocial = input.cod_os
+    ? await orm.em.findOne(ObraSocial, { cod_os: input.cod_os })
+    : null;
   const paciente = orm.em.create(Paciente, {
-    ...input,
+    dni: input.dni,
+    nombre: input.nombre,
+    telefono: input.telefono,
+    direccion: input.direccion,
+    email: input.email,
+    obraSocial,
     contrasena: await hashPassword(input.contrasena),
   });
   try {
@@ -58,7 +67,11 @@ export async function sUpdatePaciente(
   if (input.telefono !== undefined) paciente.telefono = input.telefono;
   if (input.direccion !== undefined) paciente.direccion = input.direccion;
   if (input.email !== undefined) paciente.email = input.email;
-  if (input.cod_os !== undefined) paciente.cod_os = input.cod_os ?? null;
+  if (input.cod_os !== undefined) {
+    paciente.obraSocial = input.cod_os
+      ? await orm.em.findOne(ObraSocial, { cod_os: input.cod_os })
+      : null;
+  }
 
   if (input.contrasena && input.contrasena.trim() !== '') {
     paciente.contrasena = await hashPassword(input.contrasena);

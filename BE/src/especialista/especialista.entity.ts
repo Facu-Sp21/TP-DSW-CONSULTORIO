@@ -1,7 +1,9 @@
-import { Entity, ManyToOne, Opt, PrimaryKey, Property, ManyToMany, Collection, OneToMany } from '@mikro-orm/core';
+import { Collection, Entity, ManyToMany, ManyToOne, Opt, PrimaryKey, Property,OneToMany } from '@mikro-orm/core';
 import type { Especialidad } from '../especialidad/especialidad.entity.js';
-import type {ObraSocial} from '../ObraSocial/obraSocial.entity.js';
-import type { Turno } from '../Turno/turno.entity.js';
+import type { ObraSocial } from '../ObraSocial/obraSocial.entity.js';
+import type { Turno } from '../turno/turno.entity.js';
+
+
 @Entity()
 export class Especialista {
   @PrimaryKey({ type: 'number', autoincrement: true, unique: true })
@@ -25,18 +27,26 @@ export class Especialista {
   //@ManyToOne('Especialidad', { fieldName: 'cod_especialidad', nullable: false })
   //especialidad!: Especialidad;
 
-  @ManyToMany('ObraSocial', (unObraSocial: ObraSocial) => unObraSocial.especialistas,{owner:true})
-  obrasSociales = new Collection<ObraSocial>(this);
-
   @OneToMany('Turno', (unTurno: Turno) => unTurno.especialista)
   turnos = new Collection<Turno>(this);
   
   @Property({ length: 255, nullable: false, type: 'string' })
   contrasena!: string;
-  
+
+  @Property({ nullable: false, type: 'boolean', default: true })
+  estado: boolean = true;
+
+  @Property({ nullable: false, type: 'number', default: 0 })
+  consulta_particular: number = 0;
+
   @ManyToOne('Especialidad', { fieldName: 'cod_especialidad', nullable: true })
   especialidad?: Especialidad | null;
-  
+
+  @ManyToMany('ObraSocial', (obraSocial: ObraSocial) => obraSocial.especialistas, {
+    owner: true,
+    pivotTable: 'obra_social_especialista',
+  })
+  obrasSociales = new Collection<ObraSocial>(this);
 }
 
 

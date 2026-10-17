@@ -5,6 +5,7 @@ export interface CreateTurnoPayload {
   hora_inicio: string;      
   cod_especialista: number; 
   nro_afiliado: number;     
+  cod_os?: number | null;
 }
 
 export interface TurnoAdmin {
@@ -14,6 +15,10 @@ export interface TurnoAdmin {
   cod_especialista: number;
   nro_afiliado: number;
   estado?: string;
+  obraSocial?: {
+    cod_os: number;
+    nombre: string;
+  } | null;
   paciente?: {
     nro_afiliado: number;
     nombre: string;

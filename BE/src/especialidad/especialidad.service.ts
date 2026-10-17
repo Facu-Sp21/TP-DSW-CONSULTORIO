@@ -12,8 +12,12 @@ export async function sGetEspecialidadById(cod_especialidad: number): Promise<Es
   return await orm.em.findOne(Especialidad, { cod_especialidad }); // como el atributo y el valor son iguales, se puede abreviar cod_especialidad
 }
 
-export async function sCreateEspecialidad(nombre: string, duracion_minutos: number): Promise<Especialidad> {
-  const especialidad = orm.em.create(Especialidad, { nombre, duracion_minutos });
+export async function sCreateEspecialidad(
+  nombre: string,
+  duracion_minutos: number,
+  estado = true,
+): Promise<Especialidad> {
+  const especialidad = orm.em.create(Especialidad, { nombre, duracion_minutos, estado });
   try {
     await orm.em.persistAndFlush(especialidad);
   } catch (error) {
@@ -29,6 +33,7 @@ export async function sUpdateEspecialidad(
   cod_especialidad: number,
   nombre: string,
   duracion_minutos: number,
+  estado?: boolean,
 ): Promise<Especialidad | null> {
   const especialidad = await orm.em.findOne(Especialidad, { cod_especialidad });
 
@@ -38,6 +43,7 @@ export async function sUpdateEspecialidad(
 
   especialidad.nombre = nombre;
   especialidad.duracion_minutos = duracion_minutos;
+  if (estado !== undefined) especialidad.estado = estado;
   try {
     await orm.em.flush();
   } catch (error) {

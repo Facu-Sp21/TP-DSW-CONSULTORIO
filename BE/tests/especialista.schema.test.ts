@@ -2,6 +2,7 @@ import { especialistaBodySchema, especialistaParamsSchema } from '../src/especia
 
 describe('especialistaBodySchema', () => {
   const especialista = {
+    dni: '30123456',
     matricula: 'MP-12345',
     nombre: 'Laura Gómez',
     email: 'laura@example.com',
@@ -11,6 +12,24 @@ describe('especialistaBodySchema', () => {
 
   it('acepta un especialista válido', () => {
     expect(especialistaBodySchema.safeParse(especialista).success).toBe(true);
+  });
+
+  it('acepta el precio real de una consulta particular', () => {
+    const result = especialistaBodySchema.safeParse({
+      ...especialista,
+      consulta_particular: '15000.50',
+    });
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.consulta_particular).toBe(15000.5);
+    }
+  });
+
+  it('rechaza un precio negativo de consulta particular', () => {
+    expect(
+      especialistaBodySchema.safeParse({ ...especialista, consulta_particular: -1 }).success,
+    ).toBe(false);
   });
 
   it.each([

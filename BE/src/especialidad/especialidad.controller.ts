@@ -26,16 +26,16 @@ export async function cGetEspecialidadById(req: Request, res: Response) {
 }
 
 export async function cCreateEspecialidad(req: Request, res: Response) {
-  const { nombre, duracion_minutos } = res.locals.body;
-  const nuevaEspecialidad = await sCreateEspecialidad(nombre, duracion_minutos);
+  const { nombre, duracion_minutos, estado } = res.locals.body;
+  const nuevaEspecialidad = await sCreateEspecialidad(nombre, duracion_minutos, estado);
   res.status(201).json(nuevaEspecialidad);
 }
 
 export async function cUpdateEspecialidad(req: Request, res: Response) {
   const cod_especialidad = res.locals.params.cod_especialidad;
-  const { nombre, duracion_minutos } = res.locals.body;
+  const { nombre, duracion_minutos, estado } = res.locals.body;
 
-  const especialidad = await sUpdateEspecialidad(cod_especialidad, nombre, duracion_minutos);
+  const especialidad = await sUpdateEspecialidad(cod_especialidad, nombre, duracion_minutos, estado);
 
   if (!especialidad) {
     throw new NotFoundError('Especialidad no encontrada');
