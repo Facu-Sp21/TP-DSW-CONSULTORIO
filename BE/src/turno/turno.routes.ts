@@ -8,9 +8,10 @@ import {
   cUpdateTurno,
   cAtenderTurno,
   cMarcarAusente,
+  cConfirmarTurno,
 } from './turno.controller.js';
 import { validate } from '../shared/schemaValidator.js';
-import { disponibilidadQuerySchema, turnoBodySchema, turnoParamsSchema, turnoQuerySchema } from './turno.schema.js';
+import { confirmarAsistenciaBodySchema, disponibilidadQuerySchema, turnoBodySchema, turnoParamsSchema, turnoQuerySchema } from './turno.schema.js';
 import { atenderTurnoBodySchema } from '../historiaClinica/historiaClinica.schema.js';
 
 const turnoRouter = Router();
@@ -23,4 +24,5 @@ turnoRouter.put('/:cod_turno',validate({ body: turnoBodySchema, params: turnoPar
 turnoRouter.delete('/:cod_turno', validate({ params: turnoParamsSchema }), cDeleteTurno);
 turnoRouter.post('/:cod_turno/atender', validate({ params: turnoParamsSchema, body: atenderTurnoBodySchema }), cAtenderTurno);
 turnoRouter.post('/:cod_turno/ausente', validate({ params: turnoParamsSchema }), cMarcarAusente);
+turnoRouter.patch('/confirmar-asistencia',validate({body: confirmarAsistenciaBodySchema}) ,cConfirmarTurno);
 export default turnoRouter;

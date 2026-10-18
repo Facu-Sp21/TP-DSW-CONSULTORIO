@@ -31,6 +31,18 @@ export interface TurnoAdmin {
   };
 }
 
+export type AccionConfirmacion = 'confirmar' | 'cancelar';
+
+export interface ResponderConfirmacionPayload {
+  token: string;
+  accion: AccionConfirmacion;
+}
+
+export interface ResponderConfirmacionResponse {
+  cod_turno: number;
+  estado: 'CONFIRMADO' | 'CANCELADO';
+}
+
 export const getTurnos = () => {
   return apiFetch<TurnoAdmin[]>('/turno');
 };
@@ -51,3 +63,13 @@ export const cancelarTurno = (cod_turno: number) => {
     method: 'DELETE',
   });
 };
+
+export const confirmacionTurno = (
+  data: ResponderConfirmacionPayload,
+) => {
+  return apiFetch<ResponderConfirmacionResponse>('/turno/confirmar-asistencia',
+    {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    },
+  )};

@@ -79,3 +79,9 @@ export const disponibilidadQuerySchema = z.object({
 export const turnoParamsSchema = z.object({
   cod_turno: z.coerce.number().int().positive('El código de turno es inválido'),
 });
+
+export const confirmarAsistenciaBodySchema = z.object({
+  token: z.string().trim().min(1, 'El token es obligatorio'),
+
+  accion: z.enum(['confirmar', 'cancelar']),
+});

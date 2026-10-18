@@ -1,5 +1,6 @@
 import { useState } from 'react';
-
+import { useSearchParams } from 'react-router-dom';
+import {confirmacionTurno} from '../../services/turnoService';
 
 const turnoPrueba = {
   fecha: '18/10/2026',
@@ -9,6 +10,41 @@ const turnoPrueba = {
 
 export  function ConfirmarAsistencia() {
   const [respuesta, setRespuesta] = useState<'confirmado' | 'cancelado' | null>(null);
+  const [searchParams] = useSearchParams();
+  const token = searchParams.get('token');
+  const [cargando, setCargando] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+async function responder(accion: 'confirmar' | 'cancelar') {
+  if (!token) {
+    setError('El enlace para gestionar el turno es inválido o está incompleto.');
+    return;
+  }
+
+  setCargando(true);
+  setError(null);
+
+  try {
+    const datos = await confirmacionTurno({
+  token,
+  accion,
+});
+
+setRespuesta(
+  datos.estado === 'CONFIRMADO' ? 'confirmado' : 'cancelado',
+);
+
+  } catch (error) {
+    setError(
+      error instanceof Error
+        ? error.message
+        : 'Ocurrió un error al gestionar el turno.',
+    );
+  } finally {
+    setCargando(false);
+  }
+}
+
    return (
     <main className="fondo-punteado min-vh-100 d-flex align-items-center py-5">
       <div className="container">
@@ -67,7 +103,8 @@ export  function ConfirmarAsistencia() {
                   <button
                     type="button"
                     className="btn btn-primary flex-fill py-3"
-                    onClick={() => setRespuesta('confirmado')}
+                    onClick={() => responder('confirmar')}
+                    disabled={cargando || respuesta !== null}
                   >
                     <i className="bi bi-check-circle me-2" />
                     Confirmar asistencia
@@ -76,7 +113,8 @@ export  function ConfirmarAsistencia() {
                   <button
                     type="button"
                     className="btn btn-outline-danger flex-fill py-3"
-                    onClick={() => setRespuesta('cancelado')}
+                    onClick={() => responder('cancelar')}
+                    disabled={cargando || respuesta !== null}
                   >
                     <i className="bi bi-x-circle me-2" />
                     Cancelar turno
@@ -86,16 +124,23 @@ export  function ConfirmarAsistencia() {
                 {respuesta === 'confirmado' && (
                   <p className="respuesta-turno__mensaje respuesta-turno__mensaje--confirmado">
                     <i className="bi bi-check-circle-fill me-2" />
-                    Asistencia confirmada. Por ahora es una prueba visual.
+                    Asistencia confirmada correctamente.
                   </p>
                 )}
 
                 {respuesta === 'cancelado' && (
                   <p className="respuesta-turno__mensaje respuesta-turno__mensaje--cancelado">
                     <i className="bi bi-x-circle-fill me-2" />
-                    Turno cancelado. Por ahora es una prueba visual.
+                    Turno cancelado correctamente.
                   </p>
                 )}
+
+                {error && (
+                  <div className="alert alert-danger mt-4 mb-0">
+                  <i className="bi bi-exclamation-circle me-2" />
+                  {error}
+                </div>
+)}
               </div>
             </section>
           </div>
