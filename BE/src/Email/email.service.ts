@@ -1,5 +1,7 @@
 import nodemailer from 'nodemailer';
-import 'dotenv/config';
+import {mailFormatTurnoPendiente} from './email.template.js';
+import {mailFormatConfirmarTurno} from './email.template.confirmacion.js';
+import { Turno } from '../turno/turno.entity.js';
 
 const transporter = nodemailer.createTransport({
   host: process.env.EMAIL_HOST,
@@ -22,13 +24,13 @@ const transporter = nodemailer.createTransport({
 });*/
 
 
-export async function enviarCorreo(destinatario: string,asunto: string,mensaje: string
+export async function enviarCorreo(destinatario: string,asunto: string, turno: Turno, tipo: 'pend'|'confirm', url?: string
 ) {
   await transporter.sendMail({
     from: process.env.EMAIL_USER,
     to: destinatario,
     subject: asunto,
-    html: mensaje
+    html: tipo=== 'pend'? mailFormatTurnoPendiente(turno): mailFormatConfirmarTurno(turno, url)
   });
 }
 

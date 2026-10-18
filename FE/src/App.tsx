@@ -12,6 +12,7 @@ import { Legal } from './pages/Legal';
 import { Administrativo } from './pages/Administrativo';
 import { EspecialistaAgenda } from './pages/especialista/EspecialistaAgenda';
 import { EspecialistaTurno } from './pages/especialista/EspecialistaTurno';
+import { ConfirmarAsistencia } from './pages/ConfirmarAsistencia';
 
 function App() {
   return (
@@ -33,6 +34,7 @@ function App() {
         <Route path="/administrativo" element={<Administrativo />} />
         <Route path="/especialista" element={<EspecialistaAgenda />} />
         <Route path="/especialista/turno/:id" element={<EspecialistaTurno />} />
+        <Route path="/confirmar-asistencia" element={<ConfirmarAsistencia />} />
       </Routes>
     </BrowserRouter>
   );

@@ -338,7 +338,3 @@ export const obraSocialOpenApi = {
   },
 
 } as const;
-<<<<<<< HEAD
-
-=======
->>>>>>> origin/main

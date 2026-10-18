@@ -6,6 +6,7 @@ import { alreadyExistsError, BadRequestError } from '../shared/errorsModel.js';
 import { chocaEnMinutos, generarSlots, horaAMinutos } from './turno.availability.js';
 import { esTurnoValido } from './turno.calendar.js';
 import { motivoQueImpideCerrar } from './turno.estado.js'; 
+import { enviarCorreo } from '../Email/email.service.js';
 
 // Actualizamos el Input para usar fecha y hora separadas
 type TurnoInput = {
@@ -148,6 +149,8 @@ export async function sCreateTurno(input: TurnoInput): Promise<Turno> {
   });
 
   await orm.em.persistAndFlush(turno);
+  //se envía correo del turno CREADO 
+  await enviarCorreo(turno.paciente.email,  "Constancia de turno", turno, 'pend');  
   return turno;
 }
 

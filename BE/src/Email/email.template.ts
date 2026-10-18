@@ -1,7 +1,7 @@
 
-import { Turno } from '../Turno/turno.entity.js';
+import { Turno } from '../turno/turno.entity.js';
 
-export const mailFormatTurno = (turno: Turno) => `
+export const mailFormatTurnoPendiente = (turno: Turno) => `
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -75,7 +75,7 @@ export const mailFormatTurno = (turno: Turno) => `
 
               <p style="font-size: 16px; line-height: 1.5;">
                 Estimado/a
-                <strong>${turno.afiliado.nombreCompleto}</strong>:
+                <strong>${turno.paciente.nombre}</strong>:
               </p>
 
               <p style="
@@ -108,7 +108,7 @@ export const mailFormatTurno = (turno: Turno) => `
 
                     <p style="margin: 0 0 12px 0;">
                       <strong>Hora:</strong>
-                      ${turno.hora}
+                      ${turno.hora_inicio}
                     </p>
 
                     <p style="margin: 0;">
