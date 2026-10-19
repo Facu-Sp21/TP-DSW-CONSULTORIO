@@ -10,6 +10,7 @@ import pacienteRoutes from './src/paciente/paciente.routes.js';
 import turnoRoutes from './src/turno/turno.routes.js';
 import administrativoRoutes from './src/Administrativo/administrativo.routes.js';
 import authRoutes from './src/auth/auth.routes.js';
+import obraSocialRoutes from './src/ObraSocial/obraSocial.routes.js';
 import { errorHandler } from './src/shared/errorHandler.js';
 import { RequestContext } from '@mikro-orm/core';
 import { apiReference } from '@scalar/express-api-reference';
@@ -34,6 +35,7 @@ app.use('/historia-clinica', historiaClinicaRoutes);
 app.use('/suscripcion', suscripcionRoutes);
 app.use('/administrativo', administrativoRoutes);
 app.use('/auth', authRoutes);
+app.use('/obraSocial', obraSocialRoutes);
 
 app.get('/openapi.json', (_req, res) => {
     res.json(openApiDocument);
