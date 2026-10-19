@@ -18,30 +18,45 @@ import {
   deleteEspecialista,
 } from '../../services/especialistaService';
 import {
-  type Afiliado,
-  getAfiliados,
-  createAfiliado,
-  updateAfiliado,
-  deleteAfiliado,
-} from '../../services/afiliadoService';
+  type Paciente,
+  getPacientes,
+  createPaciente,
+  updatePaciente,
+  deletePaciente,
+} from '../../services/pacienteService';
 import {
   type TurnoAdmin,
   getTurnos,
   createTurno,
   cancelarTurno,
 } from '../../services/turnoService';
+import { type ObraSocial, getObrasSociales } from '../../services/obraSocialService';
 
 export const Administrativo: React.FC = () => {
   const usuario = getUsuarioActual();
 
   // PESTAÑA ACTIVA
   const [tabActiva, setTabActiva] = useState<
-    'especialidades' | 'especialistas' | 'afiliados' | 'turnos'
+    'especialidades' | 'especialistas' | 'pacientes' | 'turnos'
   >('especialidades');
-  
+
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+
+  // ESTADO PARA MODAL / CARTEL INTEGRADO
+  const [modalAlerta, setModalAlerta] = useState<{
+    show: boolean;
+    titulo: string;
+    mensaje: string;
+    tipo: 'error' | 'success' | 'confirm';
+    onConfirm?: () => void;
+  }>({ show: false, titulo: '', mensaje: '', tipo: 'error' });
+
+  // ESTADOS DE OBRAS SOCIALES
+  const [obrasSociales, setObrasSociales] = useState<ObraSocial[]>([]);
+  const [obrasSocialesSel, setObrasSocialesSel] = useState<number[]>([]);
+  const [editObrasSocialesSel, setEditObrasSocialesSel] = useState<number[]>([]);
 
   // ESTADOS DE ESPECIALIDADES
   const [especialidades, setEspecialidades] = useState<Especialidad[]>([]);
@@ -63,7 +78,7 @@ export const Administrativo: React.FC = () => {
   const [estadoEspecialista, setEstadoEspecialista] = useState(true);
   const [consultaParticularEspecialista, setConsultaParticularEspecialista] = useState<number | ''>(0);
   const [codEspecialidadSel, setCodEspecialidadSel] = useState<number | ''>('');
-  
+
   const [editEspecialistaId, setEditEspecialistaId] = useState<number | null>(null);
   const [editDniEspecialista, setEditDniEspecialista] = useState('');
   const [editNombreEspecialista, setEditNombreEspecialista] = useState('');
@@ -74,68 +89,97 @@ export const Administrativo: React.FC = () => {
   const [editEstadoEspecialista, setEditEstadoEspecialista] = useState(true);
   const [editConsultaParticularEspecialista, setEditConsultaParticularEspecialista] = useState<number | ''>(0);
   const [editCodEspecialidadSel, setEditCodEspecialidadSel] = useState<number | ''>('');
+
   const [mostrarBusquedaEspecialista, setMostrarBusquedaEspecialista] = useState(false);
   const [busquedaDniEspecialista, setBusquedaDniEspecialista] = useState('');
 
-  // ESTADOS DE AFILIADOS / PACIENTES
-  const [afiliados, setAfiliados] = useState<Afiliado[]>([]);
-  const [nombreAfiliado, setNombreAfiliado] = useState('');
-  const [dniAfiliado, setDniAfiliado] = useState('');
-  const [emailAfiliado, setEmailAfiliado] = useState('');
-  const [telefonoAfiliado, setTelefonoAfiliado] = useState('');
-  const [direccionAfiliado, setDireccionAfiliado] = useState('');
-  const [contrasenaAfiliado, setContrasenaAfiliado] = useState('');
+  // ESTADOS DE PACIENTES
+  const [pacientes, setPacientes] = useState<Paciente[]>([]);
+  const [nombrePaciente, setNombrePaciente] = useState('');
+  const [dniPaciente, setDniPaciente] = useState('');
+  const [emailPaciente, setEmailPaciente] = useState('');
+  const [telefonoPaciente, setTelefonoPaciente] = useState('');
+  const [direccionPaciente, setDireccionPaciente] = useState('');
+  const [contrasenaPaciente, setContrasenaPaciente] = useState('');
+  const [osPacienteSel, setOsPacienteSel] = useState<number | ''>('');
 
-  const [editAfiliadoId, setEditAfiliadoId] = useState<number | null>(null);
-  const [editNombreAfiliado, setEditNombreAfiliado] = useState('');
-  const [editDniAfiliado, setEditDniAfiliado] = useState('');
-  const [editEmailAfiliado, setEditEmailAfiliado] = useState('');
-  const [editTelefonoAfiliado, setEditTelefonoAfiliado] = useState('');
-  const [editDireccionAfiliado, setEditDireccionAfiliado] = useState('');
-  const [editContrasenaAfiliado, setEditContrasenaAfiliado] = useState('');
+  const [editPacienteId, setEditPacienteId] = useState<number | null>(null);
+  const [editNombrePaciente, setEditNombrePaciente] = useState('');
+  const [editDniPaciente, setEditDniPaciente] = useState('');
+  const [editEmailPaciente, setEditEmailPaciente] = useState('');
+  const [editTelefonoPaciente, setEditTelefonoPaciente] = useState('');
+  const [editDireccionPaciente, setEditDireccionPaciente] = useState('');
+  const [editContrasenaPaciente, setEditContrasenaPaciente] = useState('');
+  const [editOsPacienteSel, setEditOsPacienteSel] = useState<number | ''>('');
+
   const [mostrarBusquedaPaciente, setMostrarBusquedaPaciente] = useState(false);
   const [busquedaDniPaciente, setBusquedaDniPaciente] = useState('');
 
   // ESTADOS DE TURNOS
   const [turnos, setTurnos] = useState<TurnoAdmin[]>([]);
-  const [espEspecialidadSel, setEspEspecialidadSel] = useState<number | ''>(''); // 1. Especialidad
-  const [espTurnoSel, setEspTurnoSel] = useState<number | ''>('');                 // 2. Médico
-  const [afilTurnoSel, setAfilTurnoSel] = useState<number | ''>('');             // 3. Paciente
-  const [fechaTurno, setFechaTurno] = useState('');                               // 4. Fecha
-  const [horaTurno, setHoraTurno] = useState('');                                 // 5. Hora seleccionada
+  const [espEspecialidadSel, setEspEspecialidadSel] = useState<number | ''>('');
+  const [espTurnoSel, setEspTurnoSel] = useState<number | ''>('');
+  const [pacTurnoSel, setPacTurnoSel] = useState<number | ''>('');
+  const [fechaTurno, setFechaTurno] = useState('');
+  const [horaTurno, setHoraTurno] = useState('');
 
-  // Franjas horarias base
-  const horariosBase = [
-    '08:00', '08:30', '09:00', '09:30', '10:00', '10:30', 
-    '11:00', '11:30', '12:00', '12:30', '13:00', '13:30', 
-    '14:00', '14:30', '15:00', '15:30', '16:00', '16:30'
-  ];
+  // Duración en minutos de la especialidad seleccionada para turnos
+  const especialidadTurnoObj = especialidades.find(
+    (esp) => Number(esp.cod_especialidad) === Number(espEspecialidadSel)
+  );
+  const duracionMinutosTurno = especialidadTurnoObj?.duracion_minutos || 30;
+
+  // Generación dinámica de franjas horarias según los minutos de la especialidad
+  const obtenerHorariosDinamicos = (duracion: number) => {
+    const horarios = [];
+    let minActual = 8 * 60; // 08:00 hrs
+    const minFin = 17 * 60; // 17:00 hrs
+    while (minActual < minFin) {
+      const h = Math.floor(minActual / 60);
+      const m = minActual % 60;
+      horarios.push(`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`);
+      minActual += duracion;
+    }
+    return horarios;
+  };
+
+  const horariosDinamicos = obtenerHorariosDinamicos(duracionMinutosTurno);
 
   // Filtrar médicos según la especialidad elegida
   const especialistasFiltrados = especialistas.filter((esp: any) => {
-    if (!espEspecialidadSel) return true;
+    if (!espEspecialidadSel) return false;
     const codEsp = esp.cod_especialidad || esp.codEspecialidad || esp.especialidad?.cod_especialidad;
     return Number(codEsp) === Number(espEspecialidadSel);
   });
 
   const normalizarDni = (dni: unknown) => String(dni ?? '').replace(/\D/g, '');
+
   const especialistasFiltradosPorDni = especialistas.filter((esp) =>
-    normalizarDni(esp.dni).includes(normalizarDni(busquedaDniEspecialista)),
-  );
-  const afiliadosFiltradosPorDni = afiliados.filter((afiliado) =>
-    normalizarDni(afiliado.dni).includes(normalizarDni(busquedaDniPaciente)),
+    normalizarDni(esp.dni).includes(normalizarDni(busquedaDniEspecialista))
   );
 
-  // FILTRAR HORARIOS: Oculta por completo los que ya están ocupados
-  const horariosDisponibles = horariosBase.filter((hora) => {
+  const pacientesFiltradosPorDni = pacientes.filter((paciente) =>
+    normalizarDni(paciente.dni).includes(normalizarDni(busquedaDniPaciente))
+  );
+
+  // FILTRAR HORARIOS: Oculta por completo los que ya están ocupados por turnos activos
+  const horariosDisponibles = horariosDinamicos.filter((hora) => {
     if (!espTurnoSel || !fechaTurno) return true;
     const yaOcupado = turnos.some((t: any) => {
       const medCod = Number(t.cod_especialista || t.especialista?.cod_especialista);
       const tFecha = t.fecha;
       const tHora = (t.hora_inicio || t.horaInicio || '').substring(0, 5);
+      const estadoTurno = (t.estado || '').toUpperCase();
+      if (estadoTurno === 'CANCELADO') return false; 
       return medCod === Number(espTurnoSel) && tFecha === fechaTurno && tHora === hora;
     });
     return !yaOcupado;
+  });
+
+  // Filtrar turnos activos para la tabla (excluyendo los cancelados)
+  const turnosActivos = turnos.filter((t: any) => {
+    const estado = (t.estado || '').toUpperCase();
+    return estado !== 'CANCELADO';
   });
 
   // CARGA INICIAL DE DATOS DESDE LA API
@@ -143,16 +187,18 @@ export const Administrativo: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      const [espData, espListData, afilData, turnosData] = await Promise.all([
+      const [espData, espListData, pacData, turnosData, osData] = await Promise.all([
         getEspecialidades().catch(() => []),
         getEspecialistas().catch(() => []),
-        getAfiliados().catch(() => []),
+        getPacientes().catch(() => []),
         getTurnos().catch(() => []),
+        getObrasSociales().catch(() => []),
       ]);
       setEspecialidades(espData);
       setEspecialistas(espListData);
-      setAfiliados(afilData);
+      setPacientes(pacData);
       setTurnos(turnosData);
+      setObrasSociales(osData);
     } catch (err: any) {
       setError(err.message || 'Error al conectar con el servidor backend');
     } finally {
@@ -168,74 +214,68 @@ export const Administrativo: React.FC = () => {
     return <Navigate to="/login" replace />;
   }
 
-  // HANDLERS DE ESPECIALIDADES
-  const handleCrearEspecialidad = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const duracionMinutos = Number(duracionEspecialidad);
-    if (!nombreEspecialidad.trim() || !Number.isInteger(duracionMinutos) || duracionMinutos <= 0) {
-      alert('Ingresá un nombre y una duración válida en minutos.');
-      return;
+  // VALIDACIÓN DETALLADA DE CAMPOS DE ESPECIALISTA
+  const validarCamposEspecialista = (data: {
+    dni: string;
+    nombre: string;
+    matricula: string;
+    email: string;
+    telefono: string;
+    contrasena?: string;
+    consulta_particular: number | '';
+    cod_especialidad: number | '';
+    esEdicion?: boolean;
+  }) => {
+    if (!data.dni.trim()) return 'El campo DNI es obligatorio.';
+    if (!/^\d+$/.test(data.dni.trim())) return 'El DNI debe contener únicamente números.';
+    if (!data.nombre.trim()) return 'El campo Nombre Completo es obligatorio.';
+    if (!data.matricula.trim()) return 'El campo Matrícula es obligatorio.';
+    if (!data.telefono.trim()) return 'El campo Teléfono es obligatorio.';
+    if (!/^\d+$/.test(data.telefono.trim())) return 'El teléfono debe contener únicamente números.';
+    if (data.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email.trim())) {
+      return 'El campo Email no tiene un formato válido (ej: medico@consultorio.com).';
     }
-    try {
-      await createEspecialidad({
-        nombre: nombreEspecialidad.trim(),
-        duracion_minutos: duracionMinutos,
-        estado: estadoEspecialidad,
-      });
-      setNombreEspecialidad('');
-      setDuracionEspecialidad('30');
-      setEstadoEspecialidad(true);
-      cargarDatos();
-    } catch (err: any) {
-      alert(err.message || 'Error al crear especialidad');
+    if (!data.esEdicion && (!data.contrasena || data.contrasena.trim().length < 4)) {
+      return 'El campo Contraseña es obligatorio y debe tener al menos 4 caracteres.';
     }
-  };
-
-  const handleStartEditarEspecialidad = (esp: Especialidad) => {
-    setEditEspecialidadId(esp.cod_especialidad!);
-    setEditNombreEspecialidad(esp.nombre);
-    setEditEstadoEspecialidad(esp.estado ?? true);
-  };
-
-  const handleGuardarEditarEspecialidad = async (cod: number) => {
-    if (!editNombreEspecialidad.trim()) return;
-    try {
-      await updateEspecialidad(cod, {
-        nombre: editNombreEspecialidad.trim(),
-        estado: editEstadoEspecialidad,
-      });
-      setEditEspecialidadId(null);
-      cargarDatos();
-    } catch (err: any) {
-      alert(err.message || 'Error al actualizar especialidad');
+    if (data.contrasena && data.contrasena.trim() && data.contrasena.trim().length < 4) {
+      return 'La nueva contraseña debe tener al menos 4 caracteres.';
     }
-  };
-
-  const handleEliminarEspecialidad = async (cod: number) => {
-    if (!confirm('¿Estás seguro de eliminar esta especialidad?')) return;
-    try {
-      await deleteEspecialidad(cod);
-      cargarDatos();
-    } catch (err: any) {
-      alert(err.message || 'Error al eliminar especialidad');
+    if (data.consulta_particular === '' || isNaN(Number(data.consulta_particular)) || Number(data.consulta_particular) < 0) {
+      return 'El Precio de consulta particular ingresado no es válido.';
     }
+    if (!data.cod_especialidad) {
+      return 'Debe seleccionar una Especialidad para el especialista.';
+    }
+    return null;
   };
 
   // HANDLERS DE ESPECIALISTAS
   const handleCrearEspecialista = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isSubmitting) return;
-    if (
-      !dniEspecialista.trim() ||
-      !nombreEspecialista.trim() ||
-      !matriculaEspecialista.trim() ||
-      !contrasenaEspecialista.trim() ||
-      consultaParticularEspecialista === '' ||
-      consultaParticularEspecialista < 0
-    ) {
-      alert('DNI, nombre, matrícula y contraseña son requeridos.');
+
+    const errorValidacion = validarCamposEspecialista({
+      dni: dniEspecialista,
+      nombre: nombreEspecialista,
+      matricula: matriculaEspecialista,
+      email: emailEspecialista,
+      telefono: telefonoEspecialista,
+      contrasena: contrasenaEspecialista,
+      consulta_particular: consultaParticularEspecialista,
+      cod_especialidad: codEspecialidadSel,
+    });
+
+    if (errorValidacion) {
+      setModalAlerta({
+        show: true,
+        titulo: 'Dato incorrecto o faltante',
+        mensaje: errorValidacion,
+        tipo: 'error',
+      });
       return;
     }
+
     try {
       setIsSubmitting(true);
       await createEspecialista({
@@ -245,12 +285,14 @@ export const Administrativo: React.FC = () => {
         telefono: telefonoEspecialista.trim(),
         email: emailEspecialista.trim() || undefined,
         contrasena: contrasenaEspecialista.trim(),
-        cod_especialidad: codEspecialidadSel === '' ? undefined : Number(codEspecialidadSel),
+        cod_especialidad: Number(codEspecialidadSel),
         estado: estadoEspecialista,
         consulta_particular: Number(consultaParticularEspecialista),
+        obras_sociales: obrasSocialesSel,
       });
-      setNombreEspecialista('');
+
       setDniEspecialista('');
+      setNombreEspecialista('');
       setMatriculaEspecialista('');
       setTelefonoEspecialista('');
       setEmailEspecialista('');
@@ -258,15 +300,28 @@ export const Administrativo: React.FC = () => {
       setEstadoEspecialista(true);
       setConsultaParticularEspecialista(0);
       setCodEspecialidadSel('');
+      setObrasSocialesSel([]);
+
+      setModalAlerta({
+        show: true,
+        titulo: '¡Éxito!',
+        mensaje: 'Especialista registrado correctamente.',
+        tipo: 'success',
+      });
       cargarDatos();
     } catch (err: any) {
-      alert(err.message || 'Error al crear especialista');
+      setModalAlerta({
+        show: true,
+        titulo: 'Error al crear',
+        mensaje: err.message || 'Error al crear especialista',
+        tipo: 'error',
+      });
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleStartEditarEspecialista = (esp: Especialista) => {
+  const handleStartEditarEspecialista = (esp: any) => {
     setEditEspecialistaId(esp.cod_especialista!);
     setEditDniEspecialista(esp.dni || '');
     setEditNombreEspecialista(esp.nombre);
@@ -276,11 +331,37 @@ export const Administrativo: React.FC = () => {
     setEditContrasenaEspecialista('');
     setEditEstadoEspecialista(esp.estado ?? true);
     setEditConsultaParticularEspecialista(esp.consulta_particular ?? 0);
-    setEditCodEspecialidadSel(esp.cod_especialidad || '');
+    const codEsp = esp.cod_especialidad || esp.codEspecialidad ||
+      esp.especialidad?.cod_especialidad || '';
+    setEditCodEspecialidadSel(codEsp);
+
+    const idsOS = esp.obrasSociales ? esp.obrasSociales.map((os: any) => os.cod_os) : [];
+    setEditObrasSocialesSel(idsOS);
   };
 
   const handleGuardarEditarEspecialista = async (cod: number) => {
-    if (!editNombreEspecialista.trim() || !editMatriculaEspecialista.trim()) return;
+    const errorValidacion = validarCamposEspecialista({
+      dni: editDniEspecialista,
+      nombre: editNombreEspecialista,
+      matricula: editMatriculaEspecialista,
+      email: editEmailEspecialista,
+      telefono: editTelefonoEspecialista,
+      contrasena: editContrasenaEspecialista,
+      consulta_particular: editConsultaParticularEspecialista,
+      cod_especialidad: editCodEspecialidadSel,
+      esEdicion: true,
+    });
+
+    if (errorValidacion) {
+      setModalAlerta({
+        show: true,
+        titulo: 'Dato incorrecto o faltante',
+        mensaje: errorValidacion,
+        tipo: 'error',
+      });
+      return;
+    }
+
     try {
       const dataUpdate: any = {
         dni: editDniEspecialista.trim(),
@@ -288,142 +369,286 @@ export const Administrativo: React.FC = () => {
         matricula: editMatriculaEspecialista.trim(),
         telefono: editTelefonoEspecialista.trim(),
         email: editEmailEspecialista.trim() || undefined,
-        cod_especialidad: editCodEspecialidadSel === '' ? undefined : Number(editCodEspecialidadSel),
+        cod_especialidad: Number(editCodEspecialidadSel),
         estado: editEstadoEspecialista,
         consulta_particular: Number(editConsultaParticularEspecialista),
+        obras_sociales: editObrasSocialesSel,
       };
+
       if (editContrasenaEspecialista.trim()) {
         dataUpdate.contrasena = editContrasenaEspecialista.trim();
       }
+
       await updateEspecialista(cod, dataUpdate);
       setEditEspecialistaId(null);
       setEditContrasenaEspecialista('');
+
+      setModalAlerta({
+        show: true,
+        titulo: '¡Actualizado!',
+        mensaje: 'Especialista actualizado correctamente.',
+        tipo: 'success',
+      });
       cargarDatos();
     } catch (err: any) {
-      alert(err.message || 'Error al actualizar especialista');
+      setModalAlerta({
+        show: true,
+        titulo: 'Error',
+        mensaje: err.message || 'Error al actualizar especialista',
+        tipo: 'error',
+      });
     }
   };
 
   const handleEliminarEspecialista = async (cod: number) => {
-    if (!confirm('¿Estás seguro de eliminar este especialista?')) return;
-    try {
-      await deleteEspecialista(cod);
-      cargarDatos();
-    } catch (err: any) {
-      alert(err.message || 'Error al eliminar especialista');
-    }
+    setModalAlerta({
+      show: true,
+      titulo: 'Confirmar eliminación',
+      mensaje: '¿Estás seguro de eliminar este especialista?',
+      tipo: 'confirm',
+      onConfirm: async () => {
+        try {
+          await deleteEspecialista(cod);
+          cargarDatos();
+        } catch (err: any) {
+          setModalAlerta({
+            show: true,
+            titulo: 'Error',
+            mensaje: err.message || 'Error al eliminar especialista',
+            tipo: 'error',
+          });
+        }
+      },
+    });
   };
 
-  // HANDLERS DE AFILIADOS / PACIENTES
-  const handleCrearAfiliado = async (e: React.FormEvent) => {
+  // HANDLERS DE PACIENTES
+  const handleCrearPaciente = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (
-      !nombreAfiliado.trim() ||
-      !dniAfiliado.trim() ||
-      !emailAfiliado.trim() ||
-      !telefonoAfiliado.trim() ||
-      !direccionAfiliado.trim() ||
-      !contrasenaAfiliado.trim()
-    ) {
-      alert('Por favor complete todos los campos requeridos para el paciente.');
+    if (!nombrePaciente.trim()) {
+      setModalAlerta({ show: true, titulo: 'Dato faltante', mensaje: 'El campo Nombre Completo es obligatorio.', tipo: 'error' });
       return;
     }
+    if (!dniPaciente.trim()) {
+      setModalAlerta({ show: true, titulo: 'Dato faltante', mensaje: 'El campo DNI es obligatorio.', tipo: 'error' });
+      return;
+    }
+    if (!/^\d+$/.test(dniPaciente.trim())) {
+      setModalAlerta({ show: true, titulo: 'Dato inválido', mensaje: 'El DNI debe contener únicamente números.', tipo: 'error' });
+      return;
+    }
+    if (!telefonoPaciente.trim()) {
+      setModalAlerta({ show: true, titulo: 'Dato faltante', mensaje: 'El campo Teléfono es obligatorio.', tipo: 'error' });
+      return;
+    }
+    if (!/^\d+$/.test(telefonoPaciente.trim())) {
+      setModalAlerta({ show: true, titulo: 'Dato inválido', mensaje: 'El teléfono debe contener únicamente números.', tipo: 'error' });
+      return;
+    }
+    if (!direccionPaciente.trim()) {
+      setModalAlerta({ show: true, titulo: 'Dato faltante', mensaje: 'El campo Dirección es obligatorio.', tipo: 'error' });
+      return;
+    }
+    if (!emailPaciente.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailPaciente.trim())) {
+      setModalAlerta({ show: true, titulo: 'Dato inválido', mensaje: 'El campo Email no es válido.', tipo: 'error' });
+      return;
+    }
+    if (contrasenaPaciente.trim() && contrasenaPaciente.trim().length < 4) {
+      setModalAlerta({ show: true, titulo: 'Dato inválido', mensaje: 'La contraseña debe tener al menos 4 caracteres.', tipo: 'error' });
+      return;
+    }
+
     try {
-      await createAfiliado({
-        nombre: nombreAfiliado.trim(),
-        dni: dniAfiliado.trim(),
-        email: emailAfiliado.trim(),
-        telefono: telefonoAfiliado.trim(),
-        direccion: direccionAfiliado.trim(),
-        contrasena: contrasenaAfiliado.trim(),
+      await createPaciente({
+        nombre: nombrePaciente.trim(),
+        dni: dniPaciente.trim(),
+        email: emailPaciente.trim(),
+        telefono: telefonoPaciente.trim(),
+        direccion: direccionPaciente.trim(),
+        contrasena: contrasenaPaciente.trim() || undefined,
+        cod_os: osPacienteSel ? Number(osPacienteSel) : null,
       });
-      setNombreAfiliado('');
-      setDniAfiliado('');
-      setEmailAfiliado('');
-      setTelefonoAfiliado('');
-      setDireccionAfiliado('');
-      setContrasenaAfiliado('');
+
+      setNombrePaciente('');
+      setDniPaciente('');
+      setEmailPaciente('');
+      setTelefonoPaciente('');
+      setDireccionPaciente('');
+      setContrasenaPaciente('');
+      setOsPacienteSel('');
       cargarDatos();
     } catch (err: any) {
-      alert(err.message || 'Error al registrar paciente');
+      setModalAlerta({
+        show: true,
+        titulo: 'Error',
+        mensaje: err.message || 'Error al registrar paciente',
+        tipo: 'error',
+      });
     }
   };
 
-  const handleStartEditarAfiliado = (a: any) => {
-    const id = a.nro_afiliado || a.id;
-    setEditAfiliadoId(id);
-    setEditNombreAfiliado(a.nombre || a.nombreCompleto || '');
-    setEditDniAfiliado(a.dni || '');
-    setEditEmailAfiliado(a.email || '');
-    setEditTelefonoAfiliado(a.telefono || '');
-    setEditDireccionAfiliado(a.direccion || '');
-    setEditContrasenaAfiliado('');
+  const handleStartEditarPaciente = (p: any) => {
+    const id = p.nro_afiliado || p.id;
+    setEditPacienteId(id);
+    setEditNombrePaciente(p.nombre || p.nombreCompleto || '');
+    setEditDniPaciente(p.dni || '');
+    setEditEmailPaciente(p.email || '');
+    setEditTelefonoPaciente(p.telefono || '');
+    setEditDireccionPaciente(p.direccion || '');
+    setEditContrasenaPaciente('');
+    setEditOsPacienteSel(p.obraSocial?.cod_os || p.cod_os || '');
   };
 
-  const handleGuardarEditarAfiliado = async (id: number) => {
+  const handleGuardarEditarPaciente = async (id: number) => {
+    if (!editNombrePaciente.trim()) {
+      setModalAlerta({ show: true, titulo: 'Dato faltante', mensaje: 'El campo Nombre Completo es obligatorio.', tipo: 'error' });
+      return;
+    }
+    if (!editDniPaciente.trim()) {
+      setModalAlerta({ show: true, titulo: 'Dato faltante', mensaje: 'El campo DNI es obligatorio.', tipo: 'error' });
+      return;
+    }
+    if (!/^\d+$/.test(editDniPaciente.trim())) {
+      setModalAlerta({ show: true, titulo: 'Dato inválido', mensaje: 'El DNI debe contener únicamente números.', tipo: 'error' });
+      return;
+    }
+    if (!editTelefonoPaciente.trim()) {
+      setModalAlerta({ show: true, titulo: 'Dato faltante', mensaje: 'El campo Teléfono es obligatorio.', tipo: 'error' });
+      return;
+    }
+    if (!/^\d+$/.test(editTelefonoPaciente.trim())) {
+      setModalAlerta({ show: true, titulo: 'Dato inválido', mensaje: 'El teléfono debe contener únicamente números.', tipo: 'error' });
+      return;
+    }
+    if (!editEmailPaciente.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(editEmailPaciente.trim())) {
+      setModalAlerta({ show: true, titulo: 'Dato inválido', mensaje: 'El campo Email no es válido.', tipo: 'error' });
+      return;
+    }
+    if (editContrasenaPaciente.trim() && editContrasenaPaciente.trim().length < 4) {
+      setModalAlerta({ show: true, titulo: 'Dato inválido', mensaje: 'La contraseña debe tener al menos 4 caracteres.', tipo: 'error' });
+      return;
+    }
+
     try {
       const dataUpdate: any = {
-        nombre: editNombreAfiliado.trim(),
-        dni: editDniAfiliado.trim(),
-        email: editEmailAfiliado.trim(),
-        telefono: editTelefonoAfiliado.trim(),
-        direccion: editDireccionAfiliado.trim(),
+        nombre: editNombrePaciente.trim(),
+        dni: editDniPaciente.trim(),
+        email: editEmailPaciente.trim(),
+        telefono: editTelefonoPaciente.trim(),
+        direccion: editDireccionPaciente.trim(),
+        cod_os: editOsPacienteSel ? Number(editOsPacienteSel) : null,
       };
-      if (editContrasenaAfiliado.trim()) {
-        dataUpdate.contrasena = editContrasenaAfiliado.trim();
+
+      if (editContrasenaPaciente.trim()) {
+        dataUpdate.contrasena = editContrasenaPaciente.trim();
       }
-      await updateAfiliado(id, dataUpdate);
-      setEditAfiliadoId(null);
-      setEditContrasenaAfiliado('');
+
+      await updatePaciente(id, dataUpdate);
+      setEditPacienteId(null);
+      setEditContrasenaPaciente('');
+      setEditOsPacienteSel('');
       cargarDatos();
     } catch (err: any) {
-      alert(err.message || 'Error al actualizar paciente');
+      setModalAlerta({
+        show: true,
+        titulo: 'Error',
+        mensaje: err.message || 'Error al actualizar paciente',
+        tipo: 'error',
+      });
     }
   };
 
-  const handleEliminarAfiliado = async (id: number) => {
-    if (!confirm('¿Estás seguro de eliminar a este paciente?')) return;
-    try {
-      await deleteAfiliado(id);
-      cargarDatos();
-    } catch (err: any) {
-      alert(err.message || 'Error al eliminar paciente');
-    }
+  const handleEliminarPaciente = async (id: number) => {
+    setModalAlerta({
+      show: true,
+      titulo: 'Confirmar eliminación',
+      mensaje: '¿Estás seguro de eliminar a este paciente?',
+      tipo: 'confirm',
+      onConfirm: async () => {
+        try {
+          await deletePaciente(id);
+          cargarDatos();
+        } catch (err: any) {
+          setModalAlerta({
+            show: true,
+            titulo: 'Error',
+            mensaje: err.message || 'Error al eliminar paciente',
+            tipo: 'error',
+          });
+        }
+      },
+    });
   };
 
   // HANDLERS DE TURNOS
   const handleAsignarTurno = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!fechaTurno || !horaTurno || !espTurnoSel || !afilTurnoSel) {
-      alert('Por favor complete todos los campos (Especialidad, Médico, Paciente, Fecha y Hora).');
+    if (!espEspecialidadSel) {
+      setModalAlerta({ show: true, titulo: 'Campo incompleto', mensaje: 'Debe seleccionar el campo Especialidad.', tipo: 'error' });
       return;
     }
+    if (!espTurnoSel) {
+      setModalAlerta({ show: true, titulo: 'Campo incompleto', mensaje: 'Debe seleccionar el campo Médico Especialista.', tipo: 'error' });
+      return;
+    }
+    if (!pacTurnoSel) {
+      setModalAlerta({ show: true, titulo: 'Campo incompleto', mensaje: 'Debe seleccionar el campo Paciente.', tipo: 'error' });
+      return;
+    }
+    if (!fechaTurno) {
+      setModalAlerta({ show: true, titulo: 'Campo incompleto', mensaje: 'Debe seleccionar el campo Fecha del Turno.', tipo: 'error' });
+      return;
+    }
+    if (!horaTurno) {
+      setModalAlerta({ show: true, titulo: 'Campo incompleto', mensaje: 'Debe seleccionar el campo Horario Disponible.', tipo: 'error' });
+      return;
+    }
+
     try {
       await createTurno({
         fecha: fechaTurno,
         hora_inicio: horaTurno,
         cod_especialista: Number(espTurnoSel),
-        nro_afiliado: Number(afilTurnoSel),
+        nro_afiliado: Number(pacTurnoSel),
       });
+
       setFechaTurno('');
       setHoraTurno('');
       setEspEspecialidadSel('');
       setEspTurnoSel('');
-      setAfilTurnoSel('');
+      setPacTurnoSel('');
+      setModalAlerta({ show: true, titulo: '¡Éxito!', mensaje: 'Turno asignado correctamente.', tipo: 'success' });
       cargarDatos();
     } catch (err: any) {
-      alert(err.message || 'Error al asignar el turno');
+      setModalAlerta({
+        show: true,
+        titulo: 'Error',
+        mensaje: err.message || 'Error al asignar el turno',
+        tipo: 'error',
+      });
     }
   };
 
   const handleCancelarTurno = async (cod_turno: number) => {
-    if (!confirm('¿Estás seguro de cancelar este turno? El horario quedará libre nuevamente.')) return;
-    try {
-      await cancelarTurno(cod_turno);
-      cargarDatos();
-    } catch (err: any) {
-      alert(err.message || 'Error al cancelar el turno');
-    }
+    setModalAlerta({
+      show: true,
+      titulo: 'Confirmar cancelación',
+      mensaje: '¿Estás seguro de cancelar este turno? El horario quedará libre nuevamente.',
+      tipo: 'confirm',
+      onConfirm: async () => {
+        try {
+          await cancelarTurno(cod_turno);
+          cargarDatos();
+        } catch (err: any) {
+          setModalAlerta({
+            show: true,
+            titulo: 'Error',
+            mensaje: err.message || 'Error al cancelar el turno',
+            tipo: 'error',
+          });
+        }
+      },
+    });
   };
 
   return (
@@ -440,7 +665,6 @@ export const Administrativo: React.FC = () => {
           >
             Panel <span className="texto-degradado">Administrativo</span>
           </h1>
-
         </div>
       </section>
 
@@ -478,11 +702,11 @@ export const Administrativo: React.FC = () => {
               <button
                 type="button"
                 className={`btn rounded-pill px-3 m-1 ${
-                  tabActiva === 'afiliados' ? 'btn-primary' : 'btn-light text-muted'
+                  tabActiva === 'pacientes' ? 'btn-primary' : 'btn-light text-muted'
                 }`}
-                onClick={() => setTabActiva('afiliados')}
+                onClick={() => setTabActiva('pacientes')}
               >
-                <i className="bi bi-people me-1"></i>Pacientes / Afiliados
+                <i className="bi bi-people me-1"></i>Pacientes
               </button>
               <button
                 type="button"
@@ -513,7 +737,57 @@ export const Administrativo: React.FC = () => {
                       <h2 className="h5 fw-bold mb-3">
                         <i className="bi bi-plus-circle text-primary me-2"></i>Nueva Especialidad
                       </h2>
-                      <form onSubmit={handleCrearEspecialidad}>
+                      <form
+                        onSubmit={async (e) => {
+                          e.preventDefault();
+                          const duracionMinutos = Number(duracionEspecialidad);
+                          if (!nombreEspecialidad.trim()) {
+                            setModalAlerta({
+                              show: true,
+                              titulo: 'Campo incompleto',
+                              mensaje: 'El campo "Nombre de la Especialidad" es obligatorio.',
+                              tipo: 'error',
+                            });
+                            return;
+                          }
+                          if (isNaN(duracionMinutos) || duracionMinutos <= 0) {
+                            setModalAlerta({
+                              show: true,
+                              titulo: 'Duración inválida',
+                              mensaje: 'Ingresá una duración válida en minutos.',
+                              tipo: 'error',
+                            });
+                            return;
+                          }
+                          if (duracionMinutos % 5 !== 0) {
+                            setModalAlerta({
+                              show: true,
+                              titulo: 'Duración no permitida',
+                              mensaje: 'La duración en minutos debe ser un múltiplo de 5 (ej: 15, 30, 45).',
+                              tipo: 'error',
+                            });
+                            return;
+                          }
+                          try {
+                            await createEspecialidad({
+                              nombre: nombreEspecialidad.trim(),
+                              duracion_minutos: duracionMinutos,
+                              estado: estadoEspecialidad,
+                            });
+                            setNombreEspecialidad('');
+                            setDuracionEspecialidad('30');
+                            setEstadoEspecialidad(true);
+                            cargarDatos();
+                          } catch (err: any) {
+                            setModalAlerta({
+                              show: true,
+                              titulo: 'Error',
+                              mensaje: err.message || 'Error al crear especialidad',
+                              tipo: 'error',
+                            });
+                          }
+                        }}
+                      >
                         <div className="mb-3">
                           <label className="form-label small fw-bold text-muted">
                             Nombre de la Especialidad
@@ -524,7 +798,6 @@ export const Administrativo: React.FC = () => {
                             placeholder="Ej: Pediatría, Cardiología..."
                             value={nombreEspecialidad}
                             onChange={(e) => setNombreEspecialidad(e.target.value)}
-                            required
                           />
                         </div>
                         <div className="mb-3">
@@ -535,12 +808,11 @@ export const Administrativo: React.FC = () => {
                             type="number"
                             id="duracionEspecialidad"
                             className="form-control"
-                            min="1"
-                            step="1"
+                            step="5"
+                            min="5"
                             placeholder="Ej: 30"
                             value={duracionEspecialidad}
                             onChange={(e) => setDuracionEspecialidad(e.target.value)}
-                            required
                           />
                         </div>
                         <div className="form-check mb-3">
@@ -568,19 +840,13 @@ export const Administrativo: React.FC = () => {
                         <table className="table table-hover align-middle mb-0">
                           <thead className="table-light">
                             <tr>
-                              <th style={{ width: 100 }}>Código</th>
-                              <th>Nombre</th>
+                              <th>Nombre y Duración</th>
                               <th className="text-end" style={{ width: 180 }}>Acciones</th>
                             </tr>
                           </thead>
                           <tbody>
                             {especialidades.map((esp) => (
                               <tr key={esp.cod_especialidad}>
-                                <td>
-                                  <span className="badge bg-light text-dark border">
-                                    {esp.cod_especialidad}
-                                  </span>
-                                </td>
                                 <td>
                                   {editEspecialidadId === esp.cod_especialidad ? (
                                     <>
@@ -604,12 +870,15 @@ export const Administrativo: React.FC = () => {
                                       </div>
                                     </>
                                   ) : (
-                                    <>
+                                    <div>
                                       <span className="fw-semibold">{esp.nombre}</span>
                                       <span className={`badge ms-2 ${esp.estado === false ? 'text-bg-secondary' : 'text-bg-success'}`}>
                                         {esp.estado === false ? 'Inactiva' : 'Activa'}
                                       </span>
-                                    </>
+                                      <small className="text-muted d-block">
+                                        Duración: {esp.duracion_minutos} minutos
+                                      </small>
+                                    </div>
                                   )}
                                 </td>
                                 <td className="text-end">
@@ -618,7 +887,33 @@ export const Administrativo: React.FC = () => {
                                       <button
                                         type="button"
                                         className="btn btn-success"
-                                        onClick={() => handleGuardarEditarEspecialidad(esp.cod_especialidad!)}
+                                        onClick={async () => {
+                                          if (!editNombreEspecialidad.trim()) {
+                                            setModalAlerta({
+                                              show: true,
+                                              titulo: 'Error',
+                                              mensaje: 'El nombre no puede estar vacío.',
+                                              tipo: 'error',
+                                            });
+                                            return;
+                                          }
+                                          try {
+                                            await updateEspecialidad(esp.cod_especialidad!, {
+                                              nombre: editNombreEspecialidad.trim(),
+                                              duracion_minutos: esp.duracion_minutos,
+                                              estado: editEstadoEspecialidad,
+                                            });
+                                            setEditEspecialidadId(null);
+                                            cargarDatos();
+                                          } catch (err: any) {
+                                            setModalAlerta({
+                                              show: true,
+                                              titulo: 'Error',
+                                              mensaje: err.message || 'Error al actualizar especialidad',
+                                              tipo: 'error',
+                                            });
+                                          }
+                                        }}
                                       >
                                         <i className="bi bi-check-lg"></i>
                                       </button>
@@ -635,14 +930,38 @@ export const Administrativo: React.FC = () => {
                                       <button
                                         type="button"
                                         className="btn btn-outline-primary"
-                                        onClick={() => handleStartEditarEspecialidad(esp)}
+                                        onClick={() => {
+                                          setEditEspecialidadId(esp.cod_especialidad!);
+                                          setEditNombreEspecialidad(esp.nombre);
+                                          setEditEstadoEspecialidad(esp.estado ?? true);
+                                        }}
                                       >
                                         <i className="bi bi-pencil"></i>
                                       </button>
                                       <button
                                         type="button"
                                         className="btn btn-outline-danger"
-                                        onClick={() => handleEliminarEspecialidad(esp.cod_especialidad!)}
+                                        onClick={() => {
+                                          setModalAlerta({
+                                            show: true,
+                                            titulo: 'Confirmar eliminación',
+                                            mensaje: '¿Estás seguro de eliminar esta especialidad?',
+                                            tipo: 'confirm',
+                                            onConfirm: async () => {
+                                              try {
+                                                await deleteEspecialidad(esp.cod_especialidad!);
+                                                cargarDatos();
+                                              } catch (err: any) {
+                                                setModalAlerta({
+                                                  show: true,
+                                                  titulo: 'Error',
+                                                  mensaje: err.message || 'Error al eliminar especialidad',
+                                                  tipo: 'error',
+                                                });
+                                              }
+                                            },
+                                          });
+                                        }}
                                       >
                                         <i className="bi bi-trash"></i>
                                       </button>
@@ -653,7 +972,7 @@ export const Administrativo: React.FC = () => {
                             ))}
                             {especialidades.length === 0 && (
                               <tr>
-                                <td colSpan={3} className="text-center text-muted py-4">
+                                <td colSpan={2} className="text-center text-muted py-4">
                                   No hay especialidades registradas.
                                 </td>
                               </tr>
@@ -683,7 +1002,6 @@ export const Administrativo: React.FC = () => {
                             placeholder="Ej: 30123456"
                             value={dniEspecialista}
                             onChange={(e) => setDniEspecialista(e.target.value)}
-                            required
                           />
                         </div>
                         <div className="mb-2">
@@ -694,7 +1012,6 @@ export const Administrativo: React.FC = () => {
                             placeholder="Ej: Dr. Esteban Quito"
                             value={nombreEspecialista}
                             onChange={(e) => setNombreEspecialista(e.target.value)}
-                            required
                           />
                         </div>
                         <div className="mb-2">
@@ -705,7 +1022,6 @@ export const Administrativo: React.FC = () => {
                             placeholder="Ej: MP-30192"
                             value={matriculaEspecialista}
                             onChange={(e) => setMatriculaEspecialista(e.target.value)}
-                            required
                           />
                         </div>
                         <div className="mb-2">
@@ -713,7 +1029,7 @@ export const Administrativo: React.FC = () => {
                           <input
                             type="text"
                             className="form-control"
-                            placeholder="Ej: 341-555-0101"
+                            placeholder="Ej: 3415550101"
                             value={telefonoEspecialista}
                             onChange={(e) => setTelefonoEspecialista(e.target.value)}
                           />
@@ -733,10 +1049,9 @@ export const Administrativo: React.FC = () => {
                           <input
                             type="password"
                             className="form-control"
-                            placeholder="******"
+                            placeholder="***********"
                             value={contrasenaEspecialista}
                             onChange={(e) => setContrasenaEspecialista(e.target.value)}
-                            required
                           />
                         </div>
                         <div className="form-check mb-2">
@@ -765,7 +1080,7 @@ export const Administrativo: React.FC = () => {
                             value={consultaParticularEspecialista}
                             onChange={(e) =>
                               setConsultaParticularEspecialista(
-                                e.target.value === '' ? '' : Number(e.target.value),
+                                e.target.value === '' ? '' : Number(e.target.value)
                               )
                             }
                           />
@@ -789,6 +1104,38 @@ export const Administrativo: React.FC = () => {
                             ))}
                           </select>
                         </div>
+                        {/* OBRAS SOCIALES AL CREAR */}
+                        <div className="mb-3">
+                          <label className="form-label small fw-bold text-muted d-block">
+                            Obras Sociales Aceptadas
+                          </label>
+                          <div className="border rounded p-2 bg-light" style={{ maxHeight: '130px', overflowY: 'auto' }}>
+                            {obrasSociales.length === 0 ? (
+                              <span className="text-muted small">No hay obras sociales disponibles.</span>
+                            ) : (
+                              obrasSociales.map((os) => (
+                                <div key={os.cod_os} className="form-check form-check-inline me-3 mb-1">
+                                  <input
+                                    className="form-check-input"
+                                    type="checkbox"
+                                    id={`os-crear-${os.cod_os}`}
+                                    checked={obrasSocialesSel.includes(os.cod_os)}
+                                    onChange={(e) => {
+                                      if (e.target.checked) {
+                                        setObrasSocialesSel([...obrasSocialesSel, os.cod_os]);
+                                      } else {
+                                        setObrasSocialesSel(obrasSocialesSel.filter((id) => id !== os.cod_os));
+                                      }
+                                    }}
+                                  />
+                                  <label className="form-check-label small" htmlFor={`os-crear-${os.cod_os}`}>
+                                    {os.nombre}
+                                  </label>
+                                </div>
+                              ))
+                            )}
+                          </div>
+                        </div>
                         <button
                           type="submit"
                           className="btn btn-primary w-100"
@@ -802,7 +1149,7 @@ export const Administrativo: React.FC = () => {
                   </div>
                   <div className="col-lg-8">
                     <div className="card border p-4 shadow-sm">
-                      <div className="d-flex justify-content-between align-items-center mb-3 gap-2">
+                      <div className="d-flex justify-content-between align-items-center mb-3">
                         <h2 className="h5 fw-bold mb-0">Especialistas Registrados</h2>
                         <button
                           type="button"
@@ -844,10 +1191,10 @@ export const Administrativo: React.FC = () => {
                             {especialistasFiltradosPorDni.map((esp: any) => {
                               const encontrada = especialidades.find(
                                 (e) =>
-                                  Number(e.cod_especialidad) === Number(esp.cod_especialidad || esp.codEspecialidad)
+                                  Number(e.cod_especialidad) ===
+                                  Number(esp.cod_especialidad || esp.codEspecialidad || esp.especialidad?.cod_especialidad)
                               );
                               const espNombre = encontrada?.nombre || esp.especialidad?.nombre || 'Sin asignar';
-
                               return (
                                 <tr key={esp.cod_especialista}>
                                   <td>
@@ -871,7 +1218,6 @@ export const Administrativo: React.FC = () => {
                                           value={editDniEspecialista}
                                           placeholder="DNI"
                                           onChange={(e) => setEditDniEspecialista(e.target.value)}
-                                          required
                                         />
                                         <input
                                           type="text"
@@ -923,13 +1269,39 @@ export const Administrativo: React.FC = () => {
                                             value={editConsultaParticularEspecialista}
                                             onChange={(e) =>
                                               setEditConsultaParticularEspecialista(
-                                                e.target.value === '' ? '' : Number(e.target.value),
+                                                e.target.value === '' ? '' : Number(e.target.value)
                                               )
                                             }
                                           />
                                           <label className="form-label small text-muted" htmlFor={`particular-especialista-${esp.cod_especialista}`}>
                                             Precio consulta particular
                                           </label>
+                                        </div>
+                                        {/* OBRAS SOCIALES AL EDITAR */}
+                                        <div className="mt-2">
+                                          <label className="form-label small fw-bold text-muted d-block">Obras Sociales</label>
+                                          <div className="border rounded p-1 bg-white" style={{ maxHeight: '100px', overflowY: 'auto' }}>
+                                            {obrasSociales.map((os) => (
+                                              <div key={os.cod_os} className="form-check form-check-inline me-2 mb-1">
+                                                <input
+                                                  className="form-check-input"
+                                                  type="checkbox"
+                                                  id={`os-edit-${esp.cod_especialista}-${os.cod_os}`}
+                                                  checked={editObrasSocialesSel.includes(os.cod_os)}
+                                                  onChange={(e) => {
+                                                    if (e.target.checked) {
+                                                      setEditObrasSocialesSel([...editObrasSocialesSel, os.cod_os]);
+                                                    } else {
+                                                      setEditObrasSocialesSel(editObrasSocialesSel.filter((id) => id !== os.cod_os));
+                                                    }
+                                                  }}
+                                                />
+                                                <label className="form-check-label small" htmlFor={`os-edit-${esp.cod_especialista}-${os.cod_os}`}>
+                                                  {os.nombre}
+                                                </label>
+                                              </div>
+                                            ))}
+                                          </div>
                                         </div>
                                       </>
                                     ) : (
@@ -951,9 +1323,22 @@ export const Administrativo: React.FC = () => {
                                           </small>
                                         )}
                                         <small className="text-muted d-block">
-                                          {esp.estado === false ? 'Inactivo' : 'Activo'} · {Number(esp.consulta_particular ?? 0) > 0
+                                          {esp.estado === false ? 'Inactivo' : 'Activo'}.{' '}
+                                          {Number(esp.consulta_particular ?? 0) > 0
                                             ? `Particular: $${Number(esp.consulta_particular).toFixed(2)}`
                                             : 'Sin consulta particular'}
+                                        </small>
+                                        <small className="text-muted d-block mt-1">
+                                          <i className="bi bi-card-heading me-1"></i>
+                                          {esp.obrasSociales && esp.obrasSociales.length > 0 ? (
+                                            esp.obrasSociales.map((os: any) => (
+                                              <span key={os.cod_os} className="badge bg-secondary-subtle text-secondary border me-1 mb-1">
+                                                {os.nombre}
+                                              </span>
+                                            ))
+                                          ) : (
+                                            <span className="fst-italic">Sin OS adheridas</span>
+                                          )}
                                         </small>
                                       </div>
                                     )}
@@ -1043,24 +1428,23 @@ export const Administrativo: React.FC = () => {
                 </div>
               )}
 
-              {/* TAB 3: AFILIADOS / PACIENTES */}
-              {tabActiva === 'afiliados' && (
+              {/* TAB 3: PACIENTES */}
+              {tabActiva === 'pacientes' && (
                 <div className="row g-4">
                   <div className="col-lg-4">
                     <div className="card border p-4 shadow-sm h-100">
                       <h2 className="h5 fw-bold mb-3">
                         <i className="bi bi-person-plus-fill text-primary me-2"></i>Registrar Paciente
                       </h2>
-                      <form onSubmit={handleCrearAfiliado}>
+                      <form onSubmit={handleCrearPaciente}>
                         <div className="mb-2">
                           <label className="form-label small fw-bold text-muted">Nombre Completo</label>
                           <input
                             type="text"
                             className="form-control"
                             placeholder="Ej: Juan Pérez"
-                            value={nombreAfiliado}
-                            onChange={(e) => setNombreAfiliado(e.target.value)}
-                            required
+                            value={nombrePaciente}
+                            onChange={(e) => setNombrePaciente(e.target.value)}
                           />
                         </div>
                         <div className="mb-2">
@@ -1069,9 +1453,8 @@ export const Administrativo: React.FC = () => {
                             type="text"
                             className="form-control"
                             placeholder="Ej: 38123456"
-                            value={dniAfiliado}
-                            onChange={(e) => setDniAfiliado(e.target.value)}
-                            required
+                            value={dniPaciente}
+                            onChange={(e) => setDniPaciente(e.target.value)}
                           />
                         </div>
                         <div className="mb-2">
@@ -1079,10 +1462,9 @@ export const Administrativo: React.FC = () => {
                           <input
                             type="text"
                             className="form-control"
-                            placeholder="Ej: 341-456789"
-                            value={telefonoAfiliado}
-                            onChange={(e) => setTelefonoAfiliado(e.target.value)}
-                            required
+                            placeholder="Ej: 341456789"
+                            value={telefonoPaciente}
+                            onChange={(e) => setTelefonoPaciente(e.target.value)}
                           />
                         </div>
                         <div className="mb-2">
@@ -1091,9 +1473,8 @@ export const Administrativo: React.FC = () => {
                             type="text"
                             className="form-control"
                             placeholder="Ej: Calle 123"
-                            value={direccionAfiliado}
-                            onChange={(e) => setDireccionAfiliado(e.target.value)}
-                            required
+                            value={direccionPaciente}
+                            onChange={(e) => setDireccionPaciente(e.target.value)}
                           />
                         </div>
                         <div className="mb-2">
@@ -1102,21 +1483,32 @@ export const Administrativo: React.FC = () => {
                             type="email"
                             className="form-control"
                             placeholder="juan@ejemplo.com"
-                            value={emailAfiliado}
-                            onChange={(e) => setEmailAfiliado(e.target.value)}
-                            required
+                            value={emailPaciente}
+                            onChange={(e) => setEmailPaciente(e.target.value)}
                           />
                         </div>
-                        <div className="mb-3">
-                          <label className="form-label small fw-bold text-muted">Contraseña</label>
+                        <div className="mb-2">
+                          <label className="form-label small fw-bold text-muted">Contraseña (Opcional)</label>
                           <input
                             type="password"
                             className="form-control"
-                            placeholder="******"
-                            value={contrasenaAfiliado}
-                            onChange={(e) => setContrasenaAfiliado(e.target.value)}
-                            required
+                            placeholder="********"
+                            value={contrasenaPaciente}
+                            onChange={(e) => setContrasenaPaciente(e.target.value)}
                           />
+                        </div>
+                        <div className="mb-3">
+                          <label className="form-label small fw-bold text-muted">Obra Social</label>
+                          <select
+                            className="form-select"
+                            value={osPacienteSel}
+                            onChange={(e) => setOsPacienteSel(e.target.value ? Number(e.target.value) : '')}
+                          >
+                            <option value="">Sin Obra Social (Particular)</option>
+                            {obrasSociales.map((os) => (
+                              <option key={os.cod_os} value={os.cod_os}>{os.nombre}</option>
+                            ))}
+                          </select>
                         </div>
                         <button type="submit" className="btn btn-primary w-100">
                           <i className="bi bi-check-lg me-1"></i>Guardar Paciente
@@ -1126,7 +1518,7 @@ export const Administrativo: React.FC = () => {
                   </div>
                   <div className="col-lg-8">
                     <div className="card border p-4 shadow-sm">
-                      <div className="d-flex justify-content-between align-items-center mb-3 gap-2">
+                      <div className="d-flex justify-content-between align-items-center mb-3">
                         <h2 className="h5 fw-bold mb-0">Pacientes Registrados</h2>
                         <button
                           type="button"
@@ -1159,108 +1551,128 @@ export const Administrativo: React.FC = () => {
                           <thead className="table-light">
                             <tr>
                               <th>Nombre Completo</th>
-                              <th>DNI</th>
+                              <th>DNI / Obra Social</th>
                               <th>Contacto / Dirección</th>
                               <th className="text-end" style={{ width: 120 }}>Acciones</th>
                             </tr>
                           </thead>
                           <tbody>
-                            {afiliadosFiltradosPorDni.map((a: any) => {
-                              const id = a.nro_afiliado || a.id;
+                            {pacientesFiltradosPorDni.map((p: any) => {
+                              const id = p.nro_afiliado || p.id;
+                              const osNombre = p.obraSocial?.nombre || obrasSociales.find((os) => os.cod_os === p.cod_os)?.nombre;
                               return (
                                 <tr key={id}>
                                   <td>
-                                    {editAfiliadoId === id ? (
+                                    {editPacienteId === id ? (
                                       <input
                                         type="text"
-                                        className="form-control form-control-sm"
-                                        value={editNombreAfiliado}
-                                        onChange={(e) => setEditNombreAfiliado(e.target.value)}
+                                        className="form-control form-control-sm mb-1"
+                                        value={editNombrePaciente}
+                                        onChange={(e) => setEditNombrePaciente(e.target.value)}
+                                        placeholder="Nombre"
                                       />
                                     ) : (
                                       <span className="fw-semibold">
-                                        {a.nombre || a.nombreCompleto}
+                                        {p.nombre || p.nombreCompleto}
                                       </span>
                                     )}
                                   </td>
                                   <td>
-                                    {editAfiliadoId === id ? (
-                                      <input
-                                        type="text"
-                                        className="form-control form-control-sm"
-                                        value={editDniAfiliado}
-                                        onChange={(e) => setEditDniAfiliado(e.target.value)}
-                                      />
+                                    {editPacienteId === id ? (
+                                      <>
+                                        <input
+                                          type="text"
+                                          className="form-control form-control-sm mb-1"
+                                          value={editDniPaciente}
+                                          onChange={(e) => setEditDniPaciente(e.target.value)}
+                                          placeholder="DNI"
+                                        />
+                                        <select
+                                          className="form-select form-select-sm mt-1"
+                                          value={editOsPacienteSel}
+                                          onChange={(e) => setEditOsPacienteSel(e.target.value ? Number(e.target.value) : '')}
+                                        >
+                                          <option value="">Sin Obra Social</option>
+                                          {obrasSociales.map((os) => (
+                                            <option key={os.cod_os} value={os.cod_os}>{os.nombre}</option>
+                                          ))}
+                                        </select>
+                                      </>
                                     ) : (
-                                      <span className="badge bg-light text-dark border">
-                                        {a.dni}
-                                      </span>
+                                      <div>
+                                        <span className="badge bg-light text-dark border">
+                                          DNI: {p.dni}
+                                        </span>
+                                        <small className="text-muted d-block mt-1">
+                                          {osNombre ? `OS: ${osNombre}` : 'Particular / Sin OS'}
+                                        </small>
+                                      </div>
                                     )}
                                   </td>
                                   <td>
-                                    {editAfiliadoId === id ? (
+                                    {editPacienteId === id ? (
                                       <>
                                         <input
                                           type="email"
                                           className="form-control form-control-sm mb-1"
                                           placeholder="Email"
-                                          value={editEmailAfiliado}
-                                          onChange={(e) => setEditEmailAfiliado(e.target.value)}
+                                          value={editEmailPaciente}
+                                          onChange={(e) => setEditEmailPaciente(e.target.value)}
                                         />
                                         <input
                                           type="text"
                                           className="form-control form-control-sm mb-1"
                                           placeholder="Teléfono"
-                                          value={editTelefonoAfiliado}
-                                          onChange={(e) => setEditTelefonoAfiliado(e.target.value)}
+                                          value={editTelefonoPaciente}
+                                          onChange={(e) => setEditTelefonoPaciente(e.target.value)}
                                         />
                                         <input
                                           type="text"
                                           className="form-control form-control-sm mb-1"
                                           placeholder="Dirección"
-                                          value={editDireccionAfiliado}
-                                          onChange={(e) => setEditDireccionAfiliado(e.target.value)}
+                                          value={editDireccionPaciente}
+                                          onChange={(e) => setEditDireccionPaciente(e.target.value)}
                                         />
                                         <input
                                           type="password"
                                           className="form-control form-control-sm"
                                           placeholder="Nueva clave (opcional)"
-                                          value={editContrasenaAfiliado}
-                                          onChange={(e) => setEditContrasenaAfiliado(e.target.value)}
+                                          value={editContrasenaPaciente}
+                                          onChange={(e) => setEditContrasenaPaciente(e.target.value)}
                                         />
                                       </>
                                     ) : (
                                       <div>
                                         <small className="text-muted d-block">
-                                          {a.email}
+                                          {p.email}
                                         </small>
-                                        {a.telefono && (
+                                        {p.telefono && (
                                           <small className="text-muted d-block">
-                                            <i className="bi bi-telephone me-1"></i>{a.telefono}
+                                            <i className="bi bi-telephone me-1"></i>{p.telefono}
                                           </small>
                                         )}
-                                        {a.direccion && (
+                                        {p.direccion && (
                                           <small className="text-muted d-block">
-                                            <i className="bi bi-geo-alt me-1"></i>{a.direccion}
+                                            <i className="bi bi-geo-alt me-1"></i>{p.direccion}
                                           </small>
                                         )}
                                       </div>
                                     )}
                                   </td>
                                   <td className="text-end">
-                                    {editAfiliadoId === id ? (
+                                    {editPacienteId === id ? (
                                       <div className="btn-group btn-group-sm">
                                         <button
                                           type="button"
                                           className="btn btn-success"
-                                          onClick={() => handleGuardarEditarAfiliado(id)}
+                                          onClick={() => handleGuardarEditarPaciente(id)}
                                         >
                                           <i className="bi bi-check-lg"></i>
                                         </button>
                                         <button
                                           type="button"
                                           className="btn btn-outline-secondary"
-                                          onClick={() => setEditAfiliadoId(null)}
+                                          onClick={() => setEditPacienteId(null)}
                                         >
                                           <i className="bi bi-x-lg"></i>
                                         </button>
@@ -1270,14 +1682,14 @@ export const Administrativo: React.FC = () => {
                                         <button
                                           type="button"
                                           className="btn btn-outline-primary"
-                                          onClick={() => handleStartEditarAfiliado(a)}
+                                          onClick={() => handleStartEditarPaciente(p)}
                                         >
                                           <i className="bi bi-pencil"></i>
                                         </button>
                                         <button
                                           type="button"
                                           className="btn btn-outline-danger"
-                                          onClick={() => handleEliminarAfiliado(id)}
+                                          onClick={() => handleEliminarPaciente(id)}
                                         >
                                           <i className="bi bi-trash"></i>
                                         </button>
@@ -1287,10 +1699,10 @@ export const Administrativo: React.FC = () => {
                                 </tr>
                               );
                             })}
-                            {afiliadosFiltradosPorDni.length === 0 && (
+                            {pacientesFiltradosPorDni.length === 0 && (
                               <tr>
                                 <td colSpan={4} className="text-center text-muted py-4">
-                                  {afiliados.length === 0
+                                  {pacientes.length === 0
                                     ? 'No hay pacientes registrados.'
                                     : 'No se encontraron pacientes con ese DNI.'}
                                 </td>
@@ -1304,13 +1716,13 @@ export const Administrativo: React.FC = () => {
                 </div>
               )}
 
-              {/* TAB 4: TURNOS CON FLUJO EN CASCADA Y VALIDACIONES DE CALENDARIO */}
+              {/* TAB 4: TURNOS */}
               {tabActiva === 'turnos' && (
                 <div className="row g-4">
                   <div className="col-lg-5">
                     <div className="card border p-4 shadow-sm h-100">
                       <h2 className="h5 fw-bold mb-3">
-                        <i className="bi bi-calendar-plus text-primary me-2"></i>Otorgar Turno Manual
+                        <i className="bi bi-calendar-plus text-primary me-2"></i>Otorgar Turno
                       </h2>
                       <form onSubmit={handleAsignarTurno}>
                         {/* 1. Especialidad */}
@@ -1325,7 +1737,6 @@ export const Administrativo: React.FC = () => {
                               setFechaTurno('');
                               setHoraTurno('');
                             }}
-                            required
                           >
                             <option value="">Seleccione una especialidad</option>
                             {especialidades.map((esp) => (
@@ -1348,7 +1759,6 @@ export const Administrativo: React.FC = () => {
                               setHoraTurno('');
                             }}
                             disabled={!espEspecialidadSel}
-                            required
                           >
                             <option value="">Seleccione un profesional</option>
                             {especialistasFiltrados.map((esp: any) => (
@@ -1361,28 +1771,27 @@ export const Administrativo: React.FC = () => {
 
                         {/* 3. Paciente */}
                         <div className="mb-2">
-                          <label className="form-label small fw-bold text-muted">3. Paciente / Afiliado</label>
+                          <label className="form-label small fw-bold text-muted">3. Paciente</label>
                           <select
                             className="form-select"
-                            value={afilTurnoSel}
-                            onChange={(e) => setAfilTurnoSel(e.target.value ? Number(e.target.value) : '')}
-                            required
+                            value={pacTurnoSel}
+                            onChange={(e) => setPacTurnoSel(e.target.value ? Number(e.target.value) : '')}
                           >
                             <option value="">Seleccione un paciente</option>
-                            {afiliados.map((a: any) => {
-                              const afilId = a.nro_afiliado || a.id;
+                            {pacientes.map((p: any) => {
+                              const pacienteId = p.nro_afiliado || p.id;
                               return (
-                                <option key={afilId} value={afilId}>
-                                  {a.nombre || a.nombreCompleto} (DNI: {a.dni})
+                                <option key={pacienteId} value={pacienteId}>
+                                  {p.nombre || p.nombreCompleto} (DNI: {p.dni})
                                 </option>
                               );
                             })}
                           </select>
                         </div>
 
-                        {/* 4. Fecha del Turno (Validación de Fin de Semana, Feriados y Agenda Llena) */}
+                        {/* 4. Fecha del Turno (Bloqueando fines de semana) */}
                         <div className="mb-2">
-                          <label className="form-label small fw-bold text-muted">4. Fecha del Turno (Lun a Vie)</label>
+                          <label className="form-label small fw-bold text-muted">4. Fecha del Turno</label>
                           <input
                             type="date"
                             className="form-control"
@@ -1391,55 +1800,29 @@ export const Administrativo: React.FC = () => {
                             onChange={(e) => {
                               const fechaVal = e.target.value;
                               if (fechaVal) {
-                                // 1. Validar Fin de Semana (0 = Domingo, 6 = Sábado)
-                                const diaSemana = new Date(fechaVal + 'T00:00:00').getDay();
+                                const [yyyy, mm, dd] = fechaVal.split('-').map(Number);
+                                const diaSemana = new Date(yyyy, mm - 1, dd).getDay();
+                                // 0 = Domingo, 6 = Sábado
                                 if (diaSemana === 0 || diaSemana === 6) {
-                                  alert('Los fines de semana no se atienden turnos. Por favor seleccione un día hábil (Lunes a Viernes).');
-                                  setFechaTurno('');
-                                  setHoraTurno('');
-                                  return;
-                                }
-
-                                // 2. Validar Feriados
-                                const feriadosAnio = [
-                                  '2026-05-25',
-                                  '2026-07-09',
-                                  '2026-12-25',
-                                ];
-                                if (feriadosAnio.includes(fechaVal)) {
-                                  alert('La fecha seleccionada es un día feriado. No hay atención disponible.');
-                                  setFechaTurno('');
-                                  setHoraTurno('');
-                                  return;
-                                }
-
-                                // 3. Validar si el médico ya tiene todos los horarios ocupados en esa fecha
-                                const ocupadosEnFecha = horariosBase.filter((h) => {
-                                  return turnos.some((t: any) => {
-                                    const medCod = Number(t.cod_especialista || t.especialista?.cod_especialista);
-                                    const tFecha = t.fecha;
-                                    const tHora = (t.hora_inicio || t.horaInicio || '').substring(0, 5);
-                                    return medCod === Number(espTurnoSel) && tFecha === fechaVal && tHora === h;
+                                  setModalAlerta({
+                                    show: true,
+                                    titulo: 'Día no hábil',
+                                    mensaje: 'Los fines de semana (sábados y domingos) no se atienden turnos. Por favor seleccione un día hábil.',
+                                    tipo: 'error',
                                   });
-                                });
-
-                                if (ocupadosEnFecha.length === horariosBase.length) {
-                                  alert('El médico seleccionado ya tiene todos los horarios ocupados para esta fecha. Por favor elija otro día.');
                                   setFechaTurno('');
                                   setHoraTurno('');
                                   return;
                                 }
                               }
-
                               setFechaTurno(fechaVal);
                               setHoraTurno('');
                             }}
                             disabled={!espTurnoSel}
-                            required
                           />
                         </div>
 
-                        {/* 5. Grilla Horaria (Oculta los turnos ya ocupados) */}
+                        {/* 5. Grilla Horaria */}
                         <div className="mb-3">
                           <label className="form-label small fw-bold text-muted">5. Horarios Disponibles</label>
                           {!espTurnoSel || !fechaTurno ? (
@@ -1451,7 +1834,10 @@ export const Administrativo: React.FC = () => {
                               No hay horarios disponibles para esta fecha.
                             </div>
                           ) : (
-                            <div className="d-flex flex-wrap gap-1 p-2 bg-light rounded border" style={{ maxHeight: '160px', overflowY: 'auto' }}>
+                            <div
+                              className="d-flex flex-wrap gap-1 p-2 bg-light rounded border"
+                              style={{ maxHeight: '160px', overflowY: 'auto' }}
+                            >
                               {horariosDisponibles.map((hora) => (
                                 <button
                                   key={hora}
@@ -1496,18 +1882,16 @@ export const Administrativo: React.FC = () => {
                             </tr>
                           </thead>
                           <tbody>
-                            {turnos.map((t: any) => {
+                            {turnosActivos.map((t: any) => {
                               const espObj = especialistas.find(
                                 (e) => Number(e.cod_especialista) === Number(t.cod_especialista || t.especialista?.cod_especialista)
                               );
-                              const nroAfilBuscado = t.nro_afiliado || t.paciente?.nro_afiliado || t.paciente?.id;
-                              const afilObj = afiliados.find((a: any) => Number(nroAfilBuscado) === Number(a.nro_afiliado || a.id));
-
+                              const nroPacBuscado = t.nro_afiliado || t.paciente?.nro_afiliado || t.paciente?.id;
+                              const pacObj = pacientes.find((p: any) => Number(nroPacBuscado) === Number(p.nro_afiliado || p.id));
                               const nombreEspecialista = espObj?.nombre || t.especialista?.nombre || 'Profesional';
-                              const nombrePaciente = afilObj?.nombre || afilObj?.nombreCompleto || t.paciente?.nombre || t.paciente?.nombreCompleto || 'Paciente';
-                              const dniPaciente = afilObj?.dni || t.paciente?.dni;
+                              const nombrePaciente = pacObj?.nombre || pacObj?.nombreCompleto || t.paciente?.nombre || t.paciente?.nombreCompleto || 'Paciente';
+                              const dniPaciente = pacObj?.dni || t.paciente?.dni;
                               const turnoId = t.cod_turno || t.id;
-
                               return (
                                 <tr key={turnoId}>
                                   <td>
@@ -1547,10 +1931,10 @@ export const Administrativo: React.FC = () => {
                                 </tr>
                               );
                             })}
-                            {turnos.length === 0 && (
+                            {turnosActivos.length === 0 && (
                               <tr>
                                 <td colSpan={5} className="text-center text-muted py-4">
-                                  No hay turnos registrados en el sistema.
+                                  No hay turnos activos registrados en el sistema.
                                 </td>
                               </tr>
                             )}
@@ -1565,6 +1949,57 @@ export const Administrativo: React.FC = () => {
           )}
         </div>
       </section>
+
+      {/* MODAL/CARTEL INTEGRADO DE ALERTAS Y CONFIRMACIONES */}
+      {modalAlerta.show && (
+        <div className="modal show d-block" tabIndex={-1} style={{ backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1050 }}>
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content border-0 shadow-lg rounded-4">
+              <div className={`modal-header border-0 pb-0 ${modalAlerta.tipo === 'error' ? 'text-danger' : modalAlerta.tipo === 'success' ? 'text-success' : 'text-primary'}`}>
+                <h5 className="modal-title fw-bold">
+                  <i className={`bi ${modalAlerta.tipo === 'error' ? 'bi-exclamation-triangle-fill' : modalAlerta.tipo === 'success' ? 'bi-check-circle-fill' : 'bi-question-circle-fill'} me-2`}></i>
+                  {modalAlerta.titulo}
+                </h5>
+                <button type="button" className="btn-close" onClick={() => setModalAlerta({ ...modalAlerta, show: false })}></button>
+              </div>
+              <div className="modal-body py-4 text-center">
+                <p className="mb-0 text-secondary fs-6">{modalAlerta.mensaje}</p>
+              </div>
+              <div className="modal-footer border-0 pt-0 justify-content-center pb-4">
+                {modalAlerta.tipo === 'confirm' ? (
+                  <>
+                    <button
+                      type="button"
+                      className="btn btn-outline-secondary rounded-pill px-4"
+                      onClick={() => setModalAlerta({ ...modalAlerta, show: false })}
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-danger rounded-pill px-4"
+                      onClick={() => {
+                        if (modalAlerta.onConfirm) modalAlerta.onConfirm();
+                        setModalAlerta({ ...modalAlerta, show: false });
+                      }}
+                    >
+                      Aceptar
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    type="button"
+                    className="btn btn-primary rounded-pill px-5"
+                    onClick={() => setModalAlerta({ ...modalAlerta, show: false })}
+                  >
+                    Entendido
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </PublicLayout>
   );
 };
