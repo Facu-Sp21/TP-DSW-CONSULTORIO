@@ -50,7 +50,8 @@ export function getUsuarioActual(): UsuarioLogueado | null {
 }
 
 export function isAuthenticated(): boolean {
-  return !!getToken();
+  const token = getToken();
+  return !!token && tokenVigente(token);
 }
 
 // Devuelve a qué ruta debería ir cada rol después de loguearse
@@ -63,5 +64,15 @@ export function rutaSegunRol(rol: Rol): string {
     case 'paciente':
     default:
       return '/usuario';
+  }
+}
+
+function tokenVigente(token: string): boolean {
+  try {
+    const base64 = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+    const payload = JSON.parse(atob(base64 + '='.repeat((4 - (base64.length % 4)) % 4)));
+    return typeof payload.exp !== 'number' || payload.exp * 1000 > Date.now();
+  } catch {
+    return false; // token mal formado
   }
 }
