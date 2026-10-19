@@ -1,4 +1,4 @@
-export type EstadoTurno = 'PENDIENTE' | 'CONFIRMADO' | 'CANCELADO';
+export type EstadoTurno = 'PENDIENTE' | 'CONFIRMADO' | 'CANCELADO' | 'ATENDIDO' | 'AUSENTE';
 
 /** Fecha de hoy como 'YYYY-MM-DD' */
 export function fechaDeHoy(ahora = new Date()): string {
@@ -8,8 +8,8 @@ export function fechaDeHoy(ahora = new Date()): string {
 }
 
 export function motivoQueImpideCerrar(estado: EstadoTurno, fecha: string, hoy = fechaDeHoy()): string | undefined {
-  if (estado !== 'PENDIENTE') {
-    return 'Este turno ya fue confirmado o cancelado';
+  if (estado !== 'PENDIENTE' && estado !== 'CONFIRMADO') {
+    return 'Este turno ya fue cancelado, atendido o marcado como ausente';
   }
   if (fecha > hoy) {
     return 'No se puede atender un turno de una fecha futura';
