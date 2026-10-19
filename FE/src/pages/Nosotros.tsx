@@ -1,8 +1,18 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { PublicLayout } from '../components/PublicLayout';
+import { useEffect, useState } from 'react';
+import { getEspecialistasQueTeAcompanian, type Especialista } from '../../services/especialistaService.ts';
 
 export const Nosotros: React.FC = () => {
+  const [especialistas, setEspecialistas] = useState<Especialista[]>([]);
+
+useEffect(() => {
+  getEspecialistasQueTeAcompanian()
+    .then(setEspecialistas)
+    .catch(console.error);
+}, []);
+
   return (
     <PublicLayout activo="/nosotros">
       {/* HEADER */}
@@ -166,6 +176,7 @@ export const Nosotros: React.FC = () => {
       {/* EQUIPO */}
       <section className="fondo-punteado py-5 py-md-6">
         <div className="container">
+
           <div className="text-center mx-auto mb-5" style={{ maxWidth: '640px' }}>
             <span className="etiqueta-superior rounded-pill mb-3">Nuestro equipo</span>
             <h2 className="fw-bold mb-2">Profesionales que te acompañan</h2>
@@ -173,7 +184,7 @@ export const Nosotros: React.FC = () => {
           </div>
 
           <div className="row g-4 row-cols-1 row-cols-md-2 row-cols-lg-4 text-center">
-            <div className="col">
+           {/* <div className="col">
               <div className="card border-0 shadow-sm h-100 p-4 tarjeta-interactiva">
                 <div className="card-body p-0">
                   <div className="avatar-iniciales mb-3">CL</div>
@@ -215,9 +226,37 @@ export const Nosotros: React.FC = () => {
                   <p className="text-muted small mb-0">A cargo de la gestión de turnos y la atención al paciente.</p>
                 </div>
               </div>
+            </div>*/}
+         
+              {especialistas.map((especialista) => (
+              <div className="col" key={especialista.cod_especialista}>
+                <div className="card border-0 shadow-sm h-100 p-4 tarjeta-interactiva">
+                  <div className="card-body p-0">
+                    <div className="avatar-iniciales mb-3">
+                      {(() => {
+                         return especialista.nombre.trim().split(/\s+/).map((palabra) => palabra[0]).join('').toUpperCase();
+                      })()}
+
+                    </div>
+
+                    <h4 className="h6 fw-bold mb-1">
+                      {especialista.nombre}
+                    </h4>
+
+                    <div
+                      className="small fw-semibold mb-2"
+                      style={{ color: 'var(--color-primario-oscuro)' }}
+                    >
+                      {especialista.cod_especialidad}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
             </div>
           </div>
-        </div>
+          
+          
       </section>
 
       {/* CTA FINAL */}

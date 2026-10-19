@@ -73,3 +73,19 @@ export const confirmacionTurno = (
       body: JSON.stringify(data),
     },
   )};
+
+  export interface TurnoDelCorreo {
+  cod_turno: number;
+  fecha: string;
+  hora_inicio: string;
+  estado: string;
+  especialista: {
+    nombre: string;
+  };
+}
+
+export const getTurnoDelCorreo = (token: string) => {
+  return apiFetch<TurnoDelCorreo>(
+    `/turno/confirmar-asistencia?token=${encodeURIComponent(token)}`,
+  );
+};

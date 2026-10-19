@@ -1,12 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import {confirmacionTurno} from '../../services/turnoService';
+import {confirmacionTurno, getTurnoDelCorreo, type TurnoDelCorreo} from '../../services/turnoService';
 
-const turnoPrueba = {
-  fecha: '18/10/2026',
-  hora: '10:00',
-  especialista: 'Dra. Especialista de prueba'
-};
 
 export  function ConfirmarAsistencia() {
   const [respuesta, setRespuesta] = useState<'confirmado' | 'cancelado' | null>(null);
@@ -14,6 +9,33 @@ export  function ConfirmarAsistencia() {
   const token = searchParams.get('token');
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [turno, setTurno] = useState<TurnoDelCorreo | null>(null);
+  const [cargandoTurno, setCargandoTurno] = useState(true);
+
+  useEffect(() => {
+  async function cargarTurno() {
+    if (!token) {
+      setError('El enlace para gestionar el turno es inválido.');
+      setCargandoTurno(false);
+      return;
+    }
+
+    try {
+      const datos = await getTurnoDelCorreo(token);
+      setTurno(datos);
+    } catch (error) {
+      setError(
+        error instanceof Error
+          ? error.message
+          : 'No se pudo cargar el turno.',
+      );
+    } finally {
+      setCargandoTurno(false);
+    }
+  }
+
+  cargarTurno();
+}, [token]);
 
 async function responder(accion: 'confirmar' | 'cancelar') {
   if (!token) {
@@ -78,7 +100,7 @@ setRespuesta(
                     <i className="bi bi-calendar3 text-primary fs-5" />
                     <div>
                       <small className="text-secondary d-block">Fecha</small>
-                      <strong>{turnoPrueba.fecha}</strong>
+                      <strong>{turno?.fecha ?? 'Cargando...'}</strong>
                     </div>
                   </div>
 
@@ -86,7 +108,7 @@ setRespuesta(
                     <i className="bi bi-clock text-primary fs-5" />
                     <div>
                       <small className="text-secondary d-block">Hora</small>
-                      <strong>{turnoPrueba.hora}</strong>
+                      <strong>{turno?.hora_inicio ?? 'Cargando...'}</strong>
                     </div>
                   </div>
 
@@ -94,7 +116,7 @@ setRespuesta(
                     <i className="bi bi-person-badge text-primary fs-5" />
                     <div>
                       <small className="text-secondary d-block">Especialista</small>
-                      <strong>{turnoPrueba.especialista}</strong>
+                      <strong>{turno?.especialista.nombre ?? 'Cargando...'}</strong>
                     </div>
                   </div>
                 </div>
@@ -104,7 +126,7 @@ setRespuesta(
                     type="button"
                     className="btn btn-primary flex-fill py-3"
                     onClick={() => responder('confirmar')}
-                    disabled={cargando || respuesta !== null}
+                    disabled={cargando || cargandoTurno || respuesta !== null || !turno}
                   >
                     <i className="bi bi-check-circle me-2" />
                     Confirmar asistencia
@@ -114,7 +136,7 @@ setRespuesta(
                     type="button"
                     className="btn btn-outline-danger flex-fill py-3"
                     onClick={() => responder('cancelar')}
-                    disabled={cargando || respuesta !== null}
+                    disabled={cargando || cargandoTurno || respuesta !== null || !turno}
                   >
                     <i className="bi bi-x-circle me-2" />
                     Cancelar turno
