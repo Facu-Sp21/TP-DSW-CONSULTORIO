@@ -29,8 +29,8 @@ function obtenerFechaDeManiana(): string {
 
 export function iniciarRecordatoriosTurnos() {
   cron.schedule(
-    '* * * * *',
-   // '41 10 * * *',  //se ejecuta todos los dias a las 10:41 am 
+  
+  '41 10 * * *',  //se ejecuta todos los dias a las 10:41 am 
     async () => {
       try {
       

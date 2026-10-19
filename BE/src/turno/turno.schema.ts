@@ -85,3 +85,7 @@ export const confirmarAsistenciaBodySchema = z.object({
 
   accion: z.enum(['confirmar', 'cancelar']),
 });
+
+export const turnoDelCorreoQuerySchema = z.object({
+  token: z.string().trim().min(1, 'El token es obligatorio'),
+});

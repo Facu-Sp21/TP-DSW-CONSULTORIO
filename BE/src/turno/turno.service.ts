@@ -223,6 +223,20 @@ export async function sConfirmarTurno(token:string, accion:'confirmar'|'cancelar
   return turno;
 }
 
+//para mostrar el turno en confirmacióno de asistencia tengo que validar el token primero
+export async function sGetTurnoDelCorreo(
+  token: string,
+): Promise<Turno> {
+  const payload = verifyTokenGestionTurno(token);
+
+  const turno = await sGetTurnoById(payload.cod_turno);
+
+  if (!turno) {
+    throw new BadRequestError('El turno ya no existe');
+  }
+
+  return turno;
+}
 
 export async function sAtenderTurno(
   cod_turno: number,

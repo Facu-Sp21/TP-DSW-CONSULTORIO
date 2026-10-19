@@ -42,7 +42,7 @@ app.use('/suscripcion', suscripcionRoutes);
 app.use('/administrativo', administrativoRoutes);
 app.use('/auth', authRoutes);
 
-iniciarRecordatoriosTurnos(); // Inicia la tarea de recordatorios de turnos para pacientes
+//iniciarRecordatoriosTurnos(); // Inicia la tarea de recordatorios de turnos para pacientes
 
 app.get('/openapi.json', (_req, res) => {
     res.json(openApiDocument);

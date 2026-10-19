@@ -9,15 +9,17 @@ import {
   cAtenderTurno,
   cMarcarAusente,
   cConfirmarTurno,
+  cGetTurnoDelCorreo,
 } from './turno.controller.js';
 import { validate } from '../shared/schemaValidator.js';
-import { confirmarAsistenciaBodySchema, disponibilidadQuerySchema, turnoBodySchema, turnoParamsSchema, turnoQuerySchema } from './turno.schema.js';
+import { confirmarAsistenciaBodySchema, disponibilidadQuerySchema, turnoBodySchema, turnoDelCorreoQuerySchema, turnoParamsSchema, turnoQuerySchema } from './turno.schema.js';
 import { atenderTurnoBodySchema } from '../historiaClinica/historiaClinica.schema.js';
 
 const turnoRouter = Router();
 
 turnoRouter.get('/', validate({ query: turnoQuerySchema }), cGetTurnos); // con este endpoint podemos filtrar por paciente, especialista y/o fecha
 turnoRouter.get('/disponibles', validate({ query: disponibilidadQuerySchema }), cGetHorariosDisponibles); // para mostrar grilla de turnos en el front
+turnoRouter.get('/confirmar-asistencia',validate({ query: turnoDelCorreoQuerySchema }),cGetTurnoDelCorreo,);
 turnoRouter.get('/:cod_turno', validate({ params: turnoParamsSchema }), cGetTurnoById);
 turnoRouter.post('/', validate({ body: turnoBodySchema }), cCreateTurno);
 turnoRouter.put('/:cod_turno',validate({ body: turnoBodySchema, params: turnoParamsSchema }),cUpdateTurno,);
