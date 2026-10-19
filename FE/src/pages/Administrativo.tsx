@@ -50,6 +50,7 @@ export const Administrativo: React.FC = () => {
   const [estadoEspecialidad, setEstadoEspecialidad] = useState(true);
   const [editEspecialidadId, setEditEspecialidadId] = useState<number | null>(null);
   const [editNombreEspecialidad, setEditNombreEspecialidad] = useState('');
+  const [editDuracionEspecialidad, setEditDuracionEspecialidad] = useState('');
   const [editEstadoEspecialidad, setEditEstadoEspecialidad] = useState(true);
 
   // ESTADOS DE ESPECIALISTAS
@@ -194,14 +195,20 @@ export const Administrativo: React.FC = () => {
   const handleStartEditarEspecialidad = (esp: Especialidad) => {
     setEditEspecialidadId(esp.cod_especialidad!);
     setEditNombreEspecialidad(esp.nombre);
+    setEditDuracionEspecialidad(String(esp.duracion_minutos ?? 30));
     setEditEstadoEspecialidad(esp.estado ?? true);
   };
 
   const handleGuardarEditarEspecialidad = async (cod: number) => {
-    if (!editNombreEspecialidad.trim()) return;
+    const duracionMinutos = Number(editDuracionEspecialidad);
+    if (!editNombreEspecialidad.trim() || !Number.isInteger(duracionMinutos) || duracionMinutos <= 0) {
+      alert('Ingresá un nombre y una duración válida en minutos.');
+      return;
+    }
     try {
       await updateEspecialidad(cod, {
         nombre: editNombreEspecialidad.trim(),
+        duracion_minutos: duracionMinutos,
         estado: editEstadoEspecialidad,
       });
       setEditEspecialidadId(null);
@@ -570,6 +577,7 @@ export const Administrativo: React.FC = () => {
                             <tr>
                               <th style={{ width: 100 }}>Código</th>
                               <th>Nombre</th>
+                              <th style={{ width: 160 }}>Minutos por turno</th>
                               <th className="text-end" style={{ width: 180 }}>Acciones</th>
                             </tr>
                           </thead>
@@ -610,6 +618,22 @@ export const Administrativo: React.FC = () => {
                                         {esp.estado === false ? 'Inactiva' : 'Activa'}
                                       </span>
                                     </>
+                                  )}
+                                </td>
+                                <td>
+                                  {editEspecialidadId === esp.cod_especialidad ? (
+                                    <input
+                                      type="number"
+                                      className="form-control form-control-sm"
+                                      min="1"
+                                      step="1"
+                                      aria-label={`Minutos por turno para ${editNombreEspecialidad}`}
+                                      value={editDuracionEspecialidad}
+                                      onChange={(e) => setEditDuracionEspecialidad(e.target.value)}
+                                      required
+                                    />
+                                  ) : (
+                                    <span>{esp.duracion_minutos ?? '—'} min</span>
                                   )}
                                 </td>
                                 <td className="text-end">
@@ -1533,7 +1557,7 @@ export const Administrativo: React.FC = () => {
                                     </span>
                                   </td>
                                   <td className="text-end">
-                                    {turnoId && (
+                                    {turnoId && t.estado !== 'CANCELADO' && (
                                       <button
                                         type="button"
                                         className="btn btn-sm btn-outline-danger"

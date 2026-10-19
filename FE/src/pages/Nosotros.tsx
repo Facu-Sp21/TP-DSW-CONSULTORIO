@@ -229,7 +229,7 @@ export const Nosotros: React.FC = () => {
               Reservá tu turno online en minutos y sumate a la comunidad de pacientes que ya confían en nosotros.
             </p>
             <div className="d-flex gap-3 justify-content-center flex-wrap">
-              <Link to="/turnos" className="btn btn-primary btn-lg px-4">Agendar Turno Online</Link>
+              <Link to="/sacar-turno" className="btn btn-primary btn-lg px-4">Agendar Turno Online</Link>
               <Link to="/contacto" className="btn btn-outline-light btn-lg px-4">Contactar al equipo</Link>
             </div>
           </div>

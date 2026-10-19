@@ -31,12 +31,23 @@ export interface TurnoAdmin {
   };
 }
 
+export interface HorariosDisponibles {
+  fecha: string;
+  horarios: string[];
+}
+
 export const getTurnos = () => {
   return apiFetch<TurnoAdmin[]>('/turno');
 };
 
 export const getTurnosPaciente = (nroAfiliado: number) => {
   return apiFetch<TurnoAdmin[]>(`/turno?nro_afiliado=${nroAfiliado}`);
+};
+
+export const getHorariosDisponibles = (cod_especialista: number, fecha: string) => {
+  return apiFetch<HorariosDisponibles>(
+    `/turno/disponibles?cod_especialista=${cod_especialista}&fecha=${fecha}`,
+  );
 };
 
 export const createTurno = (data: CreateTurnoPayload) => {

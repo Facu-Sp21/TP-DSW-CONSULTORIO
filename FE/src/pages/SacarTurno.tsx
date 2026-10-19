@@ -7,7 +7,7 @@ import { getEspecialistasByEspecialidad } from '../../services/especialistaServi
 import type { Especialista } from '../../services/especialistaService';
 import { isAuthenticated } from '../../services/authService';
 import { getUsuarioActual } from '../../services/authService';
-import { createTurno } from '../../services/turnoService';
+import { createTurno, getHorariosDisponibles } from '../../services/turnoService';
 
 export const SacarTurno: React.FC = () => {
   const navigate = useNavigate();
@@ -20,6 +20,9 @@ export const SacarTurno: React.FC = () => {
   const [fecha, setFecha] = useState('');
   const [hora, setHora] = useState('');
   const [loading, setLoading] = useState(false);
+  const [loadingHorarios, setLoadingHorarios] = useState(false);
+  const [horariosDisponibles, setHorariosDisponibles] = useState<string[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -44,6 +47,28 @@ export const SacarTurno: React.FC = () => {
     .finally(() => setLoading(false));
   }, [especialidad]);
 
+  useEffect(() => {
+    if (!especialista?.cod_especialista || !fecha) return;
+
+    let cancelled = false;
+    getHorariosDisponibles(especialista.cod_especialista, fecha)
+      .then((disponibilidad) => {
+        if (!cancelled) setHorariosDisponibles(disponibilidad.horarios);
+      })
+      .catch((err: unknown) => {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : 'No se pudieron cargar los horarios disponibles.');
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingHorarios(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [especialista, fecha]);
+
   const { calendarDays, maxDate } = useMemo(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -58,8 +83,10 @@ export const SacarTurno: React.FC = () => {
   const finish = (event: React.FormEvent) => {
     event.preventDefault();
     const usuario = getUsuarioActual();
-    if (!usuario || !especialista?.cod_especialista) return;
+    if (!usuario || !especialista?.cod_especialista || !horariosDisponibles.includes(hora)) return;
 
+    setIsSubmitting(true);
+    setError(null);
     createTurno({
       fecha,
       hora_inicio: hora,
@@ -67,7 +94,8 @@ export const SacarTurno: React.FC = () => {
       nro_afiliado: usuario.id,
     })
       .then(() => navigate('/usuario', { state: { bookingSuccess: true } }))
-      .catch((err) => setError(err instanceof Error ? err.message : 'No se pudo confirmar el turno.'));
+      .catch((err) => setError(err instanceof Error ? err.message : 'No se pudo confirmar el turno.'))
+      .finally(() => setIsSubmitting(false));
   };
 
   return (
@@ -114,7 +142,7 @@ export const SacarTurno: React.FC = () => {
                 <div className="row g-3">
                   {especialistas.map((item) => (
                     <div className="col-md-6" key={item.cod_especialista}>
-                      <button className={`selection-card text-start w-100 ${especialista?.cod_especialista === item.cod_especialista ? 'selected' : ''}`} onClick={() => setEspecialista(item)} onDoubleClick={() => { setEspecialista(item); setStep(3); }}>
+                      <button className={`selection-card text-start w-100 ${especialista?.cod_especialista === item.cod_especialista ? 'selected' : ''}`} onClick={() => { setEspecialista(item); setHora(''); setHorariosDisponibles([]); setLoadingHorarios(Boolean(fecha)); setError(null); }} onDoubleClick={() => { setEspecialista(item); setHora(''); setHorariosDisponibles([]); setLoadingHorarios(Boolean(fecha)); setError(null); setStep(3); }}>
                         <i className="bi bi-person-badge fs-4" /><span><strong className="d-block">{item.nombre}</strong><small className="text-muted">{item.matricula}</small></span>
                         {especialista?.cod_especialista === item.cod_especialista && <i className="bi bi-check-circle-fill ms-auto" />}
                       </button>
@@ -138,14 +166,45 @@ export const SacarTurno: React.FC = () => {
                     const value = new Date(`${day}T12:00:00`);
                     const today = new Date(); today.setHours(0, 0, 0, 0);
                     const disabled = !calendarDay.isCurrentMonth || value < today || value > maxDate || value.getDay() === 0 || value.getDay() === 6;
-                    return <button type="button" className={`calendar-day ${!calendarDay.isCurrentMonth ? 'adjacent-month' : ''} ${fecha === day ? 'selected' : ''}`} disabled={disabled} key={day} onClick={() => setFecha(day)}>{value.getDate()}</button>;
+                    return <button type="button" className={`calendar-day ${!calendarDay.isCurrentMonth ? 'adjacent-month' : ''} ${fecha === day ? 'selected' : ''}`} disabled={disabled} key={day} onClick={() => { setFecha(day); setHora(''); setHorariosDisponibles([]); setLoadingHorarios(Boolean(especialista?.cod_especialista)); setError(null); }}>{value.getDate()}</button>;
                   })}
                 </div>
               </div>
-              <label className="form-label fw-semibold" htmlFor="hora"><i className="bi bi-clock me-2 text-primary" />Horario</label>
-              <select className="form-select" id="hora" value={hora} onChange={(e) => setHora(e.target.value)} required><option value="">Seleccionar horario</option>{Array.from({ length: 37 }, (_, index) => { const minutes = 9 * 60 + index * 15; return `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`; }).map((item) => <option key={item} value={item}>{item} hs</option>)}</select>
+              <label className="form-label fw-semibold"><i className="bi bi-clock me-2 text-primary" />Horarios disponibles</label>
+              {!fecha ? (
+                <div className="text-muted small fst-italic p-2 bg-light rounded border">
+                  Seleccioná un día hábil para ver los horarios.
+                </div>
+              ) : loadingHorarios ? (
+                <div className="text-muted small fst-italic p-2 bg-light rounded border">
+                  Cargando horarios disponibles...
+                </div>
+              ) : horariosDisponibles.length === 0 ? (
+                <div className="text-muted small fst-italic p-2 bg-light rounded border">
+                  No hay horarios disponibles para esta fecha.
+                </div>
+              ) : (
+                <div className="d-flex flex-wrap gap-2 p-2 bg-light rounded border">
+                  {horariosDisponibles.map((item) => (
+                    <button
+                      key={item}
+                      type="button"
+                      className={`btn btn-sm ${hora === item ? 'btn-primary shadow-sm' : 'btn-outline-primary'}`}
+                      onClick={() => { setHora(item); setError(null); }}
+                      style={{ minWidth: '65px' }}
+                    >
+                      {item}
+                    </button>
+                  ))}
+                </div>
+              )}
+              {hora && (
+                <div className="text-success small fw-semibold mt-1">
+                  <i className="bi bi-check-circle-fill me-1" />Horario seleccionado: {hora}
+                </div>
+              )}
               <div className="alert alert-light border mt-4"><strong>{especialidad?.nombre}</strong> con {especialista?.nombre}</div>
-              <div className="d-flex justify-content-between mt-4"><button type="button" className="btn btn-outline-secondary" onClick={() => setStep(2)}>Atrás</button><button className="btn btn-primary" type="submit">Confirmar turno <i className="bi bi-check-lg ms-2" /></button></div>
+              <div className="d-flex justify-content-between mt-4"><button type="button" className="btn btn-outline-secondary" onClick={() => setStep(2)}>Atrás</button><button className="btn btn-primary" type="submit" disabled={!hora || !horariosDisponibles.includes(hora) || isSubmitting}>{isSubmitting ? 'Confirmando...' : 'Confirmar turno'} <i className="bi bi-check-lg ms-2" /></button></div>
             </form>
           )}
         </section>
