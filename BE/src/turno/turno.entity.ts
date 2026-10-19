@@ -17,7 +17,7 @@ export class Turno {
   @Property({ nullable: false, type: 'time' })
   hora_inicio!: string;
   
-  // PENDIENTE al crearse; pasa a CONFIRMADO por correo o a CANCELADO por el usuario/admin
+  // PENDIENTE al crearse; CONFIRMADO por correo; ATENDIDO/AUSENTE al finalizar la consulta.
   @Property({ length: 10, nullable: false, type: 'string', default: 'PENDIENTE' })
   estado: EstadoTurno & Opt = 'PENDIENTE';
 

@@ -6,6 +6,7 @@ import { alreadyExistsError, BadRequestError } from '../shared/errorsModel.js';
 import { chocaEnMinutos, generarSlots, horaAMinutos } from './turno.availability.js';
 import { esTurnoValido } from './turno.calendar.js';
 import { motivoQueImpideCerrar } from './turno.estado.js'; 
+import { HistoriaClinica } from '../historiaClinica/historiaClinica.entity.js';
 
 // Actualizamos el Input para usar fecha y hora separadas
 type TurnoInput = {
@@ -161,7 +162,7 @@ export async function sUpdateTurno(
   const turno = await orm.em.findOne(Turno, { cod_turno });
   if (!turno) return null;
   if (turno.estado !== 'PENDIENTE') {
-    throw new BadRequestError('No se puede modificar un turno que ya fue atendido o marcado como ausente');
+    throw new BadRequestError('No se puede modificar un turno que ya fue confirmado, cancelado, atendido o marcado como ausente');
   }
 
   const duracion = input.especialista.especialidad?.duracion_minutos ?? 0;
@@ -196,14 +197,14 @@ export async function sDeleteTurno(cod_turno: number): Promise<boolean> {
   if (turno.estado === 'CANCELADO') {
     throw new BadRequestError('El turno ya está cancelado');
   }
+  if (turno.estado === 'ATENDIDO' || turno.estado === 'AUSENTE') {
+    throw new BadRequestError('No se puede cancelar un turno atendido o marcado como ausente');
+  }
   turno.estado = 'CANCELADO';
   await orm.em.flush();
   return true;
 }
 
-/**
- * La confirmación automática se implementará cuando se integre el envío de correo.
- */
 export async function sAtenderTurno(
   cod_turno: number,
   datos: { diagnostico: string; indicaciones?: string },
@@ -214,10 +215,28 @@ export async function sAtenderTurno(
   const motivo = motivoQueImpideCerrar(turno.estado, turno.fecha);
   if (motivo) throw new BadRequestError(motivo);
 
-  throw new BadRequestError('La confirmación del turno se realizará mediante correo electrónico');
+  turno.estado = 'ATENDIDO';
+  orm.em.create(HistoriaClinica, {
+    paciente: turno.paciente,
+    especialista: turno.especialista,
+    turno,
+    diagnostico: datos.diagnostico,
+    indicaciones: datos.indicaciones || undefined,
+  });
+
+  await orm.em.flush();
+  return turno;
 }
 
-/** La ausencia ya no modifica el estado: el turno solo puede cancelarse. */
+/** El paciente no se presentó a la consulta. */
 export async function sMarcarAusente(cod_turno: number): Promise<Turno | null> {
-  return sGetTurnoById(cod_turno);
+  const turno = await orm.em.findOne(Turno, { cod_turno });
+  if (!turno) return null;
+
+  const motivo = motivoQueImpideCerrar(turno.estado, turno.fecha);
+  if (motivo) throw new BadRequestError(motivo);
+
+  turno.estado = 'AUSENTE';
+  await orm.em.flush();
+  return turno;
 }
