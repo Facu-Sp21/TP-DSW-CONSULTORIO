@@ -1,40 +1,62 @@
 import { apiFetch } from './api';
 
-export interface Paciente {
-  nro_afiliado?: number;
-  dni: string;
+export interface RegistrarPacienteDTO {
   nombre: string;
+  dni: string;
+  email: string;
   telefono: string;
   direccion: string;
-  email: string;
-  contrasena: string;
+  contrasena?: string;
   cod_os?: number | null;
 }
 
-export const getPacientes = () => {
-  return apiFetch<Paciente[]>('/paciente');
-};
+export interface PacienteResponse {
+  nro_afiliado?: number;
+  id?: number;
+  nombre: string;
+  nombreCompleto?: string;
+  dni: string;
+  email: string;
+  telefono: string;
+  direccion: string;
+  cod_os?: number | null;
+  obraSocial?: {
+    cod_os: number;
+    nombre: string;
+  };
+}
 
-export const getPacienteById = (nro_afiliado: number) => {
-  return apiFetch<Paciente>(`/paciente/${nro_afiliado}`);
-};
+export type Paciente = PacienteResponse;
 
-export const createPaciente = (data: Paciente) => {
-  return apiFetch<Paciente>('/paciente', {
+export const createPaciente = (data: RegistrarPacienteDTO) => {
+  return apiFetch<PacienteResponse>('/paciente', {
     method: 'POST',
     body: JSON.stringify(data),
   });
 };
 
-export const updatePaciente = (nro_afiliado: number, data: Partial<Paciente>) => {
-  return apiFetch<Paciente>(`/paciente/${nro_afiliado}`, {
+export const getPacientes = async () => {
+  const data = await apiFetch<any[]>('/paciente');
+  return data.map((p) => ({
+    ...p,
+    id: p.nro_afiliado,
+    nombreCompleto: p.nombre,
+  })) as PacienteResponse[];
+};
+
+export const getPacienteById = (id: number) => {
+  return apiFetch<PacienteResponse>(`/paciente/${id}`);
+};
+
+export const updatePaciente = (id: number, data: Partial<RegistrarPacienteDTO>) => {
+  return apiFetch<PacienteResponse>(`/paciente/${id}`, {
     method: 'PUT',
     body: JSON.stringify(data),
   });
 };
 
-export const deletePaciente = (nro_afiliado: number) => {
-  return apiFetch<void>(`/paciente/${nro_afiliado}`, {
+export const deletePaciente = (id: number) => {
+  return apiFetch<void>(`/paciente/${id}`, {
     method: 'DELETE',
   });
 };

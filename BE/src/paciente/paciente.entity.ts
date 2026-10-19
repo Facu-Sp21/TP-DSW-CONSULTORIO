@@ -22,8 +22,8 @@ export class Paciente {
   @Property({ length: 120, nullable: false, type: 'string', unique: true })
   email!: string;
 
-  @Property({ length: 100, nullable: false, type: 'string' })
-  contrasena!: string;
+  @Property({ length: 100, nullable: true, type: 'string' })
+  contrasena?: string & Opt;
 
   @ManyToOne('ObraSocial', { fieldName: 'cod_os', nullable: true })
   obraSocial?: ObraSocial | null;
