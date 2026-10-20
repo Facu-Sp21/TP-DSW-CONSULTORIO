@@ -1,4 +1,5 @@
-import 'dotenv/config';
+import dotenv from 'dotenv';
+dotenv.config({path: '.env.desarrollo'});
 import 'reflect-metadata';
 import { orm, syncSchema } from './src/shared/db/orm.js';
 import express from 'express';
@@ -31,9 +32,8 @@ app.use((req, res, next) => {
 
 app.use('/especialidad', especialidadRoutes);
 app.use('/especialista', especialistaRoutes);
-//app.use('/afiliado', afiliadoRoutes);
 app.use('/obra-social', obraSocialRoutes);
-//app.use('/turno', turnoRoutes);
+
 
 app.use('/paciente', pacienteRoutes);
 app.use('/turno', turnoRoutes);
@@ -42,7 +42,7 @@ app.use('/suscripcion', suscripcionRoutes);
 app.use('/administrativo', administrativoRoutes);
 app.use('/auth', authRoutes);
 
-//iniciarRecordatoriosTurnos(); // Inicia la tarea de recordatorios de turnos para pacientes
+iniciarRecordatoriosTurnos(); // Inicia la tarea de recordatorios de turnos para pacientes
 
 app.get('/openapi.json', (_req, res) => {
     res.json(openApiDocument);
