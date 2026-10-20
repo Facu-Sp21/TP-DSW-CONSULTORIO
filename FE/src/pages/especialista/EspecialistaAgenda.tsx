@@ -1,12 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { EspecialistaNav } from '../../components/EspecialistaNav';
-import { formatearFecha, hoyISO, sumarDias } from '../../../services/fechas';
+import { SelectorFecha } from '../../components/SelectorFecha';
+import { ConfirmarModal } from '../../components/ConfirmarModal';
+import { getUsuarioActual } from '../../../services/authService';
+import { formatearFecha, hoyISO } from '../../../services/fechas';
 import { getAgenda, marcarAusente } from '../../../services/agendaService';
 import type { EstadoTurno, TurnoAgenda } from '../../../services/agendaService';
 
-
-const COD_ESPECIALISTA_PRUEBA = 26;
+// Si el nombre ya trae el título ("Dra. Laura Fernández") se usa tal cual; si no, se antepone "Dr."
+function tituloDeAgenda(nombre: string): string {
+  const limpio = nombre.trim();
+  return /^dra?\.?\s/i.test(limpio) ? `Agenda de ${limpio}` : `Agenda del Dr. ${limpio}`;
+}
 
 const ESTADOS: Record<EstadoTurno, { clase: string; texto: string }> = {
   PENDIENTE: { clase: 'text-bg-primary', texto: 'Pendiente' },
@@ -17,23 +23,25 @@ const ESTADOS: Record<EstadoTurno, { clase: string; texto: string }> = {
 };
 
 export const EspecialistaAgenda: React.FC = () => {
-  // Al volver de atender un turno, la URL trae ?fecha=AAAA-MM-DD para reabrir el mismo día
+  const usuario = getUsuarioActual();
+  const codEspecialista = usuario?.id ?? 0;
+
   const [searchParams] = useSearchParams();
   const fechaDeUrl = searchParams.get('fecha');
   const [fecha, setFecha] = useState(fechaDeUrl && /^\d{4}-\d{2}-\d{2}$/.test(fechaDeUrl) ? fechaDeUrl : hoyISO());
   const [version, setVersion] = useState(0);
-  // Guardamos el resultado junto con la fecha a la que pertenece
+  const [turnoPorMarcar, setTurnoPorMarcar] = useState<TurnoAgenda | null>(null);
+  const [errorAccion, setErrorAccion] = useState<string | null>(null);
   const [resultado, setResultado] = useState<{ fecha: string; turnos: TurnoAgenda[]; error: string | null } | null>(null);
 
   useEffect(() => {
-    let vigente = true; // evita que una respuesta lenta pise a una más nueva
-    getAgenda(COD_ESPECIALISTA_PRUEBA, fecha)
+    let vigente = true;
+    getAgenda(codEspecialista, fecha)
       .then((turnos) => vigente && setResultado({ fecha, turnos, error: null }))
       .catch((err: Error) => vigente && setResultado({ fecha, turnos: [], error: err.message }));
     return () => { vigente = false; };
-  }, [fecha, version]);
+  }, [codEspecialista, fecha, version]);
 
-  // Si lo que tenemos guardado es de otra fecha, todavía estamos cargando la nueva
   const cargando = resultado?.fecha !== fecha;
   const turnos = cargando ? [] : resultado.turnos;
   const error = cargando ? null : resultado.error;
@@ -41,13 +49,16 @@ export const EspecialistaAgenda: React.FC = () => {
   const atendidos = turnos.filter((t) => t.estado === 'ATENDIDO').length;
   const ausentes = turnos.filter((t) => t.estado === 'AUSENTE').length;
 
-  const ausente = async (turno: TurnoAgenda) => {
-    if (!window.confirm(`¿Marcar a ${turno.paciente.nombre} como ausente?`)) return;
+  const confirmarAusente = async () => {
+    if (!turnoPorMarcar) return;
+    const turno = turnoPorMarcar;
+    setTurnoPorMarcar(null);
+    setErrorAccion(null);
     try {
       await marcarAusente(turno.id);
       setVersion((actual) => actual + 1);
     } catch (err) {
-      window.alert(err instanceof Error ? err.message : 'No se pudo actualizar el turno.');
+      setErrorAccion(err instanceof Error ? err.message : 'No se pudo actualizar el turno.');
     }
   };
 
@@ -58,29 +69,12 @@ export const EspecialistaAgenda: React.FC = () => {
       <main className="container py-5">
         <div className="mb-4">
           <span className="etiqueta-superior rounded-pill mb-3">Panel del profesional</span>
-          <h1 className="fw-bold mb-1">Mi agenda</h1>
+          <h1 className="fw-bold mb-1">{tituloDeAgenda(usuario?.nombre ?? '')}</h1>
           <p className="text-muted mb-0">Elegí un día para ver y atender a tus pacientes.</p>
         </div>
 
         <div className="card border-0 shadow-sm p-3 mb-4">
-          <div className="d-flex flex-wrap align-items-center gap-2">
-            <div className="btn-group">
-              <button className="btn btn-outline-secondary" onClick={() => setFecha(sumarDias(fecha, -1))} aria-label="Día anterior">
-                <i className="bi bi-chevron-left"></i>
-              </button>
-              <button className="btn btn-outline-secondary" onClick={() => setFecha(hoyISO())}>Hoy</button>
-              <button className="btn btn-outline-secondary" onClick={() => setFecha(sumarDias(fecha, 1))} aria-label="Día siguiente">
-                <i className="bi bi-chevron-right"></i>
-              </button>
-            </div>
-            <input
-              type="date"
-              className="form-control w-auto"
-              value={fecha}
-              onChange={(e) => e.target.value && setFecha(e.target.value)}
-              aria-label="Elegir fecha"
-            />
-          </div>
+          <SelectorFecha fecha={fecha} onCambiar={setFecha} />
         </div>
 
         <section className="card border-0 shadow-sm p-4">
@@ -102,6 +96,7 @@ export const EspecialistaAgenda: React.FC = () => {
           )}
 
           {error && <div className="alert alert-danger" role="alert">No pudimos cargar la agenda. {error}</div>}
+          {errorAccion && <div className="alert alert-danger" role="alert">{errorAccion}</div>}
           {!cargando && !error && turnos.length === 0 && (
             <div className="fondo-punteado rounded p-4 text-center">
               <i className="bi bi-calendar2-check fs-2 text-primary"></i>
@@ -122,10 +117,9 @@ export const EspecialistaAgenda: React.FC = () => {
                   {(t.estado === 'PENDIENTE' || t.estado === 'CONFIRMADO') && t.fecha <= hoyISO() && (
                     <>
                       <Link className="btn btn-sm btn-primary" to={`/especialista/turno/${t.id}`}>Atender</Link>
-                      <button className="btn btn-sm btn-outline-warning" onClick={() => ausente(t)}>Ausente</button>
+                      <button className="btn btn-sm btn-outline-warning" onClick={() => setTurnoPorMarcar(t)}>Ausente</button>
                     </>
                   )}
-                  {/* Un turno futuro todavía no se puede atender: solo se puede ver */}
                   {(t.estado === 'PENDIENTE' || t.estado === 'CONFIRMADO') && t.fecha > hoyISO() && (
                     <Link className="btn btn-sm btn-outline-primary" to={`/especialista/turno/${t.id}`}>Ver</Link>
                   )}
@@ -138,6 +132,15 @@ export const EspecialistaAgenda: React.FC = () => {
           </div>
         </section>
       </main>
+
+      <ConfirmarModal
+        abierto={turnoPorMarcar !== null}
+        titulo="Marcar como ausente"
+        mensaje={`¿Confirmás que ${turnoPorMarcar?.paciente.nombre ?? 'el paciente'} no se presentó a su turno?`}
+        textoConfirmar="Sí, marcar ausente"
+        onConfirmar={confirmarAusente}
+        onCancelar={() => setTurnoPorMarcar(null)}
+      />
     </div>
   );
 };
