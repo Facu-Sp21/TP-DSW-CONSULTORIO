@@ -2,16 +2,18 @@ import React, { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { EspecialistaNav } from '../../components/EspecialistaNav';
 import { formatearFecha, hoyISO, sumarDias } from '../../../services/fechas';
-import { getAgenda } from '../../../services/agendaService';
+import { getAgenda, marcarAusente } from '../../../services/agendaService';
 import type { EstadoTurno, TurnoAgenda } from '../../../services/agendaService';
 
-// TEMPORAL: cuando exista el login (Elian), este código sale de la sesión del especialista.
-const COD_ESPECIALISTA_PRUEBA = 1;
+
+const COD_ESPECIALISTA_PRUEBA = 26;
 
 const ESTADOS: Record<EstadoTurno, { clase: string; texto: string }> = {
   PENDIENTE: { clase: 'text-bg-primary', texto: 'Pendiente' },
   CONFIRMADO: { clase: 'text-bg-success', texto: 'Confirmado' },
   CANCELADO: { clase: 'text-bg-secondary', texto: 'Cancelado' },
+  ATENDIDO: { clase: 'text-bg-success', texto: 'Atendido' },
+  AUSENTE: { clase: 'text-bg-warning', texto: 'Ausente' },
 };
 
 export const EspecialistaAgenda: React.FC = () => {
@@ -19,6 +21,7 @@ export const EspecialistaAgenda: React.FC = () => {
   const [searchParams] = useSearchParams();
   const fechaDeUrl = searchParams.get('fecha');
   const [fecha, setFecha] = useState(fechaDeUrl && /^\d{4}-\d{2}-\d{2}$/.test(fechaDeUrl) ? fechaDeUrl : hoyISO());
+  const [version, setVersion] = useState(0);
   // Guardamos el resultado junto con la fecha a la que pertenece
   const [resultado, setResultado] = useState<{ fecha: string; turnos: TurnoAgenda[]; error: string | null } | null>(null);
 
@@ -28,14 +31,25 @@ export const EspecialistaAgenda: React.FC = () => {
       .then((turnos) => vigente && setResultado({ fecha, turnos, error: null }))
       .catch((err: Error) => vigente && setResultado({ fecha, turnos: [], error: err.message }));
     return () => { vigente = false; };
-  }, [fecha]);
+  }, [fecha, version]);
 
   // Si lo que tenemos guardado es de otra fecha, todavía estamos cargando la nueva
   const cargando = resultado?.fecha !== fecha;
   const turnos = cargando ? [] : resultado.turnos;
   const error = cargando ? null : resultado.error;
   const pendientes = turnos.filter((t) => t.estado === 'PENDIENTE').length;
-  const confirmados = turnos.filter((t) => t.estado === 'CONFIRMADO').length;
+  const atendidos = turnos.filter((t) => t.estado === 'ATENDIDO').length;
+  const ausentes = turnos.filter((t) => t.estado === 'AUSENTE').length;
+
+  const ausente = async (turno: TurnoAgenda) => {
+    if (!window.confirm(`¿Marcar a ${turno.paciente.nombre} como ausente?`)) return;
+    try {
+      await marcarAusente(turno.id);
+      setVersion((actual) => actual + 1);
+    } catch (err) {
+      window.alert(err instanceof Error ? err.message : 'No se pudo actualizar el turno.');
+    }
+  };
 
   return (
     <div className="min-vh-100 bg-light">
@@ -74,7 +88,8 @@ export const EspecialistaAgenda: React.FC = () => {
             <h2 className="h5 fw-bold mb-0 text-capitalize">{formatearFecha(fecha)}</h2>
             <div className="d-flex gap-2">
               <span className="badge rounded-pill text-bg-primary">{pendientes} pendiente{pendientes === 1 ? '' : 's'}</span>
-              <span className="badge rounded-pill text-bg-success">{confirmados} confirmado{confirmados === 1 ? '' : 's'}</span>
+              <span className="badge rounded-pill text-bg-success">{atendidos} atendido{atendidos === 1 ? '' : 's'}</span>
+              <span className="badge rounded-pill text-bg-warning">{ausentes} ausente{ausentes === 1 ? '' : 's'}</span>
             </div>
           </div>
 
@@ -104,12 +119,18 @@ export const EspecialistaAgenda: React.FC = () => {
                 </div>
                 <div className="d-flex align-items-center gap-2 ms-auto">
                   <span className={`badge rounded-pill ${ESTADOS[t.estado].clase}`}>{ESTADOS[t.estado].texto}</span>
-                  {t.estado === 'PENDIENTE' && t.fecha <= hoyISO() && (
-                    <Link className="btn btn-sm btn-primary" to={`/especialista/turno/${t.id}`}>Ver</Link>
+                  {(t.estado === 'PENDIENTE' || t.estado === 'CONFIRMADO') && t.fecha <= hoyISO() && (
+                    <>
+                      <Link className="btn btn-sm btn-primary" to={`/especialista/turno/${t.id}`}>Atender</Link>
+                      <button className="btn btn-sm btn-outline-warning" onClick={() => ausente(t)}>Ausente</button>
+                    </>
                   )}
                   {/* Un turno futuro todavía no se puede atender: solo se puede ver */}
-                  {t.estado === 'PENDIENTE' && t.fecha > hoyISO() && (
+                  {(t.estado === 'PENDIENTE' || t.estado === 'CONFIRMADO') && t.fecha > hoyISO() && (
                     <Link className="btn btn-sm btn-outline-primary" to={`/especialista/turno/${t.id}`}>Ver</Link>
+                  )}
+                  {t.estado === 'ATENDIDO' && (
+                    <Link className="btn btn-sm btn-outline-success" to={`/especialista/turno/${t.id}`}>Ver informe</Link>
                   )}
                 </div>
               </div>

@@ -3,11 +3,13 @@ import { Especialista } from '../especialista/especialista.entity.js';
 import { Paciente } from '../paciente/paciente.entity.js';
 import { Turno } from './turno.entity.js';
 import { alreadyExistsError, BadRequestError } from '../shared/errorsModel.js';
-import { chocaEnMinutos, generarSlots, horaAMinutos } from './turno.availability.js';
+import { chocaEnMinutos, horaAMinutos } from './turno.availability.js';
 import { esTurnoValido } from './turno.calendar.js';
 import { motivoQueImpideCerrar } from './turno.estado.js'; 
 import { enviarCorreo } from '../Email/email.service.js';
 import {verifyTokenGestionTurno} from '../shared/auth/jwt.js';
+import { generarHorariosDelDia } from './turno.schedule.js';
+import { HistoriaClinica } from '../historiaClinica/historiaClinica.entity.js';
 
 // Actualizamos el Input para usar fecha y hora separadas
 type TurnoInput = {
@@ -81,8 +83,7 @@ export async function sGetHorariosDisponibles(
 ): Promise<string[]> {
   const duracion_minutos = especialista.especialidad?.duracion_minutos ?? 0;
 
-  // OJO: Acá definimos un horario fijo comercial para el ejemplo.
-  const slotsPosibles = generarSlots('08:00', '17:00', duracion_minutos);
+  const slotsPosibles = generarHorariosDelDia(fecha, duracion_minutos);
   if (slotsPosibles.length === 0) return [];
 
   // Traemos solo los turnos de ese médico ese día
@@ -96,7 +97,17 @@ export async function sGetHorariosDisponibles(
   );
 
   // Filtramos la grilla generada contra la base de datos
+  const ahora = new Date();
+  const fechaHoy = [
+    ahora.getFullYear(),
+    String(ahora.getMonth() + 1).padStart(2, '0'),
+    String(ahora.getDate()).padStart(2, '0'),
+  ].join('-');
+  const minutosActuales = ahora.getHours() * 60 + ahora.getMinutes();
+
   return slotsPosibles.filter((slot) => {
+    if (fecha === fechaHoy && horaAMinutos(slot) <= minutosActuales) return false;
+
     const slotInicio = horaAMinutos(slot);
     const slotFin = slotInicio + duracion_minutos;
 
@@ -165,7 +176,7 @@ export async function sUpdateTurno(
   const turno = await orm.em.findOne(Turno, { cod_turno });
   if (!turno) return null;
   if (turno.estado !== 'PENDIENTE') {
-    throw new BadRequestError('No se puede modificar un turno que ya fue atendido o marcado como ausente');
+    throw new BadRequestError('No se puede modificar un turno que ya fue confirmado, cancelado, atendido o marcado como ausente');
   }
 
   const duracion = input.especialista.especialidad?.duracion_minutos ?? 0;
@@ -199,6 +210,9 @@ export async function sDeleteTurno(cod_turno: number): Promise<boolean> {
   if (!turno) return false;
   if (turno.estado === 'CANCELADO') {
     throw new BadRequestError('El turno ya está cancelado');
+  }
+  if (turno.estado === 'ATENDIDO' || turno.estado === 'AUSENTE') {
+    throw new BadRequestError('No se puede cancelar un turno atendido o marcado como ausente');
   }
   turno.estado = 'CANCELADO';
   await orm.em.flush();
@@ -248,10 +262,28 @@ export async function sAtenderTurno(
   const motivo = motivoQueImpideCerrar(turno.estado, turno.fecha);
   if (motivo) throw new BadRequestError(motivo);
 
-  throw new BadRequestError('La confirmación del turno se realizará mediante correo electrónico');
+  turno.estado = 'ATENDIDO';
+  orm.em.create(HistoriaClinica, {
+    paciente: turno.paciente,
+    especialista: turno.especialista,
+    turno,
+    diagnostico: datos.diagnostico,
+    indicaciones: datos.indicaciones || undefined,
+  });
+
+  await orm.em.flush();
+  return turno;
 }
 
-/** La ausencia ya no modifica el estado: el turno solo puede cancelarse. */
+/** El paciente no se presentó a la consulta. */
 export async function sMarcarAusente(cod_turno: number): Promise<Turno | null> {
-  return sGetTurnoById(cod_turno);
+  const turno = await orm.em.findOne(Turno, { cod_turno });
+  if (!turno) return null;
+
+  const motivo = motivoQueImpideCerrar(turno.estado, turno.fecha);
+  if (motivo) throw new BadRequestError(motivo);
+
+  turno.estado = 'AUSENTE';
+  await orm.em.flush();
+  return turno;
 }

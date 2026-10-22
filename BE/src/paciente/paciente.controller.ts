@@ -34,7 +34,17 @@ export async function cGetPacienteById(req: Request, res: Response) {
 }
 
 export async function cCreatePaciente(req: Request, res: Response) {
-  const paciente = await sCreatePaciente(res.locals.body);
+  const { dni, nombre, telefono, direccion, email, contrasena, cod_os } = res.locals.body;
+  
+  const paciente = await sCreatePaciente({
+    dni,
+    nombre,
+    telefono,
+    direccion,
+    email,
+    contrasena,
+    cod_os,
+  });
   res.status(201).json(paciente);
 }
 
@@ -42,7 +52,17 @@ export async function cUpdatePaciente(req: Request, res: Response) {
   const nro_afiliado = res.locals.params.nro_afiliado;
   verificarPropioPaciente(req, nro_afiliado);
 
-  const paciente = await sUpdatePaciente(nro_afiliado, res.locals.body);
+  const { dni, nombre, email, telefono, direccion, contrasena, cod_os } = res.locals.body;
+
+  const paciente = await sUpdatePaciente(nro_afiliado, {
+    dni,
+    nombre,
+    email,
+    telefono,
+    direccion,
+    contrasena,
+    cod_os,
+  });
 
   if (!paciente) {
     throw new NotFoundError('Paciente no encontrado');

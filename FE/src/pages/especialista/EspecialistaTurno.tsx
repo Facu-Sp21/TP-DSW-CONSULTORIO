@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { EspecialistaNav } from '../../components/EspecialistaNav';
-import { formatearFecha } from '../../../services/fechas';
-import { getHistoria, getTurno } from '../../../services/agendaService';
+import { formatearFecha, hoyISO } from '../../../services/fechas';
+import { atenderTurno, getHistoria, getTurno } from '../../../services/agendaService';
 import type { EntradaHistoria, TurnoAgenda } from '../../../services/agendaService';
 
 interface Resultado {
@@ -15,8 +15,13 @@ interface Resultado {
 export const EspecialistaTurno: React.FC = () => {
   const { id: idDeUrl } = useParams(); // viene de la ruta /especialista/turno/:id
   const id = Number(idDeUrl);
+  const navigate = useNavigate();
 
   const [resultado, setResultado] = useState<Resultado | null>(null);
+  const [diagnostico, setDiagnostico] = useState('');
+  const [indicaciones, setIndicaciones] = useState('');
+  const [guardando, setGuardando] = useState(false);
+  const [errorGuardar, setErrorGuardar] = useState<string | null>(null);
 
   useEffect(() => {
     let vigente = true;
@@ -33,6 +38,21 @@ export const EspecialistaTurno: React.FC = () => {
   const error = cargando ? null : resultado.error;
   const informe = turno ? historia.find((h) => h.turnoId === turno.id) : undefined; // lo cargado en ESTA consulta
   const previas = historia.filter((h) => h.turnoId !== turno?.id); // consultas anteriores
+  const esFuturo = turno ? turno.fecha > hoyISO() : false;
+
+  const guardar = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!turno) return;
+    setGuardando(true);
+    setErrorGuardar(null);
+    try {
+      await atenderTurno(turno.id, { diagnostico, indicaciones: indicaciones || undefined });
+      navigate(`/especialista?fecha=${turno.fecha}`);
+    } catch (err) {
+      setErrorGuardar(err instanceof Error ? err.message : 'No se pudo guardar la consulta.');
+      setGuardando(false);
+    }
+  };
 
   return (
     <div className="min-vh-100 bg-light">
@@ -67,16 +87,28 @@ export const EspecialistaTurno: React.FC = () => {
                 </dl>
               </section>
 
-              {turno.estado === 'PENDIENTE' && (
-                <div className="card border-0 shadow-sm p-4">
-                  <h2 className="h5 fw-bold mb-3">Turno pendiente</h2>
-                  <p className="text-muted mb-0">
-                    El turno todavía está pendiente de confirmación por correo electrónico.
-                  </p>
-                </div>
+              {(turno.estado === 'PENDIENTE' || turno.estado === 'CONFIRMADO') && (
+                <form className="card border-0 shadow-sm p-4" onSubmit={guardar}>
+                  <h2 className="h5 fw-bold mb-3">Informe de la consulta</h2>
+                  {esFuturo && (
+                    <div className="alert alert-info small">
+                      Este turno es de una fecha futura: vas a poder cargar el informe el día de la consulta.
+                    </div>
+                  )}
+                  <label className="form-label fw-semibold" htmlFor="diagnostico">Diagnóstico</label>
+                  <textarea id="diagnostico" className="form-control mb-3" rows={4} maxLength={2000} minLength={3} required value={diagnostico} onChange={(e) => setDiagnostico(e.target.value)} disabled={esFuturo} />
+                  <label className="form-label fw-semibold" htmlFor="indicaciones">
+                    Indicaciones <span className="text-muted fw-normal small">(opcional)</span>
+                  </label>
+                  <textarea id="indicaciones" className="form-control mb-4" rows={3} maxLength={2000} value={indicaciones} onChange={(e) => setIndicaciones(e.target.value)} disabled={esFuturo} />
+                  {errorGuardar && <div className="alert alert-danger" role="alert">{errorGuardar}</div>}
+                  <button className="btn btn-primary ms-auto" type="submit" disabled={guardando || esFuturo}>
+                    {guardando ? 'Guardando…' : <><i className="bi bi-check2-circle me-2"></i>Finalizar consulta</>}
+                  </button>
+                </form>
               )}
 
-              {turno.estado === 'CONFIRMADO' && (
+              {turno.estado === 'ATENDIDO' && (
                 <section className="card border-0 shadow-sm p-4">
                   <h2 className="h5 fw-bold mb-3">Informe de la consulta</h2>
                   {informe ? (
@@ -90,6 +122,10 @@ export const EspecialistaTurno: React.FC = () => {
                     <p className="text-muted mb-0">Este turno fue atendido.</p>
                   )}
                 </section>
+              )}
+
+              {turno.estado === 'AUSENTE' && (
+                <div className="alert alert-warning mb-0">El paciente figura como ausente: no hay informe para cargar.</div>
               )}
 
               {turno.estado === 'CANCELADO' && (
