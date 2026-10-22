@@ -1,5 +1,5 @@
-import { Request, Response } from 'express';
-import { NotFoundError } from '../shared/errorsModel.js';
+import { NextFunction, Request, Response } from 'express';
+import { NotFoundError,BadRequestError } from '../shared/errorsModel.js';
 import { sGetEspecialistaById } from '../especialista/especialista.service.js';
 import { sGetPacienteById } from '../paciente/paciente.service.js';
 import {
@@ -11,6 +11,8 @@ import {
   sUpdateTurno,
   sAtenderTurno,
   sMarcarAusente,
+  sConfirmarTurno,
+  sGetTurnoDelCorreo,
 } from './turno.service.js';
 
 export async function cGetTurnos(req: Request, res: Response) {
@@ -119,6 +121,31 @@ export async function cAtenderTurno(req: Request, res: Response) {
 
   // Devolvemos solo lo necesario: no hace falta (ni conviene) mandar los datos completos del paciente
   res.json({ cod_turno: turno.cod_turno, estado: turno.estado });
+}
+
+export async function cConfirmarTurno(req: Request, res: Response) {
+  const turno = await sConfirmarTurno(res.locals.body.token,res.locals.body.accion,);
+
+  res.json({cod_turno: turno.cod_turno,estado: turno.estado,});
+}
+
+export async function cGetTurnoDelCorreo(
+  req: Request,
+  res: Response,
+) {
+  const turno = await sGetTurnoDelCorreo(
+    res.locals.query.token,
+  );
+
+  res.json({
+    cod_turno: turno.cod_turno,
+    fecha: turno.fecha,
+    hora_inicio: turno.hora_inicio,
+    estado: turno.estado,
+    especialista: {
+      nombre: turno.especialista.nombre,
+    },
+  });
 }
 
 export async function cMarcarAusente(req: Request, res: Response) {

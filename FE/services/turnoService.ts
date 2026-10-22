@@ -31,6 +31,16 @@ export interface TurnoAdmin {
   };
 }
 
+export type AccionConfirmacion = 'confirmar' | 'cancelar';
+
+export interface ResponderConfirmacionPayload {
+  token: string;
+  accion: AccionConfirmacion;
+}
+
+export interface ResponderConfirmacionResponse {
+  cod_turno: number;
+  estado: 'CONFIRMADO' | 'CANCELADO';
 export interface HorariosDisponibles {
   fecha: string;
   horarios: string[];
@@ -61,4 +71,30 @@ export const cancelarTurno = (cod_turno: number) => {
   return apiFetch<void>(`/turno/${cod_turno}`, {
     method: 'DELETE',
   });
+};
+
+export const confirmacionTurno = (
+  data: ResponderConfirmacionPayload,
+) => {
+  return apiFetch<ResponderConfirmacionResponse>('/turno/confirmar-asistencia',
+    {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    },
+  )};
+
+  export interface TurnoDelCorreo {
+  cod_turno: number;
+  fecha: string;
+  hora_inicio: string;
+  estado: string;
+  especialista: {
+    nombre: string;
+  };
+}
+
+export const getTurnoDelCorreo = (token: string) => {
+  return apiFetch<TurnoDelCorreo>(
+    `/turno/confirmar-asistencia?token=${encodeURIComponent(token)}`,
+  );
 };

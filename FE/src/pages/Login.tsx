@@ -83,7 +83,7 @@ export const Login: React.FC = () => {
             </div>
 
             <div className="d-flex justify-content-between align-items-center mb-4">
-              <div className="form-check">
+            {/* <div className="form-check">
                 <input 
                   className="form-check-input" 
                   type="checkbox" 
@@ -95,6 +95,7 @@ export const Login: React.FC = () => {
                   Recuérdame
                 </label>
               </div>
+            */}
               <Link to="/recuperar-password" className="small link-primario">¿Olvidaste tu contraseña?</Link>
             </div>
 
