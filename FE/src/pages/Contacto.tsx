@@ -83,8 +83,8 @@ export const Contacto: React.FC = () => {
                 <li className="d-flex gap-3">
                   <span className="icono-contacto"><i className="bi bi-clock-fill fs-5"></i></span>
                   <div>
-                    <h6 className="fw-bold mb-1">Atención administrativa</h6>
-                    <p className="text-muted small mb-0">Lunes a viernes de 08:00 a 20:00 hs · Sábados de 08:00 a 13:00 hs</p>
+                    <h6 className="fw-bold mb-1">Horario del consultorio</h6>
+                    <p className="text-muted small mb-0">Lunes a viernes de 08:00 a 17:00 hs</p>
                   </div>
                 </li>
               </ul>

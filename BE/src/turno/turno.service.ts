@@ -3,9 +3,10 @@ import { Especialista } from '../especialista/especialista.entity.js';
 import { Paciente } from '../paciente/paciente.entity.js';
 import { Turno } from './turno.entity.js';
 import { alreadyExistsError, BadRequestError } from '../shared/errorsModel.js';
-import { chocaEnMinutos, generarSlots, horaAMinutos } from './turno.availability.js';
+import { chocaEnMinutos, horaAMinutos } from './turno.availability.js';
 import { esTurnoValido } from './turno.calendar.js';
 import { motivoQueImpideCerrar } from './turno.estado.js'; 
+import { generarHorariosDelDia } from './turno.schedule.js';
 import { HistoriaClinica } from '../historiaClinica/historiaClinica.entity.js';
 
 // Actualizamos el Input para usar fecha y hora separadas
@@ -80,8 +81,7 @@ export async function sGetHorariosDisponibles(
 ): Promise<string[]> {
   const duracion_minutos = especialista.especialidad?.duracion_minutos ?? 0;
 
-  // OJO: Acá definimos un horario fijo comercial para el ejemplo.
-  const slotsPosibles = generarSlots('08:00', '17:00', duracion_minutos);
+  const slotsPosibles = generarHorariosDelDia(fecha, duracion_minutos);
   if (slotsPosibles.length === 0) return [];
 
   // Traemos solo los turnos de ese médico ese día
@@ -95,7 +95,17 @@ export async function sGetHorariosDisponibles(
   );
 
   // Filtramos la grilla generada contra la base de datos
+  const ahora = new Date();
+  const fechaHoy = [
+    ahora.getFullYear(),
+    String(ahora.getMonth() + 1).padStart(2, '0'),
+    String(ahora.getDate()).padStart(2, '0'),
+  ].join('-');
+  const minutosActuales = ahora.getHours() * 60 + ahora.getMinutes();
+
   return slotsPosibles.filter((slot) => {
+    if (fecha === fechaHoy && horaAMinutos(slot) <= minutosActuales) return false;
+
     const slotInicio = horaAMinutos(slot);
     const slotFin = slotInicio + duracion_minutos;
 

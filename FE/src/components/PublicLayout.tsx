@@ -137,12 +137,8 @@ export const PublicLayout: React.FC<PublicLayoutProps> = ({ activo = '/', admini
             <div className="col-lg-3 col-md-6 col-6">
               <h6 className="fw-bold text-white mb-3">Horarios</h6>
               <div className="horario-footer small mb-3">
-                <strong>Consultas Externas:</strong><br />
-                Lunes a Viernes<br />08:00 a 20:00 hs
-              </div>
-              <div className="horario-footer small mb-3">
-                <strong>Sábados:</strong><br />
-                08:00 a 13:00 hs
+                <strong>Consultorio:</strong><br />
+                Lunes a Viernes<br />08:00 a 17:00 hs
               </div>
               <div className="horario-footer small">
                 <strong>Guardias Médicas:</strong><br />

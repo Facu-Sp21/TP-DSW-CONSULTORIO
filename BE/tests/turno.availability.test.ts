@@ -166,6 +166,32 @@ describe('sGetHorariosDisponibles', () => {
 
     expect(horarios).toEqual(['08:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00']);
   });
+
+  it('no ofrece turnos cuya duración excedería el cierre de las 17:00', async () => {
+    (orm.em.find as jest.Mock).mockResolvedValue([]);
+
+    const horarios = await sGetHorariosDisponibles('2026-08-03', {
+      cod_especialista: 1,
+      especialidad: { duracion_minutos: 40 },
+    } as any);
+
+    expect(horarios).not.toContain('16:40');
+    expect(horarios.at(-1)).toBe('16:00');
+  });
+
+  it('no ofrece horarios que ya pasaron en el día actual', async () => {
+    jest.setSystemTime(new Date('2026-08-03T09:30:00'));
+    (orm.em.find as jest.Mock).mockResolvedValue([]);
+
+    const horarios = await sGetHorariosDisponibles('2026-08-03', {
+      cod_especialista: 1,
+      especialidad: { duracion_minutos: 30 },
+    } as any);
+
+    expect(horarios[0]).toBe('10:00');
+    expect(horarios).not.toContain('09:00');
+    expect(horarios).not.toContain('09:30');
+  });
 });
 
 describe('sGetTurnos', () => {
