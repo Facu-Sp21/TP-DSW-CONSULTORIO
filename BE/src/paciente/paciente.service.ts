@@ -11,7 +11,7 @@ type PacienteInput = {
   telefono: string;
   direccion: string;
   email: string;
-  contrasena: string;
+  contrasena?: string; // <-- Ahora es opcional
   cod_os?: number | null;
 };
 
@@ -32,6 +32,14 @@ export async function sCreatePaciente(input: PacienteInput): Promise<Paciente> {
   const obraSocial = input.cod_os
     ? await orm.em.findOne(ObraSocial, { cod_os: input.cod_os })
     : null;
+
+  // Si no puso contraseña, autogeneramos una por defecto (ej: usamos su DNI o una clave genérica)
+  const passwordPlana = (input.contrasena && input.contrasena.trim() !== '') 
+    ? input.contrasena 
+    : input.dni; // O podés poner una fija como '123456'
+
+  const hashedPassword = await hashPassword(passwordPlana);
+
   const paciente = orm.em.create(Paciente, {
     dni: input.dni,
     nombre: input.nombre,
@@ -39,12 +47,13 @@ export async function sCreatePaciente(input: PacienteInput): Promise<Paciente> {
     direccion: input.direccion,
     email: input.email,
     obraSocial,
-    contrasena: await hashPassword(input.contrasena),
+    contrasena: hashedPassword,
   });
+  
   try {
     await orm.em.persistAndFlush(paciente);
   } catch (error) {
-    if (error instanceof UniqueConstraintViolationException) { // ese error es de MikroORM y se lanza cuando se viola una restricción de unicidad en la base de datos
+    if (error instanceof UniqueConstraintViolationException) {
       throw new alreadyExistsError('Ya existe un paciente con ese DNI o email');  
     }
     throw error;
@@ -56,7 +65,7 @@ export async function sUpdatePaciente(
   nro_afiliado: number, 
   input: Partial<PacienteInput>
 ): Promise<Paciente | null> {
-  const paciente = await orm.em.findOne(Paciente, { nro_afiliado });
+  const paciente = await orm.em.findOne(Paciente, { nro_afiliado }, { populate: ['obraSocial'] });
 
   if (!paciente) {
     return null;
@@ -67,6 +76,7 @@ export async function sUpdatePaciente(
   if (input.telefono !== undefined) paciente.telefono = input.telefono;
   if (input.direccion !== undefined) paciente.direccion = input.direccion;
   if (input.email !== undefined) paciente.email = input.email;
+  
   if (input.cod_os !== undefined) {
     paciente.obraSocial = input.cod_os
       ? await orm.em.findOne(ObraSocial, { cod_os: input.cod_os })

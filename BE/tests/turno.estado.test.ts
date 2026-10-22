@@ -21,7 +21,11 @@ describe('motivoQueImpideCerrar', () => {
     expect(motivoQueImpideCerrar('PENDIENTE', '2026-10-08', hoy)).toMatch(/futura/);
   });
 
-  it.each(['CONFIRMADO', 'CANCELADO'] as const)('no permite cerrar un turno que ya está %s', (estado) => {
-    expect(motivoQueImpideCerrar(estado, '2026-10-01', hoy)).toMatch(/confirmado o cancelado/);
+  it.each(['CANCELADO', 'ATENDIDO', 'AUSENTE'] as const)('no permite cerrar un turno que ya está %s', (estado) => {
+    expect(motivoQueImpideCerrar(estado, '2026-10-01', hoy)).toMatch(/cancelado, atendido o marcado como ausente/);
+  });
+
+  it('permite cerrar un turno confirmado', () => {
+    expect(motivoQueImpideCerrar('CONFIRMADO', '2026-10-01', hoy)).toBeUndefined();
   });
 });

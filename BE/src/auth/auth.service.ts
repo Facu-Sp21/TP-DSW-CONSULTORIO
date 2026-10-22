@@ -13,10 +13,6 @@ export interface LoginResult {
 /**
  * Busca el email en Administrativo, Especialista y Paciente (en ese orden) y
  * valida la contraseña contra el que lo encuentre primero.
- *
- * Nota: como las 3 tablas son independientes, si el mismo email estuviera
- * registrado en más de una, siempre va a loguear con el primero que encuentre
- * en ese orden. Para este proyecto no debería pasar en la práctica.
  */
 export async function sLogin(email: string, password: string): Promise<LoginResult> {
   const emailNormalizado = email.trim().toLowerCase();
@@ -52,6 +48,9 @@ export async function sLogin(email: string, password: string): Promise<LoginResu
 
   const paciente = await sGetPacienteByEmail(emailNormalizado);
   if (paciente) {
+    if (!paciente.contrasena) {
+      throw new UnauthorizedError('Email o contraseña incorrectos');
+    }
     const esValida = await comparePassword(password, paciente.contrasena);
     if (!esValida) throw new UnauthorizedError('Email o contraseña incorrectos');
 
@@ -64,6 +63,5 @@ export async function sLogin(email: string, password: string): Promise<LoginResu
     return { token: signToken(payload), user: payload };
   }
 
-  // No revelamos si el email existe o no, por seguridad
   throw new UnauthorizedError('Email o contraseña incorrectos');
 }

@@ -11,6 +11,8 @@ export interface Especialista {
   cod_especialidad?: number;
   estado?: boolean;
   consulta_particular?: number;
+  obrasSociales?: Array<{ cod_os: number; nombre: string }>;
+  obras_sociales?: number[];
 }
 
 export const getEspecialistas = () => {

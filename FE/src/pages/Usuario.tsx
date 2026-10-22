@@ -80,13 +80,10 @@ export const UserNavigation: React.FC = () => {
           <Link className="btn btn-sm btn-link text-decoration-none" to="/usuario">
             <i className="bi bi-house me-1" />Inicio
           </Link>
-          <Link className="btn btn-sm btn-primary" to="/sacar-turno">
-            <i className="bi bi-calendar-plus me-1" />Sacar turno
-          </Link>
           <Link className="btn btn-sm btn-outline-primary" to="/calendario">
             <i className="bi bi-calendar3 me-1" />Calendario
           </Link>
-          <button className="btn btn-outline-secondary btn-sm" onClick={cerrarSesion}>
+          <button className="btn btn-outline-danger rounded-pill px-4" onClick={cerrarSesion}>
             <i className="bi bi-box-arrow-right me-1" />Salir
           </button>
         </div>
