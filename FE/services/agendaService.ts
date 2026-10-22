@@ -1,7 +1,7 @@
 import { apiFetch } from './api';
 
 // 1) Lo que devuelve el backend (formato real, ver BE/src/turno y BE/src/historiaClinica) // 
-export type EstadoTurno = 'PENDIENTE' | 'CONFIRMADO' | 'CANCELADO';
+export type EstadoTurno = 'PENDIENTE' | 'CONFIRMADO' | 'CANCELADO' | 'ATENDIDO' | 'AUSENTE';
 
 interface TurnoApi {
   cod_turno: number;
