@@ -474,3 +474,32 @@ h1, h2, h3, h4,
   font-weight: 700;
   min-width: 3.25rem;
 }
+
+.respuesta-turno-card {
+  overflow: hidden;
+  border: 1px solid #eef2f7;
+  border-radius: var(--radio-grande);
+  background-color: #ffffff;
+  box-shadow: 0 20px 45px -15px rgba(var(--color-oscuro-rgb), 0.15);
+}
+
+.respuesta-turno-card__contenido {
+  padding: clamp(1.5rem, 5vw, 2.75rem);
+}
+
+.respuesta-turno__mensaje {
+  margin: 1.5rem 0 0;
+  padding: 1rem;
+  border-radius: var(--radio-normal);
+  font-weight: 600;
+}
+
+.respuesta-turno__mensaje--confirmado {
+  color: var(--color-primario-oscuro);
+  background-color: var(--color-primario-suave);
+}
+
+.respuesta-turno__mensaje--cancelado {
+  color: #b42318;
+  background-color: #fef2f2;
+}

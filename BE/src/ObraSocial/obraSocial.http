@@ -1,0 +1,7 @@
+###crear una obra social
+POST http://localhost:3000/obra-social
+Content-Type: application/json
+
+{
+  "nombre": "Obra Social Ejemplo"
+}

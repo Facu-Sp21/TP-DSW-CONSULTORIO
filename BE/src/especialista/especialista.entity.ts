@@ -1,6 +1,8 @@
-import { Collection, Entity, ManyToMany, ManyToOne, Opt, PrimaryKey, Property } from '@mikro-orm/core';
+import { Collection, Entity, ManyToMany, ManyToOne, Opt, PrimaryKey, Property,OneToMany } from '@mikro-orm/core';
 import type { Especialidad } from '../especialidad/especialidad.entity.js';
 import type { ObraSocial } from '../ObraSocial/obraSocial.entity.js';
+import type { Turno } from '../turno/turno.entity.js';
+
 
 @Entity()
 export class Especialista {
@@ -22,6 +24,12 @@ export class Especialista {
   @Property({ length: 30, nullable: false, type: 'string' })
   telefono!: string;
 
+  //@ManyToOne('Especialidad', { fieldName: 'cod_especialidad', nullable: false })
+  //especialidad!: Especialidad;
+
+  @OneToMany('Turno', (unTurno: Turno) => unTurno.especialista)
+  turnos = new Collection<Turno>(this);
+  
   @Property({ length: 255, nullable: false, type: 'string' })
   contrasena!: string;
 
@@ -40,3 +48,5 @@ export class Especialista {
   })
   obrasSociales = new Collection<ObraSocial>(this);
 }
+
+

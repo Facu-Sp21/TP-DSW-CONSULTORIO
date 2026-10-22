@@ -6,6 +6,8 @@ import { alreadyExistsError, BadRequestError } from '../shared/errorsModel.js';
 import { chocaEnMinutos, horaAMinutos } from './turno.availability.js';
 import { esTurnoValido } from './turno.calendar.js';
 import { motivoQueImpideCerrar } from './turno.estado.js'; 
+import { enviarCorreo } from '../Email/email.service.js';
+import {verifyTokenGestionTurno} from '../shared/auth/jwt.js';
 import { generarHorariosDelDia } from './turno.schedule.js';
 import { HistoriaClinica } from '../historiaClinica/historiaClinica.entity.js';
 
@@ -159,6 +161,8 @@ export async function sCreateTurno(input: TurnoInput): Promise<Turno> {
   });
 
   await orm.em.persistAndFlush(turno);
+  //se envía correo del turno CREADO (primer correo que recibe)
+  await enviarCorreo(turno.paciente.email,  "Constancia de turno", turno, 'pend');  
   return turno;
 }
 
@@ -213,6 +217,39 @@ export async function sDeleteTurno(cod_turno: number): Promise<boolean> {
   turno.estado = 'CANCELADO';
   await orm.em.flush();
   return true;
+}
+
+/**
+ * La confirmación automática se implementa con el envío de correo.
+ */
+export async function sConfirmarTurno(token:string, accion:'confirmar'|'cancelar'): Promise<Turno> {
+  const payload = verifyTokenGestionTurno(token);
+  const turno = await orm.em.findOne(Turno, { cod_turno: payload.cod_turno });
+   if (!turno) {
+    throw new BadRequestError('El turno ya no existe');
+  }
+  // Impide confirmar/cancelar dos veces desde el mismo enlace.
+  if (turno.estado !== 'PENDIENTE') {
+    throw new BadRequestError('Este turno ya fue gestionado');
+  }
+  turno.estado = accion === 'confirmar'? 'CONFIRMADO': 'CANCELADO';
+  await orm.em.flush();
+  return turno;
+}
+
+//para mostrar el turno en confirmacióno de asistencia tengo que validar el token primero
+export async function sGetTurnoDelCorreo(
+  token: string,
+): Promise<Turno> {
+  const payload = verifyTokenGestionTurno(token);
+
+  const turno = await sGetTurnoById(payload.cod_turno);
+
+  if (!turno) {
+    throw new BadRequestError('El turno ya no existe');
+  }
+
+  return turno;
 }
 
 export async function sAtenderTurno(

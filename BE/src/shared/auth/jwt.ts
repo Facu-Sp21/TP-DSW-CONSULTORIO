@@ -23,3 +23,25 @@ export function signToken(payload: JwtPayload): string {
 export function verifyToken(token: string): JwtPayload {
   return jwt.verify(token, JWT_SECRET) as JwtPayload;
 }
+
+//token para confirmar el turno
+
+
+export interface TokenGestionTurnoPayload {
+  tipo: 'gestion-turno';
+  cod_turno: number;
+}
+
+export function signTokenGestionTurno(cod_turno: number): string {
+  return jwt.sign({tipo: 'gestion-turno',cod_turno},JWT_SECRET,{ expiresIn: '48h' } as jwt.SignOptions);
+}
+
+export function verifyTokenGestionTurno(token: string): TokenGestionTurnoPayload 
+{
+  const payload = jwt.verify(token,JWT_SECRET) as TokenGestionTurnoPayload;
+  if (payload.tipo !== 'gestion-turno') 
+  {
+    throw new Error('Token inválido para la gestión del turno');
+  }
+  return payload;
+}

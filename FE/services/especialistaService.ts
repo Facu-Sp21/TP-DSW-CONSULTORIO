@@ -23,6 +23,12 @@ export const getEspecialistasByEspecialidad = (codEspecialidad: number) => {
   return apiFetch<Especialista[]>(`/especialista?especialidad=${codEspecialidad}`);
 };
 
+//para la parte de profesionales que te acompañan
+export const getEspecialistasQueTeAcompanian = async () => {
+  const especialistas = await getEspecialistas();
+  return especialistas.slice(0, 4);
+};
+
 export const createEspecialista = (data: Omit<Especialista, 'cod_especialista'>) => {
   const emailGenerado =
     data.email || `doc${data.matricula.toLowerCase().replace(/[^a-z0-9]/g, '')}@consultorio.com`;
