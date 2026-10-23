@@ -16,7 +16,6 @@ import { errorHandler } from './src/shared/errorHandler.js';
 import { RequestContext } from '@mikro-orm/core';
 import { apiReference } from '@scalar/express-api-reference';
 import { openApiDocument } from './src/shared/openapi.js';
-import obraSocialRoutes from './src/ObraSocial/obraSocial.routes.js';
 import './src/Email/email.service.js';
 import suscripcionRoutes from './src/suscripcion/suscripcion.routes.js';
 import historiaClinicaRoutes from './src/historiaClinica/historiaClinica.routes.js'; 
