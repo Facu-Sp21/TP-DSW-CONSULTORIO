@@ -182,6 +182,15 @@ export const Calendario: React.FC = () => {
   const [turnos, setTurnos] = useState<Turno[]>([]);
   const usuario = getUsuarioActual();
 
+  // ESTADO PARA MODAL / CARTEL INTEGRADO
+  const [modalAlerta, setModalAlerta] = useState<{
+    show: boolean;
+    titulo: string;
+    mensaje: string;
+    tipo: 'error' | 'success' | 'confirm';
+    onConfirm?: () => void;
+  }>({ show: false, titulo: '', mensaje: '', tipo: 'error' });
+
   useEffect(() => {
     if (!usuario?.id) return;
     getTurnosPaciente(usuario.id)
@@ -199,10 +208,32 @@ export const Calendario: React.FC = () => {
   const calendarDays = buildMonthCalendar(firstDay.getFullYear(), firstDay.getMonth());
   const selectedTurnos = selectedDate ? turnos.filter((turno) => turno.fecha === selectedDate) : [];
 
-  const cancelar = async (id: number) => {
-    if (!window.confirm('¿Querés cancelar este turno?')) return;
-    await cancelarTurno(id);
-    setTurnos((actuales) => actuales.filter((turno) => turno.id !== id));
+  const cancelar = (id: number) => {
+    setModalAlerta({
+      show: true,
+      titulo: 'Cancelar Turno',
+      mensaje: '¿Estás seguro de que deseás cancelar este turno? Esta acción no se puede deshacer.',
+      tipo: 'confirm',
+      onConfirm: async () => {
+        try {
+          await cancelarTurno(id);
+          setTurnos((actuales) => actuales.filter((turno) => turno.id !== id));
+          setModalAlerta({
+            show: true,
+            titulo: 'Turno Cancelado',
+            mensaje: 'El turno ha sido cancelado con éxito.',
+            tipo: 'success'
+          });
+        } catch (error) {
+          setModalAlerta({
+            show: true,
+            titulo: 'Error',
+            mensaje: 'Ocurrió un error al intentar cancelar el turno.',
+            tipo: 'error'
+          });
+        }
+      }
+    });
   };
 
   return (
@@ -261,6 +292,58 @@ export const Calendario: React.FC = () => {
           </section>
         </div>
       </main>
+
+      {/* MODAL / CARTEL INTEGRADO DE ALERTAS Y CONFIRMACIONES */}
+      {modalAlerta.show && (
+        <div className="modal show d-block" tabIndex={-1} style={{ backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1050 }}>
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content border-0 shadow-lg rounded-4">
+              <div className={`modal-header border-0 pb-0 ${modalAlerta.tipo === 'error' ? 'text-danger' : modalAlerta.tipo === 'success' ? 'text-success' : 'text-primary'}`}>
+                <h5 className="modal-title fw-bold">
+                  <i className={`bi ${modalAlerta.tipo === 'error' ? 'bi-exclamation-triangle-fill' : modalAlerta.tipo === 'success' ? 'bi-check-circle-fill' : 'bi-question-circle-fill'} me-2`}></i>
+                  {modalAlerta.titulo}
+                </h5>
+                <button type="button" className="btn-close" onClick={() => setModalAlerta({ ...modalAlerta, show: false })}></button>
+              </div>
+              <div className="modal-body py-4 text-center">
+                <p className="mb-0 text-secondary fs-6">{modalAlerta.mensaje}</p>
+              </div>
+              <div className="modal-footer border-0 pt-0 justify-content-center pb-4">
+                {modalAlerta.tipo === 'confirm' ? (
+                  <>
+                    <button
+                      type="button"
+                      className="btn btn-outline-secondary rounded-pill px-4"
+                      onClick={() => setModalAlerta({ ...modalAlerta, show: false })}
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-danger rounded-pill px-4"
+                      onClick={() => {
+                        const confirmCallback = modalAlerta.onConfirm;
+                        setModalAlerta({ ...modalAlerta, show: false });
+                        if (confirmCallback) confirmCallback();
+                      }}
+                    >
+                      Aceptar
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    type="button"
+                    className="btn btn-primary rounded-pill px-5"
+                    onClick={() => setModalAlerta({ ...modalAlerta, show: false })}
+                  >
+                    Entendido
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

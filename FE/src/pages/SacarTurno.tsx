@@ -23,10 +23,20 @@ export const SacarTurno: React.FC = () => {
   const [loadingHorarios, setLoadingHorarios] = useState(false);
   const [horariosDisponibles, setHorariosDisponibles] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+
+  // ESTADO PARA MODAL / CARTEL INTEGRADO DE ALERTAS Y CONFIRMACIONES
+  const [modalAlerta, setModalAlerta] = useState<{
+    show: boolean;
+    titulo: string;
+    mensaje: string;
+    tipo: 'error' | 'success' | 'confirm';
+    onConfirm?: () => void;
+  }>({ show: false, titulo: '', mensaje: '', tipo: 'error' });
 
   useEffect(() => {
-    getEspecialidades().then(setEspecialidades).catch(() => setError('No se pudieron cargar las especialidades.'));
+    getEspecialidades()
+      .then(setEspecialidades)
+      .catch(() => setModalAlerta({ show: true, titulo: 'Error', mensaje: 'No se pudieron cargar las especialidades.', tipo: 'error' }));
   }, []);
 
   useEffect(() => {
@@ -39,12 +49,12 @@ export const SacarTurno: React.FC = () => {
   }, [especialidades, searchParams, especialidad]);
 
   useEffect(() => {
-  if (!especialidad || especialidad.cod_especialidad === undefined) return;
-  setLoading(true);
-  getEspecialistasByEspecialidad(especialidad.cod_especialidad)
-    .then(setEspecialistas)
-    .catch(() => setError('No se pudieron cargar los especialistas.'))
-    .finally(() => setLoading(false));
+    if (!especialidad || especialidad.cod_especialidad === undefined) return;
+    setLoading(true);
+    getEspecialistasByEspecialidad(especialidad.cod_especialidad)
+      .then(setEspecialistas)
+      .catch(() => setModalAlerta({ show: true, titulo: 'Error', mensaje: 'No se pudieron cargar los especialistas.', tipo: 'error' }))
+      .finally(() => setLoading(false));
   }, [especialidad]);
 
   useEffect(() => {
@@ -57,7 +67,12 @@ export const SacarTurno: React.FC = () => {
       })
       .catch((err: unknown) => {
         if (!cancelled) {
-          setError(err instanceof Error ? err.message : 'No se pudieron cargar los horarios disponibles.');
+          setModalAlerta({
+            show: true,
+            titulo: 'Atención',
+            mensaje: err instanceof Error ? err.message : 'No se pudieron cargar los horarios disponibles.',
+            tipo: 'error'
+          });
         }
       })
       .finally(() => {
@@ -80,13 +95,11 @@ export const SacarTurno: React.FC = () => {
 
   if (!isAuthenticated()) return <Navigate to="/login" replace />;
 
-  const finish = (event: React.FormEvent) => {
-    event.preventDefault();
+  const ejecutarReserva = () => {
     const usuario = getUsuarioActual();
     if (!usuario || !especialista?.cod_especialista || !horariosDisponibles.includes(hora)) return;
 
     setIsSubmitting(true);
-    setError(null);
     createTurno({
       fecha,
       hora_inicio: hora,
@@ -94,8 +107,28 @@ export const SacarTurno: React.FC = () => {
       nro_afiliado: usuario.id,
     })
       .then(() => navigate('/usuario', { state: { bookingSuccess: true } }))
-      .catch((err) => setError(err instanceof Error ? err.message : 'No se pudo confirmar el turno.'))
-      .finally(() => setIsSubmitting(false));
+      .catch((err) => {
+        setIsSubmitting(false);
+        setModalAlerta({
+          show: true,
+          titulo: 'Error al reservar',
+          mensaje: err instanceof Error ? err.message : 'No se pudo confirmar el turno.',
+          tipo: 'error'
+        });
+      });
+  };
+
+  const finish = (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!hora || !horariosDisponibles.includes(hora)) return;
+
+    setModalAlerta({
+      show: true,
+      titulo: 'Confirmar turno',
+      mensaje: `¿Confirmás tu turno de ${especialidad?.nombre} con ${especialista?.nombre} para el día ${fecha} a las ${hora} hs?`,
+      tipo: 'confirm',
+      onConfirm: ejecutarReserva,
+    });
   };
 
   return (
@@ -115,7 +148,6 @@ export const SacarTurno: React.FC = () => {
           ))}
         </div>
         <section className="card border-0 shadow-sm p-4 p-md-5">
-          {error && <div className="alert alert-danger">{error}</div>}
           {step === 1 && (
             <>
               <h2 className="h4 fw-bold mb-1">¿Qué especialidad necesitás?</h2>
@@ -142,7 +174,7 @@ export const SacarTurno: React.FC = () => {
                 <div className="row g-3">
                   {especialistas.map((item) => (
                     <div className="col-md-6" key={item.cod_especialista}>
-                      <button className={`selection-card text-start w-100 ${especialista?.cod_especialista === item.cod_especialista ? 'selected' : ''}`} onClick={() => { setEspecialista(item); setHora(''); setHorariosDisponibles([]); setLoadingHorarios(Boolean(fecha)); setError(null); }} onDoubleClick={() => { setEspecialista(item); setHora(''); setHorariosDisponibles([]); setLoadingHorarios(Boolean(fecha)); setError(null); setStep(3); }}>
+                      <button className={`selection-card text-start w-100 ${especialista?.cod_especialista === item.cod_especialista ? 'selected' : ''}`} onClick={() => { setEspecialista(item); setHora(''); setHorariosDisponibles([]); setLoadingHorarios(Boolean(fecha)); }} onDoubleClick={() => { setEspecialista(item); setHora(''); setHorariosDisponibles([]); setLoadingHorarios(Boolean(fecha)); setStep(3); }}>
                         <i className="bi bi-person-badge fs-4" /><span><strong className="d-block">{item.nombre}</strong><small className="text-muted">{item.matricula}</small></span>
                         {especialista?.cod_especialista === item.cod_especialista && <i className="bi bi-check-circle-fill ms-auto" />}
                       </button>
@@ -166,7 +198,7 @@ export const SacarTurno: React.FC = () => {
                     const value = new Date(`${day}T12:00:00`);
                     const today = new Date(); today.setHours(0, 0, 0, 0);
                     const disabled = !calendarDay.isCurrentMonth || value < today || value > maxDate || value.getDay() === 0 || value.getDay() === 6;
-                    return <button type="button" className={`calendar-day ${!calendarDay.isCurrentMonth ? 'adjacent-month' : ''} ${fecha === day ? 'selected' : ''}`} disabled={disabled} key={day} onClick={() => { setFecha(day); setHora(''); setHorariosDisponibles([]); setLoadingHorarios(Boolean(especialista?.cod_especialista)); setError(null); }}>{value.getDate()}</button>;
+                    return <button type="button" className={`calendar-day ${!calendarDay.isCurrentMonth ? 'adjacent-month' : ''} ${fecha === day ? 'selected' : ''}`} disabled={disabled} key={day} onClick={() => { setFecha(day); setHora(''); setHorariosDisponibles([]); setLoadingHorarios(Boolean(especialista?.cod_especialista)); }}>{value.getDate()}</button>;
                   })}
                 </div>
               </div>
@@ -190,7 +222,7 @@ export const SacarTurno: React.FC = () => {
                       key={item}
                       type="button"
                       className={`btn btn-sm ${hora === item ? 'btn-primary shadow-sm' : 'btn-outline-primary'}`}
-                      onClick={() => { setHora(item); setError(null); }}
+                      onClick={() => setHora(item)}
                       style={{ minWidth: '65px' }}
                     >
                       {item}
@@ -209,6 +241,58 @@ export const SacarTurno: React.FC = () => {
           )}
         </section>
       </main>
+
+      {/* MODAL / CARTEL INTEGRADO DE ALERTAS Y CONFIRMACIONES */}
+      {modalAlerta.show && (
+        <div className="modal show d-block" tabIndex={-1} style={{ backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1050 }}>
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content border-0 shadow-lg rounded-4">
+              <div className={`modal-header border-0 pb-0 ${modalAlerta.tipo === 'error' ? 'text-danger' : modalAlerta.tipo === 'success' ? 'text-success' : 'text-primary'}`}>
+                <h5 className="modal-title fw-bold">
+                  <i className={`bi ${modalAlerta.tipo === 'error' ? 'bi-exclamation-triangle-fill' : modalAlerta.tipo === 'success' ? 'bi-check-circle-fill' : 'bi-question-circle-fill'} me-2`}></i>
+                  {modalAlerta.titulo}
+                </h5>
+                <button type="button" className="btn-close" onClick={() => setModalAlerta({ ...modalAlerta, show: false })}></button>
+              </div>
+              <div className="modal-body py-4 text-center">
+                <p className="mb-0 text-secondary fs-6">{modalAlerta.mensaje}</p>
+              </div>
+              <div className="modal-footer border-0 pt-0 justify-content-center pb-4">
+                {modalAlerta.tipo === 'confirm' ? (
+                  <>
+                    <button
+                      type="button"
+                      className="btn btn-outline-secondary rounded-pill px-4"
+                      onClick={() => setModalAlerta({ ...modalAlerta, show: false })}
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-danger rounded-pill px-4"
+                      onClick={() => {
+                        const confirmCallback = modalAlerta.onConfirm;
+                        setModalAlerta({ ...modalAlerta, show: false });
+                        if (confirmCallback) confirmCallback();
+                      }}
+                    >
+                      Aceptar
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    type="button"
+                    className="btn btn-primary rounded-pill px-5"
+                    onClick={() => setModalAlerta({ ...modalAlerta, show: false })}
+                  >
+                    Entendido
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
