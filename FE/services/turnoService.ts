@@ -41,6 +41,8 @@ export interface ResponderConfirmacionPayload {
 export interface ResponderConfirmacionResponse {
   cod_turno: number;
   estado: 'CONFIRMADO' | 'CANCELADO';
+}
+
 export interface HorariosDisponibles {
   fecha: string;
   horarios: string[];

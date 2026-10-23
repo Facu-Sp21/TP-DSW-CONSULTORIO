@@ -239,31 +239,6 @@ export const Administrativo: React.FC = () => {
     if (!data.esEdicion && (!data.contrasena || data.contrasena.trim().length < 4)) {
       return 'El campo Contraseña es obligatorio y debe tener al menos 4 caracteres.';
     }
-  };
-
-  const handleStartEditarEspecialidad = (esp: Especialidad) => {
-    setEditEspecialidadId(esp.cod_especialidad!);
-    setEditNombreEspecialidad(esp.nombre);
-    setEditDuracionEspecialidad(String(esp.duracion_minutos ?? 30));
-    setEditEstadoEspecialidad(esp.estado ?? true);
-  };
-
-  const handleGuardarEditarEspecialidad = async (cod: number) => {
-    const duracionMinutos = Number(editDuracionEspecialidad);
-    if (!editNombreEspecialidad.trim() || !Number.isInteger(duracionMinutos) || duracionMinutos <= 0) {
-      alert('Ingresá un nombre y una duración válida en minutos.');
-      return;
-    }
-    try {
-      await updateEspecialidad(cod, {
-        nombre: editNombreEspecialidad.trim(),
-        duracion_minutos: duracionMinutos,
-        estado: editEstadoEspecialidad,
-      });
-      setEditEspecialidadId(null);
-      cargarDatos();
-    } catch (err: any) {
-      alert(err.message || 'Error al actualizar especialidad');
     if (data.contrasena && data.contrasena.trim() && data.contrasena.trim().length < 4) {
       return 'La nueva contraseña debe tener al menos 4 caracteres.';
     }
