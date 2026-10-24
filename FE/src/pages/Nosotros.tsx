@@ -1,17 +1,30 @@
-import React from 'react';
+import * as React from 'react';
 import { Link } from 'react-router-dom';
 import { PublicLayout } from '../components/PublicLayout';
 import { useEffect, useState } from 'react';
-import { getEspecialistasQueTeAcompanian, type Especialista } from '../../services/especialistaService.ts';
+import { getEspecialistasQueTeAcompanian, getEspecialistas, type Especialista } from '../../services/especialistaService.ts';
 
 export const Nosotros: React.FC = () => {
   const [especialistas, setEspecialistas] = useState<Especialista[]>([]);
+  const [totalEspecialistas, setTotalEspecialistas] = useState<number | null>(null);
+
 
 useEffect(() => {
   getEspecialistasQueTeAcompanian()
     .then(setEspecialistas)
     .catch(console.error);
 }, []);
+
+useEffect(() => {
+  getEspecialistas()
+    .then((especialistas) => {
+      setTotalEspecialistas(especialistas.length);
+    })
+    .catch((error) => {
+      console.error('No se pudo cargar el total de especialistas:', error);
+    });
+}, []);
+
 
   return (
     <PublicLayout activo="/nosotros">
@@ -72,7 +85,7 @@ useEffect(() => {
                     </div>
                     <div className="col-6">
                       <div className="border rounded-3 p-3 h-100">
-                        <strong className="d-block fs-3 fw-bold" style={{ color: 'var(--color-primario-oscuro)' }}>45</strong>
+                        <strong className="d-block fs-3 fw-bold" style={{ color: 'var(--color-primario-oscuro)' }}>{totalEspecialistas ?? '—'}</strong>
                         <span className="text-muted small">Profesionales activos</span>
                       </div>
                     </div>
