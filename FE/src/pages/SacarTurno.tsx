@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import * as React from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import { buildMonthCalendar, UserNavigation } from './Usuario';
 import { getEspecialidades } from '../../services/especialidadService';
