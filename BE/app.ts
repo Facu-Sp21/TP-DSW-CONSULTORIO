@@ -1,5 +1,4 @@
-import dotenv from 'dotenv';
-dotenv.config({path: '.env.desarrollo'});
+import './src/shared/env.js';
 import 'reflect-metadata';
 import { orm, syncSchema } from './src/shared/db/orm.js';
 import express from 'express';

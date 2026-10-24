@@ -841,10 +841,8 @@ export const Administrativo: React.FC = () => {
                         <table className="table table-hover align-middle mb-0">
                           <thead className="table-light">
                             <tr>
-                              <th style={{ width: 100 }}>Código</th>
-                              <th>Nombre</th>
+                              <th>Especialidad</th>
                               <th style={{ width: 160 }}>Minutos por turno</th>
-                              <th>Nombre y Duración</th>
                               <th className="text-end" style={{ width: 180 }}>Acciones</th>
                             </tr>
                           </thead>
@@ -879,19 +877,22 @@ export const Administrativo: React.FC = () => {
                                       <span className={`badge ms-2 ${esp.estado === false ? 'text-bg-secondary' : 'text-bg-success'}`}>
                                         {esp.estado === false ? 'Inactiva' : 'Activa'}
                                       </span>
-                                      <small className="text-muted d-block">
-                                        Duración: {esp.duracion_minutos} minutos
-                                      </small>
                                     </div>
                                   )}
                                 </td>
-                                <td>
+                                <td
+                                  style={
+                                    editEspecialidadId === esp.cod_especialidad
+                                      ? { verticalAlign: 'top' }
+                                      : undefined
+                                  }
+                                >
                                   {editEspecialidadId === esp.cod_especialidad ? (
                                     <input
                                       type="number"
                                       className="form-control form-control-sm"
-                                      min="1"
-                                      step="1"
+                                      min="5"
+                                      step="5"
                                       aria-label={`Minutos por turno para ${editNombreEspecialidad}`}
                                       value={editDuracionEspecialidad}
                                       onChange={(e) => setEditDuracionEspecialidad(e.target.value)}
@@ -917,10 +918,29 @@ export const Administrativo: React.FC = () => {
                                             });
                                             return;
                                           }
+                                          const duracionMinutos = Number(editDuracionEspecialidad);
+                                          if (!Number.isFinite(duracionMinutos) || duracionMinutos <= 0) {
+                                            setModalAlerta({
+                                              show: true,
+                                              titulo: 'Duración inválida',
+                                              mensaje: 'Ingresá una duración válida en minutos.',
+                                              tipo: 'error',
+                                            });
+                                            return;
+                                          }
+                                          if (duracionMinutos % 5 !== 0) {
+                                            setModalAlerta({
+                                              show: true,
+                                              titulo: 'Duración no permitida',
+                                              mensaje: 'La duración en minutos debe ser un múltiplo de 5 (ej: 15, 30, 45).',
+                                              tipo: 'error',
+                                            });
+                                            return;
+                                          }
                                           try {
                                             await updateEspecialidad(esp.cod_especialidad!, {
                                               nombre: editNombreEspecialidad.trim(),
-                                              duracion_minutos: esp.duracion_minutos,
+                                              duracion_minutos: duracionMinutos,
                                               estado: editEstadoEspecialidad,
                                             });
                                             setEditEspecialidadId(null);
@@ -953,6 +973,7 @@ export const Administrativo: React.FC = () => {
                                         onClick={() => {
                                           setEditEspecialidadId(esp.cod_especialidad!);
                                           setEditNombreEspecialidad(esp.nombre);
+                                          setEditDuracionEspecialidad(String(esp.duracion_minutos ?? ''));
                                           setEditEstadoEspecialidad(esp.estado ?? true);
                                         }}
                                       >
@@ -992,7 +1013,7 @@ export const Administrativo: React.FC = () => {
                             ))}
                             {especialidades.length === 0 && (
                               <tr>
-                                <td colSpan={2} className="text-center text-muted py-4">
+                                <td colSpan={3} className="text-center text-muted py-4">
                                   No hay especialidades registradas.
                                 </td>
                               </tr>
