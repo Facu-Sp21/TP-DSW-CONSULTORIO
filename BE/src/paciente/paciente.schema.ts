@@ -6,7 +6,7 @@ export const pacienteBodySchema = z.object({
   telefono: z.string().max(30).min(1, 'El campo Teléfono del paciente es obligatorio'),
   direccion: z.string().max(100).min(1, 'El campo Dirección del paciente es obligatorio'),
   email: z.string().max(120).email('El campo Email del paciente no es válido'),
-  contrasena: z.string().min(4, 'La contraseña debe tener al menos 4 caracteres').optional().or(z.literal('')),
+  contrasena: z.string().min(4, 'La contraseña debe tener al menos 4 caracteres').optional(),
   cod_os: z.coerce.number().int().positive().nullable().optional(),
 });
 

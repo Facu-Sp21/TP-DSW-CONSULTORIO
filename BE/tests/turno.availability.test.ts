@@ -15,6 +15,10 @@ jest.mock('../src/shared/db/orm.js', () => ({
   },
 }));
 
+jest.mock('../src/Email/email.service.js', () => ({
+  enviarCorreo: jest.fn().mockResolvedValue(undefined),
+}));
+
 const crearTurno = (fecha: string, hora: string, paciente = 10, especialista = 1, duracion = 60) => ({
   fecha,
   hora_inicio: hora,
