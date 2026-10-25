@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { PublicLayout } from '../components/PublicLayout';
 import { getUsuarioActual, isAuthenticated } from '../../services/authService';
+
 // Servicios de Backend
 import {
   type Especialidad,
@@ -30,14 +31,20 @@ import {
   createTurno,
   cancelarTurno,
 } from '../../services/turnoService';
-import { type ObraSocial, getObrasSociales } from '../../services/obraSocialService';
+import {
+  type ObraSocial,
+  getObrasSociales,
+  createObraSocial,
+  updateObraSocial,
+  deleteObraSocial,
+} from '../../services/obraSocialService';
 
 export const Administrativo: React.FC = () => {
   const usuario = getUsuarioActual();
 
   // PESTAÑA ACTIVA
   const [tabActiva, setTabActiva] = useState<
-    'especialidades' | 'especialistas' | 'pacientes' | 'turnos'
+    'especialidades' | 'especialistas' | 'pacientes' | 'turnos' | 'obras-sociales'
   >('especialidades');
 
   const [error, setError] = useState<string | null>(null);
@@ -55,6 +62,10 @@ export const Administrativo: React.FC = () => {
 
   // ESTADOS DE OBRAS SOCIALES
   const [obrasSociales, setObrasSociales] = useState<ObraSocial[]>([]);
+  const [nombreObraSocial, setNombreObraSocial] = useState('');
+  const [editObraSocialId, setEditObraSocialId] = useState<number | null>(null);
+  const [editNombreObraSocial, setEditNombreObraSocial] = useState('');
+
   const [obrasSocialesSel, setObrasSocialesSel] = useState<number[]>([]);
   const [editObrasSocialesSel, setEditObrasSocialesSel] = useState<number[]>([]);
 
@@ -90,7 +101,6 @@ export const Administrativo: React.FC = () => {
   const [editEstadoEspecialista, setEditEstadoEspecialista] = useState(true);
   const [editConsultaParticularEspecialista, setEditConsultaParticularEspecialista] = useState<number | ''>(0);
   const [editCodEspecialidadSel, setEditCodEspecialidadSel] = useState<number | ''>('');
-
   const [mostrarBusquedaEspecialista, setMostrarBusquedaEspecialista] = useState(false);
   const [busquedaDniEspecialista, setBusquedaDniEspecialista] = useState('');
 
@@ -112,7 +122,6 @@ export const Administrativo: React.FC = () => {
   const [editDireccionPaciente, setEditDireccionPaciente] = useState('');
   const [editContrasenaPaciente, setEditContrasenaPaciente] = useState('');
   const [editOsPacienteSel, setEditOsPacienteSel] = useState<number | ''>('');
-
   const [mostrarBusquedaPaciente, setMostrarBusquedaPaciente] = useState(false);
   const [busquedaDniPaciente, setBusquedaDniPaciente] = useState('');
 
@@ -130,7 +139,7 @@ export const Administrativo: React.FC = () => {
   );
   const duracionMinutosTurno = especialidadTurnoObj?.duracion_minutos || 30;
 
-  // Generación dinámica de franjas horarias según los minutos de la especialidad
+  // Generación dinámica de franjas horarias
   const obtenerHorariosDinamicos = (duracion: number) => {
     const horarios = [];
     let minActual = 8 * 60; // 08:00 hrs
@@ -149,7 +158,10 @@ export const Administrativo: React.FC = () => {
   // Filtrar médicos según la especialidad elegida
   const especialistasFiltrados = especialistas.filter((esp: any) => {
     if (!espEspecialidadSel) return false;
-    const codEsp = esp.cod_especialidad || esp.codEspecialidad || esp.especialidad?.cod_especialidad;
+    const codEsp =
+      esp.cod_especialidad ||
+      esp.codEspecialidad ||
+      esp.especialidad?.cod_especialidad;
     return Number(codEsp) === Number(espEspecialidadSel);
   });
 
@@ -171,13 +183,13 @@ export const Administrativo: React.FC = () => {
       const tFecha = t.fecha;
       const tHora = (t.hora_inicio || t.horaInicio || '').substring(0, 5);
       const estadoTurno = (t.estado || '').toUpperCase();
-      if (estadoTurno === 'CANCELADO') return false; 
+      if (estadoTurno === 'CANCELADO') return false;
       return medCod === Number(espTurnoSel) && tFecha === fechaTurno && tHora === hora;
     });
     return !yaOcupado;
   });
 
-  // Filtrar turnos activos para la tabla (excluyendo los cancelados)
+  // Filtrar turnos activos para la tabla
   const turnosActivos = turnos.filter((t: any) => {
     const estado = (t.estado || '').toUpperCase();
     return estado !== 'CANCELADO';
@@ -215,6 +227,116 @@ export const Administrativo: React.FC = () => {
     return <Navigate to="/login" replace />;
   }
 
+  // HANDLERS DE OBRAS SOCIALES
+  const handleCrearObraSocial = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!nombreObraSocial.trim()) {
+      setModalAlerta({
+        show: true,
+        titulo: 'Campo incompleto',
+        mensaje: 'El campo "Nombre de la Obra Social" es obligatorio.',
+        tipo: 'error',
+      });
+      return;
+    }
+
+    try {
+      await createObraSocial({ nombre: nombreObraSocial.trim() });
+      setNombreObraSocial('');
+      setModalAlerta({
+        show: true,
+        titulo: '¡Éxito!',
+        mensaje: 'Obra social registrada correctamente.',
+        tipo: 'success',
+      });
+      cargarDatos();
+    } catch (err: any) {
+      setModalAlerta({
+        show: true,
+        titulo: 'Error',
+        mensaje: err.message || 'Error al crear la obra social',
+        tipo: 'error',
+      });
+    }
+  };
+
+  const handleGuardarEditarObraSocial = async (cod: number) => {
+    if (!editNombreObraSocial.trim()) {
+      setModalAlerta({
+        show: true,
+        titulo: 'Error',
+        mensaje: 'El nombre no puede estar vacío.',
+        tipo: 'error',
+      });
+      return;
+    }
+
+    try {
+      await updateObraSocial(cod, { nombre: editNombreObraSocial.trim() });
+      setEditObraSocialId(null);
+      setModalAlerta({
+        show: true,
+        titulo: '¡Actualizado!',
+        mensaje: 'Obra social actualizada correctamente.',
+        tipo: 'success',
+      });
+      cargarDatos();
+    } catch (err: any) {
+      setModalAlerta({
+        show: true,
+        titulo: 'Error',
+        mensaje: err.message || 'Error al actualizar la obra social',
+        tipo: 'error',
+      });
+    }
+  };
+
+  const handleEliminarObraSocial = async (cod: number) => {
+    setModalAlerta({
+      show: true,
+      titulo: 'Confirmar eliminación',
+      mensaje: '¿Estás seguro de eliminar esta obra social?',
+      tipo: 'confirm',
+      onConfirm: async () => {
+        try {
+          await deleteObraSocial(cod);
+          cargarDatos();
+        } catch (err: any) {
+          setModalAlerta({
+            show: true,
+            titulo: 'Error',
+            mensaje: err.message || 'Error al eliminar la obra social',
+            tipo: 'error',
+          });
+        }
+      },
+    });
+  };
+
+  // HANDLERS DE ESPECIALIDADES
+  const handleEliminarEspecialidad = async (cod: number) => {
+    setModalAlerta({
+      show: true,
+      titulo: 'Confirmar eliminación',
+      mensaje:
+        '¿Estás seguro de eliminar esta especialidad? Los especialistas asociados pasarán a "no asignado".',
+      tipo: 'confirm',
+      onConfirm: async () => {
+        try {
+          await deleteEspecialidad(cod);
+          cargarDatos();
+        } catch (err: any) {
+          setModalAlerta({
+            show: true,
+            titulo: 'Error',
+            mensaje: err.message || 'Error al eliminar la especialidad',
+            tipo: 'error',
+          });
+        }
+      },
+    });
+  };
+
   // VALIDACIÓN DETALLADA DE CAMPOS DE ESPECIALISTA
   const validarCamposEspecialista = (data: {
     dni: string;
@@ -229,10 +351,14 @@ export const Administrativo: React.FC = () => {
   }) => {
     if (!data.dni.trim()) return 'El campo DNI es obligatorio.';
     if (!/^\d+$/.test(data.dni.trim())) return 'El DNI debe contener únicamente números.';
+    if (data.dni.trim().length > 8) return 'El DNI no puede tener más de 8 dígitos.';
     if (!data.nombre.trim()) return 'El campo Nombre Completo es obligatorio.';
     if (!data.matricula.trim()) return 'El campo Matrícula es obligatorio.';
     if (!data.telefono.trim()) return 'El campo Teléfono es obligatorio.';
     if (!/^\d+$/.test(data.telefono.trim())) return 'El teléfono debe contener únicamente números.';
+    if (data.telefono.trim().length < 8 || data.telefono.trim().length > 15) {
+      return 'El teléfono debe tener entre 8 y 15 dígitos.';
+    }
     if (data.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email.trim())) {
       return 'El campo Email no tiene un formato válido (ej: medico@consultorio.com).';
     }
@@ -242,11 +368,12 @@ export const Administrativo: React.FC = () => {
     if (data.contrasena && data.contrasena.trim() && data.contrasena.trim().length < 4) {
       return 'La nueva contraseña debe tener al menos 4 caracteres.';
     }
-    if (data.consulta_particular === '' || isNaN(Number(data.consulta_particular)) || Number(data.consulta_particular) < 0) {
+    if (
+      data.consulta_particular === '' ||
+      isNaN(Number(data.consulta_particular)) ||
+      Number(data.consulta_particular) < 0
+    ) {
       return 'El Precio de consulta particular ingresado no es válido.';
-    }
-    if (!data.cod_especialidad) {
-      return 'Debe seleccionar una Especialidad para el especialista.';
     }
     return null;
   };
@@ -286,7 +413,7 @@ export const Administrativo: React.FC = () => {
         telefono: telefonoEspecialista.trim(),
         email: emailEspecialista.trim() || undefined,
         contrasena: contrasenaEspecialista.trim(),
-        cod_especialidad: Number(codEspecialidadSel),
+        cod_especialidad: codEspecialidadSel !== '' ? Number(codEspecialidadSel) : undefined,
         estado: estadoEspecialista,
         consulta_particular: Number(consultaParticularEspecialista),
         obras_sociales: obrasSocialesSel,
@@ -332,8 +459,12 @@ export const Administrativo: React.FC = () => {
     setEditContrasenaEspecialista('');
     setEditEstadoEspecialista(esp.estado ?? true);
     setEditConsultaParticularEspecialista(esp.consulta_particular ?? 0);
-    const codEsp = esp.cod_especialidad || esp.codEspecialidad ||
-      esp.especialidad?.cod_especialidad || '';
+
+    const codEsp =
+      esp.cod_especialidad ||
+      esp.codEspecialidad ||
+      esp.especialidad?.cod_especialidad ||
+      '';
     setEditCodEspecialidadSel(codEsp);
 
     const idsOS = esp.obrasSociales ? esp.obrasSociales.map((os: any) => os.cod_os) : [];
@@ -370,7 +501,7 @@ export const Administrativo: React.FC = () => {
         matricula: editMatriculaEspecialista.trim(),
         telefono: editTelefonoEspecialista.trim(),
         email: editEmailEspecialista.trim() || undefined,
-        cod_especialidad: Number(editCodEspecialidadSel),
+        cod_especialidad: editCodEspecialidadSel !== '' ? Number(editCodEspecialidadSel) : null,
         estado: editEstadoEspecialista,
         consulta_particular: Number(editConsultaParticularEspecialista),
         obras_sociales: editObrasSocialesSel,
@@ -383,7 +514,6 @@ export const Administrativo: React.FC = () => {
       await updateEspecialista(cod, dataUpdate);
       setEditEspecialistaId(null);
       setEditContrasenaEspecialista('');
-
       setModalAlerta({
         show: true,
         titulo: '¡Actualizado!',
@@ -438,12 +568,20 @@ export const Administrativo: React.FC = () => {
       setModalAlerta({ show: true, titulo: 'Dato inválido', mensaje: 'El DNI debe contener únicamente números.', tipo: 'error' });
       return;
     }
+    if (dniPaciente.trim().length > 8) {
+      setModalAlerta({ show: true, titulo: 'Dato inválido', mensaje: 'El DNI no puede tener más de 8 dígitos.', tipo: 'error' });
+      return;
+    }
     if (!telefonoPaciente.trim()) {
       setModalAlerta({ show: true, titulo: 'Dato faltante', mensaje: 'El campo Teléfono es obligatorio.', tipo: 'error' });
       return;
     }
     if (!/^\d+$/.test(telefonoPaciente.trim())) {
       setModalAlerta({ show: true, titulo: 'Dato inválido', mensaje: 'El teléfono debe contener únicamente números.', tipo: 'error' });
+      return;
+    }
+    if (telefonoPaciente.trim().length < 8 || telefonoPaciente.trim().length > 15) {
+      setModalAlerta({ show: true, titulo: 'Dato inválido', mensaje: 'El teléfono debe tener entre 8 y 15 dígitos.', tipo: 'error' });
       return;
     }
     if (!direccionPaciente.trim()) {
@@ -513,12 +651,20 @@ export const Administrativo: React.FC = () => {
       setModalAlerta({ show: true, titulo: 'Dato inválido', mensaje: 'El DNI debe contener únicamente números.', tipo: 'error' });
       return;
     }
+    if (editDniPaciente.trim().length > 8) {
+      setModalAlerta({ show: true, titulo: 'Dato inválido', mensaje: 'El DNI no puede tener más de 8 dígitos.', tipo: 'error' });
+      return;
+    }
     if (!editTelefonoPaciente.trim()) {
       setModalAlerta({ show: true, titulo: 'Dato faltante', mensaje: 'El campo Teléfono es obligatorio.', tipo: 'error' });
       return;
     }
     if (!/^\d+$/.test(editTelefonoPaciente.trim())) {
       setModalAlerta({ show: true, titulo: 'Dato inválido', mensaje: 'El teléfono debe contener únicamente números.', tipo: 'error' });
+      return;
+    }
+    if (editTelefonoPaciente.trim().length < 8 || editTelefonoPaciente.trim().length > 15) {
+      setModalAlerta({ show: true, titulo: 'Dato inválido', mensaje: 'El teléfono debe tener entre 8 y 15 dígitos.', tipo: 'error' });
       return;
     }
     if (!editEmailPaciente.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(editEmailPaciente.trim())) {
@@ -606,10 +752,10 @@ export const Administrativo: React.FC = () => {
     }
 
     const especialistaSeleccionado = especialistas.find(
-      (especialista) => especialista.cod_especialista === Number(espTurnoSel),
+      (especialista) => especialista.cod_especialista === Number(espTurnoSel)
     );
     const pacienteSeleccionado = pacientes.find(
-      (paciente) => Number(paciente.nro_afiliado ?? paciente.id) === Number(pacTurnoSel),
+      (paciente) => Number(paciente.nro_afiliado ?? paciente.id) === Number(pacTurnoSel)
     );
 
     if (!especialistaSeleccionado || !pacienteSeleccionado) {
@@ -625,10 +771,10 @@ export const Administrativo: React.FC = () => {
     const codOsPaciente = pacienteSeleccionado.obraSocial?.cod_os ?? pacienteSeleccionado.cod_os ?? null;
     const aceptaObraSocial = Boolean(
       codOsPaciente &&
-      especialistaSeleccionado.obrasSociales?.some((obraSocial) => obraSocial.cod_os === codOsPaciente),
+      especialistaSeleccionado.obrasSociales?.some((obraSocial) => obraSocial.cod_os === codOsPaciente)
     );
 
-    const crearTurno = async (aceptaParticular = false) => {
+    const crearTurnoReq = async (aceptaParticular = false) => {
       try {
         await createTurno({
           fecha: fechaTurno,
@@ -643,6 +789,7 @@ export const Administrativo: React.FC = () => {
         setEspEspecialidadSel('');
         setEspTurnoSel('');
         setPacTurnoSel('');
+
         setModalAlerta({ show: true, titulo: '¡Éxito!', mensaje: 'Turno asignado correctamente.', tipo: 'success' });
         cargarDatos();
       } catch (err: any) {
@@ -662,13 +809,13 @@ export const Administrativo: React.FC = () => {
         mensaje: `La obra social del paciente no es aceptada por el especialista. La consulta deberá abonarse de forma particular por $${Number(especialistaSeleccionado.consulta_particular ?? 0).toFixed(2)}. ¿Desea continuar?`,
         tipo: 'confirm',
         onConfirm: () => {
-          void crearTurno(true);
+          void crearTurnoReq(true);
         },
       });
       return;
     }
 
-    await crearTurno();
+    await crearTurnoReq();
   };
 
   const handleCancelarTurno = async (cod_turno: number) => {
@@ -759,6 +906,15 @@ export const Administrativo: React.FC = () => {
               >
                 <i className="bi bi-calendar-event me-1"></i>Turnos
               </button>
+              <button
+                type="button"
+                className={`btn rounded-pill px-3 m-1 ${
+                  tabActiva === 'obras-sociales' ? 'btn-primary' : 'btn-light text-muted'
+                }`}
+                onClick={() => setTabActiva('obras-sociales')}
+              >
+                <i className="bi bi-shield-check me-1"></i>Obras Sociales
+              </button>
             </div>
           </div>
 
@@ -783,6 +939,7 @@ export const Administrativo: React.FC = () => {
                         onSubmit={async (e) => {
                           e.preventDefault();
                           const duracionMinutos = Number(duracionEspecialidad);
+
                           if (!nombreEspecialidad.trim()) {
                             setModalAlerta({
                               show: true,
@@ -810,6 +967,7 @@ export const Administrativo: React.FC = () => {
                             });
                             return;
                           }
+
                           try {
                             await createEspecialidad({
                               nombre: nombreEspecialidad.trim(),
@@ -875,6 +1033,7 @@ export const Administrativo: React.FC = () => {
                       </form>
                     </div>
                   </div>
+
                   <div className="col-lg-8">
                     <div className="card border p-4 shadow-sm">
                       <h2 className="h5 fw-bold mb-3">Especialidades Registradas</h2>
@@ -907,7 +1066,10 @@ export const Administrativo: React.FC = () => {
                                           checked={editEstadoEspecialidad}
                                           onChange={(e) => setEditEstadoEspecialidad(e.target.checked)}
                                         />
-                                        <label className="form-check-label small" htmlFor={`estado-especialidad-${esp.cod_especialidad}`}>
+                                        <label
+                                          className="form-check-label small"
+                                          htmlFor={`estado-especialidad-${esp.cod_especialidad}`}
+                                        >
                                           Activa
                                         </label>
                                       </div>
@@ -915,19 +1077,17 @@ export const Administrativo: React.FC = () => {
                                   ) : (
                                     <div>
                                       <span className="fw-semibold">{esp.nombre}</span>
-                                      <span className={`badge ms-2 ${esp.estado === false ? 'text-bg-secondary' : 'text-bg-success'}`}>
+                                      <span
+                                        className={`badge ms-2 ${
+                                          esp.estado === false ? 'text-bg-secondary' : 'text-bg-success'
+                                        }`}
+                                      >
                                         {esp.estado === false ? 'Inactiva' : 'Activa'}
                                       </span>
                                     </div>
                                   )}
                                 </td>
-                                <td
-                                  style={
-                                    editEspecialidadId === esp.cod_especialidad
-                                      ? { verticalAlign: 'top' }
-                                      : undefined
-                                  }
-                                >
+                                <td style={editEspecialidadId === esp.cod_especialidad ? { verticalAlign: 'top' } : undefined}>
                                   {editEspecialidadId === esp.cod_especialidad ? (
                                     <input
                                       type="number"
@@ -940,7 +1100,7 @@ export const Administrativo: React.FC = () => {
                                       required
                                     />
                                   ) : (
-                                    <span>{esp.duracion_minutos ?? '—'} min</span>
+                                    <span>{esp.duracion_minutos ?? '-'} min</span>
                                   )}
                                 </td>
                                 <td className="text-end">
@@ -978,6 +1138,7 @@ export const Administrativo: React.FC = () => {
                                             });
                                             return;
                                           }
+
                                           try {
                                             await updateEspecialidad(esp.cod_especialidad!, {
                                               nombre: editNombreEspecialidad.trim(),
@@ -1023,27 +1184,7 @@ export const Administrativo: React.FC = () => {
                                       <button
                                         type="button"
                                         className="btn btn-outline-danger"
-                                        onClick={() => {
-                                          setModalAlerta({
-                                            show: true,
-                                            titulo: 'Confirmar eliminación',
-                                            mensaje: '¿Estás seguro de eliminar esta especialidad?',
-                                            tipo: 'confirm',
-                                            onConfirm: async () => {
-                                              try {
-                                                await deleteEspecialidad(esp.cod_especialidad!);
-                                                cargarDatos();
-                                              } catch (err: any) {
-                                                setModalAlerta({
-                                                  show: true,
-                                                  titulo: 'Error',
-                                                  mensaje: err.message || 'Error al eliminar especialidad',
-                                                  tipo: 'error',
-                                                });
-                                              }
-                                            },
-                                          });
-                                        }}
+                                        onClick={() => handleEliminarEspecialidad(esp.cod_especialidad!)}
                                       >
                                         <i className="bi bi-trash"></i>
                                       </button>
@@ -1131,7 +1272,7 @@ export const Administrativo: React.FC = () => {
                           <input
                             type="password"
                             className="form-control"
-                            placeholder="***********"
+                            placeholder="************"
                             value={contrasenaEspecialista}
                             onChange={(e) => setContrasenaEspecialista(e.target.value)}
                           />
@@ -1149,7 +1290,10 @@ export const Administrativo: React.FC = () => {
                           </label>
                         </div>
                         <div className="mb-3">
-                          <label className="form-label small fw-bold text-muted" htmlFor="consultaParticularEspecialista">
+                          <label
+                            className="form-label small fw-bold text-muted"
+                            htmlFor="consultaParticularEspecialista"
+                          >
                             Precio de consulta particular
                           </label>
                           <input
@@ -1178,7 +1322,7 @@ export const Administrativo: React.FC = () => {
                               )
                             }
                           >
-                            <option value="">Seleccione una especialidad</option>
+                            <option value="">Sin asignar / No asignado</option>
                             {especialidades.map((esp) => (
                               <option key={esp.cod_especialidad} value={esp.cod_especialidad}>
                                 {esp.nombre}
@@ -1186,12 +1330,16 @@ export const Administrativo: React.FC = () => {
                             ))}
                           </select>
                         </div>
+
                         {/* OBRAS SOCIALES AL CREAR */}
                         <div className="mb-3">
                           <label className="form-label small fw-bold text-muted d-block">
-                            Obras Sociales Aceptadas
+                            Obras Sociales Aceptadas (Opcional)
                           </label>
-                          <div className="border rounded p-2 bg-light" style={{ maxHeight: '130px', overflowY: 'auto' }}>
+                          <div
+                            className="border rounded p-2 bg-light"
+                            style={{ maxHeight: '130px', overflowY: 'auto' }}
+                          >
                             {obrasSociales.length === 0 ? (
                               <span className="text-muted small">No hay obras sociales disponibles.</span>
                             ) : (
@@ -1206,7 +1354,9 @@ export const Administrativo: React.FC = () => {
                                       if (e.target.checked) {
                                         setObrasSocialesSel([...obrasSocialesSel, os.cod_os]);
                                       } else {
-                                        setObrasSocialesSel(obrasSocialesSel.filter((id) => id !== os.cod_os));
+                                        setObrasSocialesSel(
+                                          obrasSocialesSel.filter((id) => id !== os.cod_os)
+                                        );
                                       }
                                     }}
                                   />
@@ -1229,6 +1379,7 @@ export const Administrativo: React.FC = () => {
                       </form>
                     </div>
                   </div>
+
                   <div className="col-lg-8">
                     <div className="card border p-4 shadow-sm">
                       <div className="d-flex justify-content-between align-items-center mb-3">
@@ -1246,9 +1397,12 @@ export const Administrativo: React.FC = () => {
                           <i className="bi bi-search" />
                         </button>
                       </div>
+
                       {mostrarBusquedaEspecialista && (
                         <div className="input-group input-group-sm mb-3">
-                          <span className="input-group-text"><i className="bi bi-person-vcard" /></span>
+                          <span className="input-group-text">
+                            <i className="bi bi-person-vcard" />
+                          </span>
                           <input
                             type="search"
                             className="form-control"
@@ -1259,12 +1413,13 @@ export const Administrativo: React.FC = () => {
                           />
                         </div>
                       )}
+
                       <div className="table-responsive">
                         <table className="table table-hover align-middle mb-0">
                           <thead className="table-light">
                             <tr>
                               <th>Nombre</th>
-                              <th>DNI / Matrícula / Tel. / Email</th>
+                              <th>DNI/Matrícula / Tel. / Email</th>
                               <th>Especialidad</th>
                               <th className="text-end" style={{ width: 120 }}>Acciones</th>
                             </tr>
@@ -1274,9 +1429,14 @@ export const Administrativo: React.FC = () => {
                               const encontrada = especialidades.find(
                                 (e) =>
                                   Number(e.cod_especialidad) ===
-                                  Number(esp.cod_especialidad || esp.codEspecialidad || esp.especialidad?.cod_especialidad)
+                                  Number(
+                                    esp.cod_especialidad ||
+                                      esp.codEspecialidad ||
+                                      esp.especialidad?.cod_especialidad
+                                  )
                               );
-                              const espNombre = encontrada?.nombre || esp.especialidad?.nombre || 'Sin asignar';
+                              const espNombre = encontrada?.nombre || esp.especialidad?.nombre || 'No asignado';
+
                               return (
                                 <tr key={esp.cod_especialista}>
                                   <td>
@@ -1337,7 +1497,10 @@ export const Administrativo: React.FC = () => {
                                             checked={editEstadoEspecialista}
                                             onChange={(e) => setEditEstadoEspecialista(e.target.checked)}
                                           />
-                                          <label className="form-check-label small" htmlFor={`estado-especialista-${esp.cod_especialista}`}>
+                                          <label
+                                            className="form-check-label small"
+                                            htmlFor={`estado-especialista-${esp.cod_especialista}`}
+                                          >
                                             Activo
                                           </label>
                                         </div>
@@ -1355,14 +1518,22 @@ export const Administrativo: React.FC = () => {
                                               )
                                             }
                                           />
-                                          <label className="form-label small text-muted" htmlFor={`particular-especialista-${esp.cod_especialista}`}>
+                                          <label
+                                            className="form-label small text-muted"
+                                            htmlFor={`particular-especialista-${esp.cod_especialista}`}
+                                          >
                                             Precio consulta particular
                                           </label>
                                         </div>
                                         {/* OBRAS SOCIALES AL EDITAR */}
                                         <div className="mt-2">
-                                          <label className="form-label small fw-bold text-muted d-block">Obras Sociales</label>
-                                          <div className="border rounded p-1 bg-white" style={{ maxHeight: '100px', overflowY: 'auto' }}>
+                                          <label className="form-label small fw-bold text-muted d-block">
+                                            Obras Sociales
+                                          </label>
+                                          <div
+                                            className="border rounded p-1 bg-white"
+                                            style={{ maxHeight: '100px', overflowY: 'auto' }}
+                                          >
                                             {obrasSociales.map((os) => (
                                               <div key={os.cod_os} className="form-check form-check-inline me-2 mb-1">
                                                 <input
@@ -1374,11 +1545,16 @@ export const Administrativo: React.FC = () => {
                                                     if (e.target.checked) {
                                                       setEditObrasSocialesSel([...editObrasSocialesSel, os.cod_os]);
                                                     } else {
-                                                      setEditObrasSocialesSel(editObrasSocialesSel.filter((id) => id !== os.cod_os));
+                                                      setEditObrasSocialesSel(
+                                                        editObrasSocialesSel.filter((id) => id !== os.cod_os)
+                                                      );
                                                     }
                                                   }}
                                                 />
-                                                <label className="form-check-label small" htmlFor={`os-edit-${esp.cod_especialista}-${os.cod_os}`}>
+                                                <label
+                                                  className="form-check-label small"
+                                                  htmlFor={`os-edit-${esp.cod_especialista}-${os.cod_os}`}
+                                                >
                                                   {os.nombre}
                                                 </label>
                                               </div>
@@ -1414,7 +1590,10 @@ export const Administrativo: React.FC = () => {
                                           <i className="bi bi-card-heading me-1"></i>
                                           {esp.obrasSociales && esp.obrasSociales.length > 0 ? (
                                             esp.obrasSociales.map((os: any) => (
-                                              <span key={os.cod_os} className="badge bg-secondary-subtle text-secondary border me-1 mb-1">
+                                              <span
+                                                key={os.cod_os}
+                                                className="badge bg-secondary-subtle text-secondary border me-1 mb-1"
+                                              >
                                                 {os.nombre}
                                               </span>
                                             ))
@@ -1436,20 +1615,20 @@ export const Administrativo: React.FC = () => {
                                           )
                                         }
                                       >
-                                        <option value="">Sin asignar</option>
+                                        <option value="">No asignado</option>
                                         {especialidades.map((e) => (
                                           <option key={e.cod_especialidad} value={e.cod_especialidad}>
                                             {e.nombre}
                                           </option>
                                         ))}
                                       </select>
-                                    ) : espNombre !== 'Sin asignar' ? (
+                                    ) : espNombre !== 'No asignado' ? (
                                       <span className="badge rounded-pill bg-primary-subtle text-primary border border-primary-subtle">
                                         {espNombre}
                                       </span>
                                     ) : (
                                       <span className="badge rounded-pill bg-light text-muted border">
-                                        Sin asignar
+                                        No asignado
                                       </span>
                                     )}
                                   </td>
@@ -1584,11 +1763,15 @@ export const Administrativo: React.FC = () => {
                           <select
                             className="form-select"
                             value={osPacienteSel}
-                            onChange={(e) => setOsPacienteSel(e.target.value ? Number(e.target.value) : '')}
+                            onChange={(e) =>
+                              setOsPacienteSel(e.target.value ? Number(e.target.value) : '')
+                            }
                           >
                             <option value="">Sin Obra Social (Particular)</option>
                             {obrasSociales.map((os) => (
-                              <option key={os.cod_os} value={os.cod_os}>{os.nombre}</option>
+                              <option key={os.cod_os} value={os.cod_os}>
+                                {os.nombre}
+                              </option>
                             ))}
                           </select>
                         </div>
@@ -1598,6 +1781,7 @@ export const Administrativo: React.FC = () => {
                       </form>
                     </div>
                   </div>
+
                   <div className="col-lg-8">
                     <div className="card border p-4 shadow-sm">
                       <div className="d-flex justify-content-between align-items-center mb-3">
@@ -1615,9 +1799,12 @@ export const Administrativo: React.FC = () => {
                           <i className="bi bi-search" />
                         </button>
                       </div>
+
                       {mostrarBusquedaPaciente && (
                         <div className="input-group input-group-sm mb-3">
-                          <span className="input-group-text"><i className="bi bi-person-vcard" /></span>
+                          <span className="input-group-text">
+                            <i className="bi bi-person-vcard" />
+                          </span>
                           <input
                             type="search"
                             className="form-control"
@@ -1628,12 +1815,13 @@ export const Administrativo: React.FC = () => {
                           />
                         </div>
                       )}
+
                       <div className="table-responsive">
                         <table className="table table-hover align-middle mb-0">
                           <thead className="table-light">
                             <tr>
                               <th>Nombre Completo</th>
-                              <th>DNI / Obra Social</th>
+                              <th>DNI/Obra Social</th>
                               <th>Contacto / Dirección</th>
                               <th className="text-end" style={{ width: 120 }}>Acciones</th>
                             </tr>
@@ -1641,7 +1829,10 @@ export const Administrativo: React.FC = () => {
                           <tbody>
                             {pacientesFiltradosPorDni.map((p: any) => {
                               const id = p.nro_afiliado || p.id;
-                              const osNombre = p.obraSocial?.nombre || obrasSociales.find((os) => os.cod_os === p.cod_os)?.nombre;
+                              const osNombre =
+                                p.obraSocial?.nombre ||
+                                obrasSociales.find((os) => os.cod_os === p.cod_os)?.nombre;
+
                               return (
                                 <tr key={id}>
                                   <td>
@@ -1654,9 +1845,7 @@ export const Administrativo: React.FC = () => {
                                         placeholder="Nombre"
                                       />
                                     ) : (
-                                      <span className="fw-semibold">
-                                        {p.nombre || p.nombreCompleto}
-                                      </span>
+                                      <span className="fw-semibold">{p.nombre || p.nombreCompleto}</span>
                                     )}
                                   </td>
                                   <td>
@@ -1672,11 +1861,15 @@ export const Administrativo: React.FC = () => {
                                         <select
                                           className="form-select form-select-sm mt-1"
                                           value={editOsPacienteSel}
-                                          onChange={(e) => setEditOsPacienteSel(e.target.value ? Number(e.target.value) : '')}
+                                          onChange={(e) =>
+                                            setEditOsPacienteSel(e.target.value ? Number(e.target.value) : '')
+                                          }
                                         >
                                           <option value="">Sin Obra Social</option>
                                           {obrasSociales.map((os) => (
-                                            <option key={os.cod_os} value={os.cod_os}>{os.nombre}</option>
+                                            <option key={os.cod_os} value={os.cod_os}>
+                                              {os.nombre}
+                                            </option>
                                           ))}
                                         </select>
                                       </>
@@ -1725,17 +1918,17 @@ export const Administrativo: React.FC = () => {
                                       </>
                                     ) : (
                                       <div>
-                                        <small className="text-muted d-block">
-                                          {p.email}
-                                        </small>
+                                        <small className="text-muted d-block">{p.email}</small>
                                         {p.telefono && (
                                           <small className="text-muted d-block">
-                                            <i className="bi bi-telephone me-1"></i>{p.telefono}
+                                            <i className="bi bi-telephone me-1"></i>
+                                            {p.telefono}
                                           </small>
                                         )}
                                         {p.direccion && (
                                           <small className="text-muted d-block">
-                                            <i className="bi bi-geo-alt me-1"></i>{p.direccion}
+                                            <i className="bi bi-geo-alt me-1"></i>
+                                            {p.direccion}
                                           </small>
                                         )}
                                       </div>
@@ -1857,7 +2050,9 @@ export const Administrativo: React.FC = () => {
                           <select
                             className="form-select"
                             value={pacTurnoSel}
-                            onChange={(e) => setPacTurnoSel(e.target.value ? Number(e.target.value) : '')}
+                            onChange={(e) =>
+                              setPacTurnoSel(e.target.value ? Number(e.target.value) : '')
+                            }
                           >
                             <option value="">Seleccione un paciente</option>
                             {pacientes.map((p: any) => {
@@ -1871,7 +2066,7 @@ export const Administrativo: React.FC = () => {
                           </select>
                         </div>
 
-                        {/* 4. Fecha del Turno (Bloqueando fines de semana) */}
+                        {/* 4. Fecha del Turno */}
                         <div className="mb-2">
                           <label className="form-label small fw-bold text-muted">4. Fecha del Turno</label>
                           <input
@@ -1884,21 +2079,21 @@ export const Administrativo: React.FC = () => {
                               if (fechaVal) {
                                 const [yyyy, mm, dd] = fechaVal.split('-').map(Number);
                                 const diaSemana = new Date(yyyy, mm - 1, dd).getDay();
-                                // 0 = Domingo, 6 = Sábado
                                 if (diaSemana === 0 || diaSemana === 6) {
                                   setModalAlerta({
                                     show: true,
                                     titulo: 'Día no hábil',
-                                    mensaje: 'Los fines de semana (sábados y domingos) no se atienden turnos. Por favor seleccione un día hábil.',
+                                    mensaje:
+                                      'Los fines de semana (sábados y domingos) no se atienden turnos. Por favor seleccione un día hábil.',
                                     tipo: 'error',
                                   });
                                   setFechaTurno('');
                                   setHoraTurno('');
                                   return;
                                 }
+                                setFechaTurno(fechaVal);
+                                setHoraTurno('');
                               }
-                              setFechaTurno(fechaVal);
-                              setHoraTurno('');
                             }}
                             disabled={!espTurnoSel}
                           />
@@ -1966,20 +2161,33 @@ export const Administrativo: React.FC = () => {
                           <tbody>
                             {turnosActivos.map((t: any) => {
                               const espObj = especialistas.find(
-                                (e) => Number(e.cod_especialista) === Number(t.cod_especialista || t.especialista?.cod_especialista)
+                                (e) =>
+                                  Number(e.cod_especialista) ===
+                                  Number(t.cod_especialista || t.especialista?.cod_especialista)
                               );
-                              const nroPacBuscado = t.nro_afiliado || t.paciente?.nro_afiliado || t.paciente?.id;
-                              const pacObj = pacientes.find((p: any) => Number(nroPacBuscado) === Number(p.nro_afiliado || p.id));
-                              const nombreEspecialista = espObj?.nombre || t.especialista?.nombre || 'Profesional';
-                              const nombrePaciente = pacObj?.nombre || pacObj?.nombreCompleto || t.paciente?.nombre || t.paciente?.nombreCompleto || 'Paciente';
+                              const nroPacBuscado =
+                                t.nro_afiliado || t.paciente?.nro_afiliado || t.paciente?.id;
+                              const pacObj = pacientes.find(
+                                (p: any) => Number(nroPacBuscado) === Number(p.nro_afiliado || p.id)
+                              );
+                              const nombreEspecialista =
+                                espObj?.nombre || t.especialista?.nombre || 'Profesional';
+                              const nombrePaciente =
+                                pacObj?.nombre ||
+                                pacObj?.nombreCompleto ||
+                                t.paciente?.nombre ||
+                                t.paciente?.nombreCompleto ||
+                                'Paciente';
                               const dniPaciente = pacObj?.dni || t.paciente?.dni;
                               const turnoId = t.cod_turno || t.id;
+
                               return (
                                 <tr key={turnoId}>
                                   <td>
                                     <div className="fw-semibold">{t.fecha}</div>
                                     <small className="text-muted">
-                                      <i className="bi bi-clock me-1"></i>{t.hora_inicio || t.horaInicio}
+                                      <i className="bi bi-clock me-1"></i>
+                                      {t.hora_inicio || t.horaInicio}
                                     </small>
                                   </td>
                                   <td>
@@ -1989,7 +2197,9 @@ export const Administrativo: React.FC = () => {
                                     <div>
                                       <span className="fw-semibold">{nombrePaciente}</span>
                                       {dniPaciente && (
-                                        <small className="text-muted d-block">DNI: {dniPaciente}</small>
+                                        <small className="text-muted d-block">
+                                          DNI: {dniPaciente}
+                                        </small>
                                       )}
                                     </div>
                                   </td>
@@ -2027,22 +2237,157 @@ export const Administrativo: React.FC = () => {
                   </div>
                 </div>
               )}
+
+              {/* TAB 5: OBRAS SOCIALES */}
+              {tabActiva === 'obras-sociales' && (
+                <div className="row g-4">
+                  <div className="col-lg-4">
+                    <div className="card border p-4 shadow-sm h-100">
+                      <h2 className="h5 fw-bold mb-3">
+                        <i className="bi bi-plus-circle text-primary me-2"></i>Nueva Obra Social
+                      </h2>
+                      <form onSubmit={handleCrearObraSocial}>
+                        <div className="mb-3">
+                          <label className="form-label small fw-bold text-muted">
+                            Nombre de la Obra Social
+                          </label>
+                          <input
+                            type="text"
+                            className="form-control"
+                            placeholder="Ej: OSDE, Swiss Medical..."
+                            value={nombreObraSocial}
+                            onChange={(e) => setNombreObraSocial(e.target.value)}
+                          />
+                        </div>
+                        <button type="submit" className="btn btn-primary w-100">
+                          <i className="bi bi-check-lg me-1"></i>Guardar Obra Social
+                        </button>
+                      </form>
+                    </div>
+                  </div>
+
+                  <div className="col-lg-8">
+                    <div className="card border p-4 shadow-sm">
+                      <h2 className="h5 fw-bold mb-3">Obras Sociales Registradas</h2>
+                      <div className="table-responsive">
+                        <table className="table table-hover align-middle mb-0">
+                          <thead className="table-light">
+                            <tr>
+                              <th>Nombre</th>
+                              <th className="text-end" style={{ width: 140 }}>Acciones</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {obrasSociales.map((os) => (
+                              <tr key={os.cod_os}>
+                                <td>
+                                  {editObraSocialId === os.cod_os ? (
+                                    <input
+                                      type="text"
+                                      className="form-control form-control-sm"
+                                      value={editNombreObraSocial}
+                                      onChange={(e) => setEditNombreObraSocial(e.target.value)}
+                                    />
+                                  ) : (
+                                    <span className="fw-semibold">{os.nombre}</span>
+                                  )}
+                                </td>
+                                <td className="text-end">
+                                  {editObraSocialId === os.cod_os ? (
+                                    <div className="btn-group btn-group-sm">
+                                      <button
+                                        type="button"
+                                        className="btn btn-success"
+                                        onClick={() => handleGuardarEditarObraSocial(os.cod_os)}
+                                      >
+                                        <i className="bi bi-check-lg"></i>
+                                      </button>
+                                      <button
+                                        type="button"
+                                        className="btn btn-outline-secondary"
+                                        onClick={() => setEditObraSocialId(null)}
+                                      >
+                                        <i className="bi bi-x-lg"></i>
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    <div className="btn-group btn-group-sm">
+                                      <button
+                                        type="button"
+                                        className="btn btn-outline-primary"
+                                        onClick={() => {
+                                          setEditObraSocialId(os.cod_os);
+                                          setEditNombreObraSocial(os.nombre);
+                                        }}
+                                      >
+                                        <i className="bi bi-pencil"></i>
+                                      </button>
+                                      <button
+                                        type="button"
+                                        className="btn btn-outline-danger"
+                                        onClick={() => handleEliminarObraSocial(os.cod_os)}
+                                      >
+                                        <i className="bi bi-trash"></i>
+                                      </button>
+                                    </div>
+                                  )}
+                                </td>
+                              </tr>
+                            ))}
+                            {obrasSociales.length === 0 && (
+                              <tr>
+                                <td colSpan={2} className="text-center text-muted py-4">
+                                  No hay obras sociales registradas.
+                                </td>
+                              </tr>
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </>
           )}
         </div>
       </section>
 
-      {/* MODAL/CARTEL INTEGRADO DE ALERTAS Y CONFIRMACIONES */}
+      {/* MODAL / CARTEL INTEGRADO DE ALERTAS Y CONFIRMACIONES */}
       {modalAlerta.show && (
-        <div className="modal show d-block" tabIndex={-1} style={{ backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1050 }}>
+        <div
+          className="modal show d-block"
+          tabIndex={-1}
+          style={{ backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1050 }}
+        >
           <div className="modal-dialog modal-dialog-centered">
             <div className="modal-content border-0 shadow-lg rounded-4">
-              <div className={`modal-header border-0 pb-0 ${modalAlerta.tipo === 'error' ? 'text-danger' : modalAlerta.tipo === 'success' ? 'text-success' : 'text-primary'}`}>
+              <div
+                className={`modal-header border-0 pb-0 ${
+                  modalAlerta.tipo === 'error'
+                    ? 'text-danger'
+                    : modalAlerta.tipo === 'success'
+                    ? 'text-success'
+                    : 'text-primary'
+                }`}
+              >
                 <h5 className="modal-title fw-bold">
-                  <i className={`bi ${modalAlerta.tipo === 'error' ? 'bi-exclamation-triangle-fill' : modalAlerta.tipo === 'success' ? 'bi-check-circle-fill' : 'bi-question-circle-fill'} me-2`}></i>
+                  <i
+                    className={`bi ${
+                      modalAlerta.tipo === 'error'
+                        ? 'bi-exclamation-triangle-fill'
+                        : modalAlerta.tipo === 'success'
+                        ? 'bi-check-circle-fill'
+                        : 'bi-question-circle-fill'
+                    } me-2`}
+                  ></i>
                   {modalAlerta.titulo}
                 </h5>
-                <button type="button" className="btn-close" onClick={() => setModalAlerta({ ...modalAlerta, show: false })}></button>
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={() => setModalAlerta({ ...modalAlerta, show: false })}
+                ></button>
               </div>
               <div className="modal-body py-4 text-center">
                 <p className="mb-0 text-secondary fs-6">{modalAlerta.mensaje}</p>
