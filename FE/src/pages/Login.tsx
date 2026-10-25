@@ -96,8 +96,8 @@ export const Login: React.FC = () => {
                   Recuérdame
                 </label>
               </div>
-            */}
-              <Link to="/recuperar-password" className="small link-primario">¿Olvidaste tu contraseña?</Link>
+            
+              <Link to="/recuperar-password" className="small link-primario">¿Olvidaste tu contraseña?</Link>*/}
             </div>
 
             <button type="submit" className="btn btn-primary w-100 py-2 mb-3" disabled={isSubmitting}>
