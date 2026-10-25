@@ -47,7 +47,7 @@ export async function cGetTurnoById(req: Request, res: Response) {
 }
 
 export async function cCreateTurno(req: Request, res: Response) {
-  const { fecha, hora_inicio, nro_afiliado, cod_especialista } = res.locals.body;
+  const { fecha, hora_inicio, nro_afiliado, cod_especialista, acepta_particular } = res.locals.body;
   const paciente = await sGetPacienteById(nro_afiliado);
 
   if (!paciente) {
@@ -65,7 +65,7 @@ export async function cCreateTurno(req: Request, res: Response) {
     hora_inicio,
     paciente,
     especialista,
-    obraSocial: paciente.obraSocial,
+    aceptaParticular: acepta_particular,
   });
 
   res.status(201).json(nuevoTurno);
@@ -73,7 +73,7 @@ export async function cCreateTurno(req: Request, res: Response) {
 
 export async function cUpdateTurno(req: Request, res: Response) {
   const cod_turno = res.locals.params.cod_turno;
-  const { fecha, hora_inicio, nro_afiliado, cod_especialista } = res.locals.body;
+  const { fecha, hora_inicio, nro_afiliado, cod_especialista, acepta_particular } = res.locals.body;
   const paciente = await sGetPacienteById(nro_afiliado);
 
   if (!paciente) {
@@ -91,7 +91,7 @@ export async function cUpdateTurno(req: Request, res: Response) {
     hora_inicio,
     paciente,
     especialista,
-    obraSocial: paciente.obraSocial,
+    aceptaParticular: acepta_particular,
   });
 
   if (!turno) {
