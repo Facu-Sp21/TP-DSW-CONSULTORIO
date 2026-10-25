@@ -605,29 +605,70 @@ export const Administrativo: React.FC = () => {
       return;
     }
 
-    try {
-      await createTurno({
-        fecha: fechaTurno,
-        hora_inicio: horaTurno,
-        cod_especialista: Number(espTurnoSel),
-        nro_afiliado: Number(pacTurnoSel),
-      });
+    const especialistaSeleccionado = especialistas.find(
+      (especialista) => especialista.cod_especialista === Number(espTurnoSel),
+    );
+    const pacienteSeleccionado = pacientes.find(
+      (paciente) => Number(paciente.nro_afiliado ?? paciente.id) === Number(pacTurnoSel),
+    );
 
-      setFechaTurno('');
-      setHoraTurno('');
-      setEspEspecialidadSel('');
-      setEspTurnoSel('');
-      setPacTurnoSel('');
-      setModalAlerta({ show: true, titulo: '¡Éxito!', mensaje: 'Turno asignado correctamente.', tipo: 'success' });
-      cargarDatos();
-    } catch (err: any) {
+    if (!especialistaSeleccionado || !pacienteSeleccionado) {
       setModalAlerta({
         show: true,
         titulo: 'Error',
-        mensaje: err.message || 'Error al asignar el turno',
+        mensaje: 'No se pudieron verificar los datos del especialista y del paciente.',
         tipo: 'error',
       });
+      return;
     }
+
+    const codOsPaciente = pacienteSeleccionado.obraSocial?.cod_os ?? pacienteSeleccionado.cod_os ?? null;
+    const aceptaObraSocial = Boolean(
+      codOsPaciente &&
+      especialistaSeleccionado.obrasSociales?.some((obraSocial) => obraSocial.cod_os === codOsPaciente),
+    );
+
+    const crearTurno = async (aceptaParticular = false) => {
+      try {
+        await createTurno({
+          fecha: fechaTurno,
+          hora_inicio: horaTurno,
+          cod_especialista: Number(espTurnoSel),
+          nro_afiliado: Number(pacTurnoSel),
+          ...(aceptaParticular ? { acepta_particular: true } : {}),
+        });
+
+        setFechaTurno('');
+        setHoraTurno('');
+        setEspEspecialidadSel('');
+        setEspTurnoSel('');
+        setPacTurnoSel('');
+        setModalAlerta({ show: true, titulo: '¡Éxito!', mensaje: 'Turno asignado correctamente.', tipo: 'success' });
+        cargarDatos();
+      } catch (err: any) {
+        setModalAlerta({
+          show: true,
+          titulo: 'Error',
+          mensaje: err.message || 'Error al asignar el turno',
+          tipo: 'error',
+        });
+      }
+    };
+
+    if (!aceptaObraSocial) {
+      setModalAlerta({
+        show: true,
+        titulo: 'Consulta particular',
+        mensaje: `La obra social del paciente no es aceptada por el especialista. La consulta deberá abonarse de forma particular por $${Number(especialistaSeleccionado.consulta_particular ?? 0).toFixed(2)}. ¿Desea continuar?`,
+        tipo: 'confirm',
+        onConfirm: () => {
+          void crearTurno(true);
+        },
+      });
+      return;
+    }
+
+    await crearTurno();
   };
 
   const handleCancelarTurno = async (cod_turno: number) => {
