@@ -4,6 +4,7 @@ import { alreadyExistsError } from '../shared/errorsModel.js';
 import { hashPassword } from '../shared/auth/password.js';
 import { Paciente } from './paciente.entity.js';
 import { ObraSocial } from '../ObraSocial/obraSocial.entity.js';
+import { mensajeDeDuplicado } from './paciente.duplicado.js';
 
 type PacienteInput = {
   dni: string;
@@ -54,7 +55,7 @@ export async function sCreatePaciente(input: PacienteInput): Promise<Paciente> {
     await orm.em.persistAndFlush(paciente);
   } catch (error) {
     if (error instanceof UniqueConstraintViolationException) {
-      throw new alreadyExistsError('Ya existe un paciente con ese DNI o email');  
+      throw new alreadyExistsError(mensajeDeDuplicado(error));
     }
     throw error;
   }
@@ -91,7 +92,7 @@ export async function sUpdatePaciente(
     await orm.em.flush();
   } catch (error) {
     if (error instanceof UniqueConstraintViolationException) {
-      throw new alreadyExistsError('Ya existe un paciente con ese DNI o email');
+      throw new alreadyExistsError(mensajeDeDuplicado(error));
     }
     throw error;
   }

@@ -1,19 +1,91 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { CampoFormulario } from '../components/CampoFormulario';
 import { createPaciente } from '../../services/pacienteService';
 import { login, rutaSegunRol } from '../../services/authService';
+import { ApiError } from '../../services/api';
+import { hoyISO } from '../../services/fechas';
+import {
+  normalizarDni,
+  validarConfirmacion,
+  validarDireccion,
+  validarDni,
+  validarEmail,
+  validarFechaNacimiento,
+  validarNombre,
+  validarPasswordRegistro,
+  validarTelefono,
+} from '../../services/validaciones';
 
-const getTodayInputValue = () => {
-  const today = new Date();
-  const month = String(today.getMonth() + 1).padStart(2, '0');
-  const day = String(today.getDate()).padStart(2, '0');
-  return `${today.getFullYear()}-${month}-${day}`;
+type Campo =
+  | 'nombre'
+  | 'apellido'
+  | 'dni'
+  | 'fechaNacimiento'
+  | 'telefono'
+  | 'direccion'
+  | 'emailRegistro'
+  | 'passwordRegistro'
+  | 'confirmarPassword';
+
+type Datos = Record<Campo, string>;
+type Errores = Partial<Record<Campo, string>>;
+
+const CAMPOS: Campo[] = [
+  'nombre',
+  'apellido',
+  'dni',
+  'fechaNacimiento',
+  'telefono',
+  'direccion',
+  'emailRegistro',
+  'passwordRegistro',
+  'confirmarPassword',
+];
+
+const CAMPO_DEL_BACKEND: Record<string, Campo> = {
+  nombre: 'nombre',
+  dni: 'dni',
+  telefono: 'telefono',
+  direccion: 'direccion',
+  email: 'emailRegistro',
+  contrasena: 'passwordRegistro',
 };
+
+function validarCampo(campo: Campo, d: Datos): string {
+  switch (campo) {
+    case 'nombre':
+      return validarNombre(d.nombre, 'nombre');
+    case 'apellido':
+      return validarNombre(d.apellido, 'apellido');
+    case 'dni':
+      return validarDni(d.dni);
+    case 'fechaNacimiento':
+      return validarFechaNacimiento(d.fechaNacimiento);
+    case 'telefono':
+      return validarTelefono(d.telefono);
+    case 'direccion':
+      return validarDireccion(d.direccion);
+    case 'emailRegistro':
+      return validarEmail(d.emailRegistro);
+    case 'passwordRegistro':
+      return validarPasswordRegistro(d.passwordRegistro);
+    case 'confirmarPassword':
+      return validarConfirmacion(d.passwordRegistro, d.confirmarPassword);
+  }
+}
+
+function camposDeUnConflicto(mensaje: string): Campo[] {
+  const campos: Campo[] = [];
+  if (/dni/i.test(mensaje)) campos.push('dni');
+  if (/email|correo/i.test(mensaje)) campos.push('emailRegistro');
+  return campos;
+}
 
 export const Registro: React.FC = () => {
   const navigate = useNavigate();
-  const todayInputValue = getTodayInputValue();
-  const [formData, setFormData] = useState({
+  const todayInputValue = hoyISO();
+  const [formData, setFormData] = useState<Datos>({
     nombre: '',
     apellido: '',
     dni: '',
@@ -24,60 +96,101 @@ export const Registro: React.FC = () => {
     passwordRegistro: '',
     confirmarPassword: '',
   });
-  const [error, setError] = useState<string | null>(null);
+  const [errores, setErrores] = useState<Errores>({});
+  const [errorServidor, setErrorServidor] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { id, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [id]: value,
-    }));
-    setError(null);
+    const campo = e.target.id as Campo;
+    const nuevo = { ...formData, [campo]: e.target.value };
+    setFormData(nuevo);
+    setErrores((prev) => {
+      const actualizados = { ...prev };
+      if (prev[campo]) actualizados[campo] = validarCampo(campo, nuevo);
+      if (campo === 'passwordRegistro' && prev.confirmarPassword) {
+        actualizados.confirmarPassword = validarCampo('confirmarPassword', nuevo);
+      }
+      return actualizados;
+    });
+    setErrorServidor(null);
+  };
+
+  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    const campo = e.target.id as Campo;
+    setErrores((prev) => ({ ...prev, [campo]: validarCampo(campo, formData) }));
+  };
+
+  const irAlPrimerError = (conError: Errores) => {
+    const primero = CAMPOS.find((campo) => conError[campo]);
+    if (primero) document.getElementById(primero)?.focus();
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
+    setErrorServidor(null);
 
-    if (formData.passwordRegistro !== formData.confirmarPassword) {
-      setError('Las contraseñas no coinciden.');
-      return;
+    const nuevosErrores: Errores = {};
+    for (const campo of CAMPOS) {
+      const mensaje = validarCampo(campo, formData);
+      if (mensaje) nuevosErrores[campo] = mensaje;
     }
-
-    if (formData.fechaNacimiento > todayInputValue) {
-      setError('La fecha de nacimiento no puede ser posterior a la fecha de hoy.');
+    setErrores(nuevosErrores);
+    if (Object.keys(nuevosErrores).length > 0) {
+      irAlPrimerError(nuevosErrores);
       return;
     }
 
     setIsSubmitting(true);
     try {
-      // El backend guarda un único campo "nombre", así que combinamos nombre + apellido
       await createPaciente({
-        nombre: `${formData.nombre} ${formData.apellido}`.trim(),
-        dni: formData.dni,
-        telefono: formData.telefono,
-        direccion: formData.direccion,
-        email: formData.emailRegistro,
+        nombre: `${formData.nombre.trim()} ${formData.apellido.trim()}`,
+        dni: normalizarDni(formData.dni),
+        telefono: formData.telefono.trim(),
+        direccion: formData.direccion.trim(),
+        email: formData.emailRegistro.trim(),
         contrasena: formData.passwordRegistro,
       });
 
-      // Una vez creada la cuenta, logueamos automáticamente al paciente
-      const { user } = await login(formData.emailRegistro, formData.passwordRegistro);
+      const { user } = await login(formData.emailRegistro.trim(), formData.passwordRegistro);
       navigate(rutaSegunRol(user.rol));
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'No pudimos crear tu cuenta. Intentá de nuevo.');
+      if (err instanceof ApiError) {
+        const delServidor: Errores = {};
+        for (const { path, message } of err.errores) {
+          const campo = CAMPO_DEL_BACKEND[path];
+          if (campo && !delServidor[campo]) delServidor[campo] = message;
+        }
+        if (err.status === 409) {
+          for (const campo of camposDeUnConflicto(err.message)) delServidor[campo] = err.message;
+        }
+
+        if (Object.keys(delServidor).length > 0) {
+          setErrores(delServidor);
+          irAlPrimerError(delServidor);
+        } else {
+          setErrorServidor(err.message);
+        }
+      } else {
+        setErrorServidor('No pudimos conectarnos con el servidor. Probá de nuevo en unos minutos.');
+      }
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  const campo = (id: Campo) => ({
+    id,
+    value: formData[id],
+    error: errores[id],
+    onChange: handleChange,
+    onBlur: handleBlur,
+  });
 
   return (
     <div className="fondo-punteado min-vh-100">
       <div className="registro-wrapper d-flex align-items-center justify-content-center min-vh-100 py-5">
         <div className="registro-card">
 
-          {/* Marca / Volver a inicio */}
           <div className="text-center mb-4">
             <Link to="/" className="d-inline-block text-decoration-none mb-3">
               <div className="icono-marca mx-auto">
@@ -88,129 +201,29 @@ export const Registro: React.FC = () => {
             <p className="text-muted mb-0">Completá tus datos para comenzar</p>
           </div>
 
-          {/* Formulario */}
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={handleSubmit} noValidate>
             <div className="row">
-              <div className="col-6 mb-3">
-                <label htmlFor="nombre" className="form-label">Nombre</label>
-                <input 
-                  type="text" 
-                  className="form-control" 
-                  id="nombre" 
-                  placeholder="Juan" 
-                  value={formData.nombre} 
-                  onChange={handleChange} 
-                  required 
-                />
-              </div>
-              <div className="col-6 mb-3">
-                <label htmlFor="apellido" className="form-label">Apellido</label>
-                <input 
-                  type="text" 
-                  className="form-control" 
-                  id="apellido" 
-                  placeholder="Pérez" 
-                  value={formData.apellido} 
-                  onChange={handleChange} 
-                  required 
-                />
-              </div>
+              <CampoFormulario {...campo('nombre')} etiqueta="Nombre" placeholder="Juan" autoComplete="given-name" claseContenedor="col-6 mb-3" />
+              <CampoFormulario {...campo('apellido')} etiqueta="Apellido" placeholder="Pérez" autoComplete="family-name" claseContenedor="col-6 mb-3" />
             </div>
 
             <div className="row">
-              <div className="col-6 mb-3">
-                <label htmlFor="dni" className="form-label">DNI</label>
-                <input 
-                  type="text" 
-                  className="form-control" 
-                  id="dni" 
-                  placeholder="38.123.456" 
-                  value={formData.dni} 
-                  onChange={handleChange} 
-                  required 
-                />
-              </div>
-              <div className="col-6 mb-3">
-                <label htmlFor="fechaNacimiento" className="form-label">Fecha de nacimiento</label>
-                <input 
-                  type="date" 
-                  className="form-control" 
-                  id="fechaNacimiento" 
-                  value={formData.fechaNacimiento} 
-                  max={todayInputValue}
-                  onChange={handleChange} 
-                  required 
-                />
-              </div>
+              <CampoFormulario {...campo('dni')} etiqueta="DNI" placeholder="38.123.456" claseContenedor="col-6 mb-3" />
+              <CampoFormulario {...campo('fechaNacimiento')} etiqueta="Fecha de nacimiento" type="date" max={todayInputValue} autoComplete="bday" claseContenedor="col-6 mb-3" />
             </div>
 
-            <div className="mb-3">
-              <label htmlFor="telefono" className="form-label">Teléfono</label>
-              <input 
-                type="tel" 
-                className="form-control" 
-                id="telefono" 
-                placeholder="+54 9 11 1234-5678" 
-                value={formData.telefono} 
-                onChange={handleChange} 
-                required 
-              />
-            </div>
+            <CampoFormulario {...campo('telefono')} etiqueta="Teléfono" type="tel" placeholder="+54 9 11 1234-5678" autoComplete="tel" />
 
-            <div className="mb-3">
-              <label htmlFor="direccion" className="form-label">Dirección</label>
-              <input 
-                type="text" 
-                className="form-control" 
-                id="direccion" 
-                placeholder="Av. Siempre Viva 742" 
-                value={formData.direccion} 
-                onChange={handleChange} 
-                required 
-              />
-            </div>
+            <CampoFormulario {...campo('direccion')} etiqueta="Dirección" placeholder="Av. Siempre Viva 742" autoComplete="street-address" />
 
-            <div className="mb-3">
-              <label htmlFor="emailRegistro" className="form-label">Correo electrónico</label>
-              <input 
-                type="email" 
-                className="form-control" 
-                id="emailRegistro" 
-                placeholder="nombre@gmail.com" 
-                value={formData.emailRegistro} 
-                onChange={handleChange} 
-                required 
-              />
-            </div>
-
-            {error && <div className="alert alert-danger py-2 small" role="alert">{error}</div>}
+            <CampoFormulario {...campo('emailRegistro')} etiqueta="Correo electrónico" type="email" placeholder="nombre@gmail.com" autoComplete="email" />
 
             <div className="row">
-              <div className="col-6 mb-3">
-                <label htmlFor="passwordRegistro" className="form-label">Contraseña</label>
-                <input 
-                  type="password" 
-                  className="form-control" 
-                  id="passwordRegistro" 
-                  placeholder="••••••••" 
-                  value={formData.passwordRegistro} 
-                  onChange={handleChange} 
-                  required 
-                />
-              </div>
-              <div className="col-6 mb-3">
-                <label htmlFor="confirmarPassword" className="form-label">Confirmar contraseña</label>
-                <input 
-                  type="password" 
-                  className="form-control" 
-                  id="confirmarPassword" 
-                  placeholder="••••••••" 
-                  value={formData.confirmarPassword} 
-                  onChange={handleChange} 
-                  required 
-                />
-              </div>
+              <CampoFormulario {...campo('passwordRegistro')} etiqueta="Contraseña" type="password" placeholder="••••••••" autoComplete="new-password" claseContenedor="col-6 mb-3" />
+              <CampoFormulario {...campo('confirmarPassword')} etiqueta="Confirmar contraseña" type="password" placeholder="••••••••" autoComplete="new-password" claseContenedor="col-6 mb-3" />
             </div>
+
+            {errorServidor && <div className="alert alert-danger py-2 small" role="alert">{errorServidor}</div>}
 
             <button type="submit" className="btn btn-primary w-100 py-2 mb-3" disabled={isSubmitting}>
               {isSubmitting ? 'Creando cuenta...' : 'Crear cuenta'}
