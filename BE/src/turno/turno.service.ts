@@ -17,7 +17,7 @@ type TurnoInput = {
   hora_inicio: string; // 'HH:mm'
   paciente: Paciente;
   especialista: Especialista;
-  obraSocial?: Paciente['obraSocial'];
+  aceptaParticular?: boolean;
 };
 
 // Actualizamos los filtros
@@ -67,11 +67,32 @@ async function ensureTurnoDisponible(
       if (turnoGuardado.especialista.cod_especialista === especialista.cod_especialista) {
         throw new alreadyExistsError('El especialista ya tiene un turno asignado en ese horario');
       }
+
       if (turnoGuardado.paciente.nro_afiliado === paciente.nro_afiliado) {
         throw new alreadyExistsError('El paciente ya tiene un turno asignado en ese horario');
       }
     }
   }
+}
+
+function obtenerObraSocialDelTurno(input: TurnoInput): Paciente['obraSocial'] {
+  const obraSocialPaciente = input.paciente.obraSocial;
+  const coincideConEspecialista = Boolean(
+    obraSocialPaciente &&
+    input.especialista.obrasSociales.getItems().some(
+      (obraSocial) => obraSocial.cod_os === obraSocialPaciente.cod_os,
+    ),
+  );
+
+  if (coincideConEspecialista) return obraSocialPaciente;
+
+  if (!input.aceptaParticular) {
+    throw new BadRequestError(
+      `El especialista no acepta la obra social del paciente. La consulta particular tiene un valor de $${Number(input.especialista.consulta_particular).toFixed(2)}. Debe aceptar el pago particular para continuar.`,
+    );
+  }
+
+  return null;
 }
 
 /**
@@ -151,13 +172,14 @@ export async function sCreateTurno(input: TurnoInput): Promise<Turno> {
   }
 
   await ensureTurnoDisponible(input.fecha, input.hora_inicio, input.especialista, input.paciente);
+  const obraSocial = obtenerObraSocialDelTurno(input);
 
   const turno = orm.em.create(Turno, {
     fecha: input.fecha,
     hora_inicio: input.hora_inicio,
     paciente: input.paciente,
     especialista: input.especialista,
-    obraSocial: input.obraSocial ?? null,
+    obraSocial,
   });
 
   await orm.em.persistAndFlush(turno);
@@ -194,12 +216,13 @@ export async function sUpdateTurno(
     input.paciente,
     cod_turno
   );
+  const obraSocial = obtenerObraSocialDelTurno(input);
 
   turno.fecha = input.fecha;
   turno.hora_inicio = input.hora_inicio;
   turno.paciente = input.paciente;
   turno.especialista = input.especialista;
-  turno.obraSocial = input.obraSocial ?? null;
+  turno.obraSocial = obraSocial;
 
   await orm.em.flush();
   return turno;

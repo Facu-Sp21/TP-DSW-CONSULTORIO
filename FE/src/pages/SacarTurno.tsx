@@ -9,6 +9,7 @@ import type { Especialista } from '../../services/especialistaService';
 import { isAuthenticated } from '../../services/authService';
 import { getUsuarioActual } from '../../services/authService';
 import { createTurno, getHorariosDisponibles } from '../../services/turnoService';
+import { getPacienteById, type PacienteResponse } from '../../services/pacienteService';
 
 export const SacarTurno: React.FC = () => {
   const navigate = useNavigate();
@@ -24,6 +25,7 @@ export const SacarTurno: React.FC = () => {
   const [loadingHorarios, setLoadingHorarios] = useState(false);
   const [horariosDisponibles, setHorariosDisponibles] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [pacienteActual, setPacienteActual] = useState<PacienteResponse | null>(null);
 
   // ESTADO PARA MODAL / CARTEL INTEGRADO DE ALERTAS Y CONFIRMACIONES
   const [modalAlerta, setModalAlerta] = useState<{
@@ -33,6 +35,20 @@ export const SacarTurno: React.FC = () => {
     tipo: 'error' | 'success' | 'confirm';
     onConfirm?: () => void;
   }>({ show: false, titulo: '', mensaje: '', tipo: 'error' });
+
+  useEffect(() => {
+    const usuario = getUsuarioActual();
+    if (!usuario) return;
+
+    getPacienteById(usuario.id)
+      .then(setPacienteActual)
+      .catch(() => setModalAlerta({
+        show: true,
+        titulo: 'Error',
+        mensaje: 'No se pudieron cargar los datos de tu obra social.',
+        tipo: 'error',
+      }));
+  }, []);
 
   useEffect(() => {
     getEspecialidades()
@@ -96,7 +112,7 @@ export const SacarTurno: React.FC = () => {
 
   if (!isAuthenticated()) return <Navigate to="/login" replace />;
 
-  const ejecutarReserva = () => {
+  const ejecutarReserva = (aceptaParticular = false) => {
     const usuario = getUsuarioActual();
     if (!usuario || !especialista?.cod_especialista || !horariosDisponibles.includes(hora)) return;
 
@@ -106,6 +122,7 @@ export const SacarTurno: React.FC = () => {
       hora_inicio: hora,
       cod_especialista: especialista.cod_especialista,
       nro_afiliado: usuario.id,
+      ...(aceptaParticular ? { acepta_particular: true } : {}),
     })
       .then(() => navigate('/usuario', { state: { bookingSuccess: true } }))
       .catch((err) => {
@@ -119,16 +136,34 @@ export const SacarTurno: React.FC = () => {
       });
   };
 
-  const finish = (event: React.FormEvent) => {
+  const finish = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!hora || !horariosDisponibles.includes(hora)) return;
 
+    if (!pacienteActual || !especialista) {
+      setModalAlerta({
+        show: true,
+        titulo: 'Error',
+        mensaje: 'No se pudieron verificar los datos de cobertura. Intentá nuevamente.',
+        tipo: 'error',
+      });
+      return;
+    }
+
+    const codOsPaciente = pacienteActual.obraSocial?.cod_os ?? pacienteActual.cod_os ?? null;
+    const aceptaObraSocial = Boolean(
+      codOsPaciente &&
+      especialista.obrasSociales?.some((obraSocial) => obraSocial.cod_os === codOsPaciente),
+    );
+
     setModalAlerta({
       show: true,
-      titulo: 'Confirmar turno',
-      mensaje: `¿Confirmás tu turno de ${especialidad?.nombre} con ${especialista?.nombre} para el día ${fecha} a las ${hora} hs?`,
+      titulo: aceptaObraSocial ? 'Confirmar turno' : 'Consulta particular',
+      mensaje: aceptaObraSocial
+        ? `¿Confirmás tu turno de ${especialidad?.nombre} con ${especialista?.nombre} para el día ${fecha} a las ${hora} hs?`
+        : `El especialista no acepta tu obra social. La consulta deberá abonarse de forma particular por $${Number(especialista.consulta_particular ?? 0).toFixed(2)}. ¿Deseás continuar?`,
       tipo: 'confirm',
-      onConfirm: ejecutarReserva,
+      onConfirm: () => ejecutarReserva(!aceptaObraSocial),
     });
   };
 

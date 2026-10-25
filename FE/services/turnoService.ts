@@ -4,7 +4,8 @@ export interface CreateTurnoPayload {
   fecha: string;            
   hora_inicio: string;      
   cod_especialista: number; 
-  nro_afiliado: number;     
+  nro_afiliado: number; 
+  acepta_particular?: boolean;
   cod_os?: number | null;
 }
 
