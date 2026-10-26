@@ -56,8 +56,8 @@ Adicionales para Aprobación
 
 | Req      | Detalle                          |
 | :------- | :------------------------------- |
-| Listados | 1. ver listados                  |
-| CUU/Epic | 1. Cambiar contraseña podría ser |
+| Listados | 1. REVISAR                  |
+| CUU/Epic | 1. REVISAR  |
 | Otros    | 1. Envío de asignación de turno  |
 
 ### Instalación y ejecución
