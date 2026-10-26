@@ -23,7 +23,12 @@ const crearTurno = (fecha: string, hora: string, paciente = 10, especialista = 1
   fecha,
   hora_inicio: hora,
   paciente: { nro_afiliado: paciente } as any,
-  especialista: { cod_especialista: especialista, especialidad: { duracion_minutos: duracion } } as any,
+  especialista: {
+    cod_especialista: especialista,
+    consulta_particular: 100,
+    especialidad: { duracion_minutos: duracion },
+  } as any,
+  aceptaParticular: true,
 });
 
 describe('chocaEnMinutos', () => {
