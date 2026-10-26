@@ -53,8 +53,13 @@ export function buildMonthCalendar(year: number, month: number): CalendarDay[] {
   for (let index = 0; index < totalCells; index += 1) {
     const dayOffset = index - leadingDays + 1;
     const date = new Date(year, month, dayOffset);
+    const dateString = [
+      date.getFullYear(),
+      String(date.getMonth() + 1).padStart(2, '0'),
+      String(date.getDate()).padStart(2, '0'),
+    ].join('-');
     result.push({
-      date: date.toISOString().slice(0, 10),
+      date: dateString,
       isCurrentMonth: dayOffset >= 1 && dayOffset <= daysInMonth,
     });
   }
@@ -180,6 +185,10 @@ const TurnoCard: React.FC<{ turno: Turno }> = ({ turno }) => (
 export const Calendario: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [turnos, setTurnos] = useState<Turno[]>([]);
+  const [displayedMonth, setDisplayedMonth] = useState(() => {
+    const today = new Date();
+    return new Date(today.getFullYear(), today.getMonth(), 1);
+  });
   const usuario = getUsuarioActual();
 
   // ESTADO PARA MODAL / CARTEL INTEGRADO
@@ -203,9 +212,12 @@ export const Calendario: React.FC = () => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const maxDate = new Date(today);
-  maxDate.setMonth(maxDate.getMonth() + 1);
-  const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
-  const calendarDays = buildMonthCalendar(firstDay.getFullYear(), firstDay.getMonth());
+  maxDate.setMonth(maxDate.getMonth() + 6);
+  maxDate.setHours(23, 59, 59, 999);
+  const minMonth = today.getFullYear() * 12 + today.getMonth();
+  const maxMonth = maxDate.getFullYear() * 12 + maxDate.getMonth();
+  const currentMonth = displayedMonth.getFullYear() * 12 + displayedMonth.getMonth();
+  const calendarDays = buildMonthCalendar(displayedMonth.getFullYear(), displayedMonth.getMonth());
   const selectedTurnos = selectedDate ? turnos.filter((turno) => turno.fecha === selectedDate) : [];
 
   const cancelar = (id: number) => {
@@ -249,8 +261,30 @@ export const Calendario: React.FC = () => {
           <section className="col-lg-7">
             <div className="card border-0 shadow-sm p-4">
               <div className="d-flex justify-content-between align-items-center mb-3">
-                <h2 className="h5 fw-bold mb-0">Próximos 30 días</h2>
-                <span className="small text-muted">Hasta {maxDate.toLocaleDateString('es-AR')}</span>
+                <button
+                  type="button"
+                  className="btn btn-sm btn-outline-secondary"
+                  aria-label="Mes anterior"
+                  disabled={currentMonth <= minMonth}
+                  onClick={() => setDisplayedMonth((month) => new Date(month.getFullYear(), month.getMonth() - 1, 1))}
+                >
+                  <i className="bi bi-chevron-left" />
+                </button>
+                <div className="text-center">
+                  <h2 className="h5 fw-bold text-capitalize mb-1" aria-live="polite">
+                    {displayedMonth.toLocaleDateString('es-AR', { month: 'long', year: 'numeric' })}
+                  </h2>
+                  <span className="small text-muted">Turnos hasta {maxDate.toLocaleDateString('es-AR')}</span>
+                </div>
+                <button
+                  type="button"
+                  className="btn btn-sm btn-outline-secondary"
+                  aria-label="Mes siguiente"
+                  disabled={currentMonth >= maxMonth}
+                  onClick={() => setDisplayedMonth((month) => new Date(month.getFullYear(), month.getMonth() + 1, 1))}
+                >
+                  <i className="bi bi-chevron-right" />
+                </button>
               </div>
               <div className="calendar-grid calendar-head mb-2">{['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'].map((day) => <span key={day}>{day}</span>)}</div>
               <div className="calendar-grid">
