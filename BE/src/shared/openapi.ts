@@ -2,13 +2,15 @@ import { especialidadOpenApi } from '../especialidad/especialidad.openapi.js';
 import { especialistaOpenApi } from '../especialista/especialista.openapi.js';
 import { pacienteOpenApi } from '../paciente/paciente.openapi.js';
 import { turnoOpenApi } from '../turno/turno.openapi.js';
+import { obraSocialOpenApi } from '../ObraSocial/obraSocial.opeapi.js';
 
-const tags = [...especialidadOpenApi.tags, ...especialistaOpenApi.tags, ...pacienteOpenApi.tags, ...turnoOpenApi.tags];
+const tags = [...especialidadOpenApi.tags, ...especialistaOpenApi.tags, ...pacienteOpenApi.tags, ...turnoOpenApi.tags,...obraSocialOpenApi.tags];
 const paths = {
   ...especialidadOpenApi.paths,
   ...especialistaOpenApi.paths,
   ...pacienteOpenApi.paths,
   ...turnoOpenApi.paths,
+  ...obraSocialOpenApi.paths,
 };
 const components = {
   schemas: {
@@ -16,6 +18,7 @@ const components = {
     ...especialistaOpenApi.components.schemas,
     ...pacienteOpenApi.components.schemas,
     ...turnoOpenApi.components.schemas,
+    ...obraSocialOpenApi.components.schemas,
   },
 };
 

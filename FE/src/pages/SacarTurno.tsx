@@ -72,7 +72,7 @@ export const SacarTurno: React.FC = () => {
   useEffect(() => {
     if (!especialidad || especialidad.cod_especialidad === undefined) return;
     setLoading(true);
-    getEspecialistasByEspecialidad(especialidad.cod_especialidad)
+    getEspecialistasByEspecialidad(especialidad.cod_especialidad,1)
       .then(setEspecialistas)
       .catch(() => setModalAlerta({ show: true, titulo: 'Error', mensaje: 'No se pudieron cargar los especialistas.', tipo: 'error' }))
       .finally(() => setLoading(false));

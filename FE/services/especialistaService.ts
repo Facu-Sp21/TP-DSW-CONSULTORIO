@@ -15,12 +15,14 @@ export interface Especialista {
   obras_sociales?: number[];
 }
 
-export const getEspecialistas = () => {
-  return apiFetch<Especialista[]>('/especialista');
+export const getEspecialistas = (estado?: number) => {
+  const query = estado === 1 ? '?estado=1' : '';
+  return apiFetch<Especialista[]>(`/especialista${query}`);
 };
 
-export const getEspecialistasByEspecialidad = (codEspecialidad: number) => {
-  return apiFetch<Especialista[]>(`/especialista?especialidad=${codEspecialidad}`);
+export const getEspecialistasByEspecialidad = (codEspecialidad: number,estado?: number) => {
+  const queryEstado = estado === 1 ? '&estado=1' : '';
+  return apiFetch<Especialista[]>(`/especialista?especialidad=${codEspecialidad}${queryEstado}`);
 };
 
 //para la parte de profesionales que te acompañan
