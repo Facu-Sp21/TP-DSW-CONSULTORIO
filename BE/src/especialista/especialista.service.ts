@@ -19,8 +19,11 @@ type EspecialistaInput = {
   obras_sociales?: number[]; // IDs de obras sociales
 };
 
-export async function sGetAllEspecialistas(cod_especialidad?: number): Promise<Especialista[]> {
-  const filter = cod_especialidad ? { especialidad: { cod_especialidad } } : {};
+export async function sGetAllEspecialistas(cod_especialidad?: number, estado?:number): Promise<Especialista[]> {
+    const filter = {
+    ...(cod_especialidad ? { especialidad: { cod_especialidad } } : {}),
+    ...(estado === 1 ? { estado: true} : {}),
+  };
   return await orm.em.find(Especialista, filter, { populate: ['especialidad', 'obrasSociales'] });
 }
 

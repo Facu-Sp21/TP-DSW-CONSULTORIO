@@ -11,7 +11,8 @@ import {
 
 export async function cGetAllEspecialistas(req: Request, res: Response) {
   const cod_especialidad = req.query.especialidad ? Number(req.query.especialidad) : undefined;
-  const especialistas = await sGetAllEspecialistas(cod_especialidad);
+  const estado = req.query.estado === '1'? 1 : undefined;
+  const especialistas = await sGetAllEspecialistas(cod_especialidad,estado);
   res.json(especialistas);
 }
 
