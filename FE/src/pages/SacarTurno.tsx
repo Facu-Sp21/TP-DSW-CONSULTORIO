@@ -19,6 +19,10 @@ export const SacarTurno: React.FC = () => {
   const [especialistas, setEspecialistas] = useState<Especialista[]>([]);
   const [especialidad, setEspecialidad] = useState<Especialidad | null>(null);
   const [especialista, setEspecialista] = useState<Especialista | null>(null);
+  const [displayedMonth, setDisplayedMonth] = useState(() => {
+    const today = new Date();
+    return new Date(today.getFullYear(), today.getMonth(), 1);
+  });
   const [fecha, setFecha] = useState('');
   const [hora, setHora] = useState('');
   const [loading, setLoading] = useState(false);
@@ -101,14 +105,19 @@ export const SacarTurno: React.FC = () => {
     };
   }, [especialista, fecha]);
 
-  const { calendarDays, maxDate } = useMemo(() => {
+  const { calendarDays, maxDate, minMonth, maxMonth } = useMemo(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const limit = new Date(today);
-    limit.setMonth(limit.getMonth() + 1);
-    const first = new Date(today.getFullYear(), today.getMonth(), 1);
-    return { calendarDays: buildMonthCalendar(first.getFullYear(), first.getMonth()), maxDate: limit };
-  }, []);
+    const maxDate = new Date(today);
+    maxDate.setMonth(maxDate.getMonth() + 6);
+    maxDate.setHours(23, 59, 59, 999);
+    return {
+      calendarDays: buildMonthCalendar(displayedMonth.getFullYear(), displayedMonth.getMonth()),
+      maxDate,
+      minMonth: today.getFullYear() * 12 + today.getMonth(),
+      maxMonth: maxDate.getFullYear() * 12 + maxDate.getMonth(),
+    };
+  }, [displayedMonth]);
 
   if (!isAuthenticated()) return <Navigate to="/login" replace />;
 
@@ -227,6 +236,29 @@ export const SacarTurno: React.FC = () => {
               <p className="text-muted mb-4">Elegí una fecha y un horario disponible.</p>
               <label className="form-label fw-semibold" htmlFor="fecha"><i className="bi bi-calendar3 me-2 text-primary" />Fecha</label>
               <div className="booking-calendar mb-3">
+                <div className="d-flex justify-content-between align-items-center mb-3">
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-outline-secondary"
+                    aria-label="Mes anterior"
+                    disabled={displayedMonth.getFullYear() * 12 + displayedMonth.getMonth() <= minMonth}
+                    onClick={() => setDisplayedMonth((month) => new Date(month.getFullYear(), month.getMonth() - 1, 1))}
+                  >
+                    <i className="bi bi-chevron-left" />
+                  </button>
+                  <h3 className="h6 fw-bold text-capitalize mb-0" aria-live="polite">
+                    {displayedMonth.toLocaleDateString('es-AR', { month: 'long', year: 'numeric' })}
+                  </h3>
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-outline-secondary"
+                    aria-label="Mes siguiente"
+                    disabled={displayedMonth.getFullYear() * 12 + displayedMonth.getMonth() >= maxMonth}
+                    onClick={() => setDisplayedMonth((month) => new Date(month.getFullYear(), month.getMonth() + 1, 1))}
+                  >
+                    <i className="bi bi-chevron-right" />
+                  </button>
+                </div>
                 <div className="calendar-grid calendar-head mb-2">{['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'].map((day) => <span key={day}>{day}</span>)}</div>
                 <div className="calendar-grid">
                   {calendarDays.map((calendarDay) => {
