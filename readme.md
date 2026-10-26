@@ -30,7 +30,7 @@ _Es un sistema de una clinica que tiene diversos especialistas de diferentes esp
 Regularidad:
 |Req|Detalle|
 |:-|:-|
-|CRUD simple|1. CRUD Paciente<br>2. CRUD Obra_Social<br>3. CRUD Especialidad<br> 4.Especialista|
+|CRUD simple|1. CRUD Paciente<br>2. CRUD Obra_Social<br>3. CRUD Especialidad<br> 4.CRUD Especialista|
 |CRUD dependiente|1. CRUD Turno {depende de} paciente y de especialista <br>2. CRUD historia_clinica {depende de} CRUD Turno|
 |Listado<br>+<br>detalle| 1. Listado de especialistas filtrado por especialidad, muestra especialistas que tengan una determinada especialidad<br> 2. Listado de turnos posibles filtrado por especialista, muestra horarios posibles para atenderse con un determinado especialista|
 |CUU/Epic| 1. Solicitar un turno seleccionando especialidad, especialista, fecha y horario disponible. 2. Registrar la atención de un paciente, guardando diagnóstico e indicaciones en su historia clínica y marcando el turno como atendido.|
@@ -48,7 +48,7 @@ Adicionales para Aprobación
 
 | Req                     | Detalle                                                                                                                                                                                                                                                                                        |
 | :---------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| CRUD                    | 1. CRUD Paciente<br>2. CRUD Obra_Social<br>3. CRUD Especialidad<br> 4.CRUD Especialista<br> 5.CRUD Turno<br>6.CRUD Historia_clinica.                                                                                                                                                           |
+| CRUD                    | 1. CRUD Paciente<br>2. CRUD Obra_Social<br>3. CRUD Especialidad<br> 4.CRUD Especialista<br> 5.CRUD Turno<br>6.CRUD Historia_clinica REVISAR.                                                                                                                                                           |
 | Listado<br>+<br>detalle | 1. Listado de especialistas filtrado por especialidad, muestra especialistas que tengan una determinada especialidad<br> 2. Listado de turnos posibles filtrado por especialista, muestra horarios posibles para atenderse con un determinado especialista                                     |
 | CUU/Epic                | 1. Solicitar un turno seleccionando especialidad, especialista, fecha y horario disponible.<br> 2.Confirmar asistencia a turno.<br>3. Cancelar turno<br>4.Registrar la atención de un paciente, guardando diagnóstico e indicaciones en su historia clínica y marcando el turno como atendido. |
 
