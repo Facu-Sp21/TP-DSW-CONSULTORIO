@@ -14,7 +14,7 @@ Mantener Docker Desktop abierto durante la ejecución de la base de datos.
 ## 2. Descargar el proyecto
 
 ```bash
-git clone URL_DEL_REPOSITORIO
+git clone https://github.com/Facu-Sp21/TP-DSW-CONSULTORIO.git
 cd TP-DSW-CONSULTORIO
 ```
 
