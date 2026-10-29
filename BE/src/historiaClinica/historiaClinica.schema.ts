@@ -5,6 +5,10 @@ export const atenderTurnoBodySchema = z.object({
   indicaciones: z.string().trim().max(2000).optional(),
 });
 
+export const crearHistoriaBodySchema = atenderTurnoBodySchema.extend({
+  cod_turno: z.coerce.number().int().positive(),
+});
+
 export const historiaQuerySchema = z.object({
   nro_afiliado: z.coerce.number().int().positive('El número de afiliado es inválido'),
 });

@@ -1,12 +1,13 @@
 import { Router, Request, Response } from 'express';
 import { validate } from '../shared/schemaValidator.js';
-import { historiaQuerySchema } from './historiaClinica.schema.js';
-import { sGetHistoriaDePaciente } from './historiaClinica.service.js';
+import { historiaQuerySchema, crearHistoriaBodySchema} from './historiaClinica.schema.js';
+import { cCreateHistoriaDePaciente, cGetHistoriaDePaciente } from './historiaClinica.controller.js';
 
 const historiaClinicaRouter = Router();
 
-historiaClinicaRouter.get('/', validate({ query: historiaQuerySchema }), async (_req: Request, res: Response) => {
-  res.json(await sGetHistoriaDePaciente(res.locals.query.nro_afiliado));
-});
+historiaClinicaRouter.get('/', validate({ query: historiaQuerySchema }), cGetHistoriaDePaciente);
+
+
+historiaClinicaRouter.post('/',validate({body: crearHistoriaBodySchema}),cCreateHistoriaDePaciente);
 
 export default historiaClinicaRouter;

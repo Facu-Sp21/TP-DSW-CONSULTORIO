@@ -11,7 +11,7 @@ const [loading, setLoading] = useState(true);
 const [error, setError] = useState<string | null>(null);
 
 useEffect(() => {
-  getEspecialidades()
+  getEspecialidades(1)
     .then(setEspecialidades)
     .catch((err: Error) => setError(err.message))
     .finally(() => setLoading(false));

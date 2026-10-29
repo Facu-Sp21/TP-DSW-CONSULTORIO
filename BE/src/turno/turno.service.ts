@@ -10,6 +10,7 @@ import { enviarCorreo } from '../Email/email.service.js';
 import {verifyTokenGestionTurno} from '../shared/auth/jwt.js';
 import { generarHorariosDelDia } from './turno.schedule.js';
 import { HistoriaClinica } from '../historiaClinica/historiaClinica.entity.js';
+import { sCreateHistoriaDePaciente } from '../historiaClinica/historiaClinica.service.js';
 
 // Actualizamos el Input para usar fecha y hora separadas
 type TurnoInput = {
@@ -26,6 +27,7 @@ type TurnoFilters = {
   cod_especialista?: number;
   fecha?: string;
 };
+
 
 /**
  * Barrera de seguridad antes de insertar o actualizar un turno.
@@ -286,13 +288,8 @@ export async function sAtenderTurno(
   if (motivo) throw new BadRequestError(motivo);
 
   turno.estado = 'ATENDIDO';
-  orm.em.create(HistoriaClinica, {
-    paciente: turno.paciente,
-    especialista: turno.especialista,
-    turno,
-    diagnostico: datos.diagnostico,
-    indicaciones: datos.indicaciones || undefined,
-  });
+  
+  await sCreateHistoriaDePaciente({cod_turno: turno.cod_turno, indicaciones: datos.indicaciones?? undefined, diagnostico: datos.diagnostico});
 
   await orm.em.flush();
   return turno;

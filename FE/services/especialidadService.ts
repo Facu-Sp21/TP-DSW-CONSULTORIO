@@ -7,8 +7,9 @@ export interface Especialidad {
   estado?: boolean;
 }
 
-export const getEspecialidades = () => {
-  return apiFetch<Especialidad[]>('/especialidad');
+export const getEspecialidades = (estado?: number) => {
+  const query = estado === 1 ? '?estado=1' : '';
+  return apiFetch<Especialidad[]>(`/especialidad${query}`);
 };
 
 export const createEspecialidad = (data: { nombre: string; duracion_minutos?: number; estado?: boolean }) => {

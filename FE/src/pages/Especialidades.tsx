@@ -12,7 +12,7 @@ export const Especialidades: React.FC = () => {
   const [busqueda, setBusqueda] = useState<string>('');
 
   useEffect(() => {
-    getEspecialidades()
+    getEspecialidades(1)
       .then((data: Especialidad[]) => {
         setEspecialidades(data);
         setLoading(false);
