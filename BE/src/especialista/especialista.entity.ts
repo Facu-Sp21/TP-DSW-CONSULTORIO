@@ -3,7 +3,6 @@ import type { Especialidad } from '../especialidad/especialidad.entity.js';
 import type { ObraSocial } from '../ObraSocial/obraSocial.entity.js';
 import type { Turno } from '../turno/turno.entity.js';
 
-
 @Entity()
 export class Especialista {
   @PrimaryKey({ type: 'number', autoincrement: true, unique: true })
@@ -26,7 +25,7 @@ export class Especialista {
 
   @OneToMany('Turno', (unTurno: Turno) => unTurno.especialista)
   turnos = new Collection<Turno>(this);
-  
+
   @Property({ length: 255, nullable: false, type: 'string' })
   contrasena!: string;
 
@@ -45,5 +44,3 @@ export class Especialista {
   })
   obrasSociales = new Collection<ObraSocial>(this);
 }
-
-

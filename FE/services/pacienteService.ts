@@ -23,7 +23,7 @@ export interface PacienteResponse {
   obraSocial?: {
     cod_os: number;
     nombre: string;
-  };
+  } | null;
 }
 
 export type Paciente = PacienteResponse;
