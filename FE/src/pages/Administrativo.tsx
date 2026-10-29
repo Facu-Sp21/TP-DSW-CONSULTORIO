@@ -38,7 +38,7 @@ import {
   updateObraSocial,
   deleteObraSocial,
 } from '../../services/obraSocialService';
-import { esHorarioPasado } from '../utils/turno';
+import { esHorarioPasado, tieneConflictoDeTurno } from '../utils/turno';
 
 export const Administrativo: React.FC = () => {
   const usuario = getUsuarioActual();
@@ -181,15 +181,14 @@ export const Administrativo: React.FC = () => {
     if (!espTurnoSel || !fechaTurno) return true;
     if (esHorarioPasado(fechaTurno, hora)) return false;
 
-    const yaOcupado = turnos.some((t: any) => {
-      const medCod = Number(t.cod_especialista || t.especialista?.cod_especialista);
-      const tFecha = t.fecha;
-      const tHora = (t.hora_inicio || t.horaInicio || '').substring(0, 5);
-      const estadoTurno = (t.estado || '').toUpperCase();
-      if (estadoTurno === 'CANCELADO') return false;
-      return medCod === Number(espTurnoSel) && tFecha === fechaTurno && tHora === hora;
-    });
-    return !yaOcupado;
+    return !tieneConflictoDeTurno(
+      fechaTurno,
+      hora,
+      duracionMinutosTurno,
+      Number(espTurnoSel),
+      pacTurnoSel,
+      turnos,
+    );
   });
 
   // Filtrar turnos activos para la tabla
@@ -751,6 +750,16 @@ export const Administrativo: React.FC = () => {
     }
     if (!horaTurno) {
       setModalAlerta({ show: true, titulo: 'Campo incompleto', mensaje: 'Debe seleccionar el campo Horario Disponible.', tipo: 'error' });
+      return;
+    }
+    if (!horariosDisponibles.includes(horaTurno)) {
+      setHoraTurno('');
+      setModalAlerta({
+        show: true,
+        titulo: 'Horario no disponible',
+        mensaje: 'El horario seleccionado ya no está disponible. Por favor, seleccione otro.',
+        tipo: 'error',
+      });
       return;
     }
     if (esHorarioPasado(fechaTurno, horaTurno)) {
@@ -2078,7 +2087,10 @@ export const Administrativo: React.FC = () => {
                             className="form-select"
                             value={pacTurnoSel}
                             onChange={(e) =>
-                              setPacTurnoSel(e.target.value ? Number(e.target.value) : '')
+                              {
+                                setPacTurnoSel(e.target.value ? Number(e.target.value) : '');
+                                setHoraTurno('');
+                              }
                             }
                           >
                             <option value="">Seleccione un paciente</option>
@@ -2164,7 +2176,7 @@ export const Administrativo: React.FC = () => {
                           )}
                         </div>
 
-                        <button type="submit" className="btn btn-primary w-100" disabled={!horaTurno}>
+                        <button type="submit" className="btn btn-primary w-100" disabled={!horaTurno || !horariosDisponibles.includes(horaTurno)}>
                           <i className="bi bi-check-circle me-1"></i>Confirmar Turno
                         </button>
                       </form>

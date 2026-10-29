@@ -8,8 +8,9 @@ import { getEspecialistasByEspecialidad } from '../../services/especialistaServi
 import type { Especialista } from '../../services/especialistaService';
 import { isAuthenticated } from '../../services/authService';
 import { getUsuarioActual } from '../../services/authService';
-import { createTurno, getHorariosDisponibles } from '../../services/turnoService';
+import { createTurno, getHorariosDisponibles, getTurnosPaciente } from '../../services/turnoService';
 import { getPacienteById, type PacienteResponse } from '../../services/pacienteService';
+import { tieneConflictoDeTurno } from '../utils/turno';
 
 export const SacarTurno: React.FC = () => {
   const navigate = useNavigate();
@@ -82,12 +83,34 @@ export const SacarTurno: React.FC = () => {
   }, [especialidad]);
 
   useEffect(() => {
-    if (!especialista?.cod_especialista || !fecha) return;
+    const codEspecialista = especialista?.cod_especialista;
+    if (!codEspecialista || !fecha) return;
 
     let cancelled = false;
-    getHorariosDisponibles(especialista.cod_especialista, fecha)
-      .then((disponibilidad) => {
-        if (!cancelled) setHorariosDisponibles(disponibilidad.horarios);
+    const usuario = getUsuarioActual();
+    if (!usuario) return;
+
+    Promise.all([
+      getHorariosDisponibles(codEspecialista, fecha),
+      getTurnosPaciente(usuario.id),
+    ])
+      .then(([disponibilidad, turnosPaciente]) => {
+        if (cancelled) return;
+
+        const duracion = especialidad?.duracion_minutos ?? 0;
+        setHorariosDisponibles(
+          disponibilidad.horarios.filter(
+            (horario) =>
+              !tieneConflictoDeTurno(
+                fecha,
+                horario,
+                duracion,
+                codEspecialista,
+                usuario.id,
+                turnosPaciente,
+              ),
+          ),
+        );
       })
       .catch((err: unknown) => {
         if (!cancelled) {
@@ -106,7 +129,7 @@ export const SacarTurno: React.FC = () => {
     return () => {
       cancelled = true;
     };
-  }, [especialista, fecha]);
+  }, [especialista, fecha, especialidad]);
 
   const { calendarDays, maxDate, minMonth, maxMonth } = useMemo(() => {
     const today = new Date();

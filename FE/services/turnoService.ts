@@ -29,6 +29,10 @@ export interface TurnoAdmin {
     cod_especialista: number;
     nombre: string;
     matricula: string;
+    especialidad?: {
+      nombre: string;
+      duracion_minutos?: number;
+    };
   };
 }
 
