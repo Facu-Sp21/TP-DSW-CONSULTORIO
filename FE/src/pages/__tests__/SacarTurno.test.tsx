@@ -35,6 +35,55 @@ afterEach(() => {
 });
 
 describe('SacarTurno', () => {
+  it('oculta especialidades y especialistas inactivos al reservar', async () => {
+    vi.mocked(getEspecialidades).mockResolvedValue([
+      { cod_especialidad: 1, nombre: 'Cardiología inactiva', estado: false },
+      { cod_especialidad: 2, nombre: 'Cardiología activa', estado: true },
+    ]);
+    vi.mocked(getEspecialistasByEspecialidad).mockResolvedValue([
+      {
+        cod_especialista: 1,
+        dni: '123',
+        matricula: 'MAT-1',
+        nombre: 'Dra. Inactiva',
+        telefono: '123',
+        estado: false,
+      },
+      {
+        cod_especialista: 2,
+        dni: '456',
+        matricula: 'MAT-2',
+        nombre: 'Dra. Activa',
+        telefono: '456',
+        estado: true,
+      },
+    ]);
+    vi.mocked(getPacienteById).mockResolvedValue({
+      id: 1,
+      nombre: 'Paciente',
+      dni: '123',
+      email: 'paciente@example.com',
+      telefono: '123',
+      direccion: 'Calle 123',
+      cod_os: 1,
+    });
+
+    render(
+      <MemoryRouter initialEntries={['/sacar-turno']}>
+        <SacarTurno />
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByRole('button', { name: /Cardiología activa/ })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /Cardiología inactiva/ })).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: /Cardiología activa/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Continuar/ }));
+
+    expect(await screen.findByRole('button', { name: /Dra\. Activa/ })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /Dra\. Inactiva/ })).toBeNull();
+  });
+
   it('permite navegar los meses hasta el límite de reserva de seis meses', async () => {
     vi.mocked(getEspecialidades).mockResolvedValue([
       { cod_especialidad: 1, nombre: 'Cardiología' },

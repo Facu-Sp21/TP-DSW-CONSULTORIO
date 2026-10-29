@@ -104,6 +104,10 @@ export async function sGetHorariosDisponibles(
   fecha: string,
   especialista: Especialista
 ): Promise<string[]> {
+  if (especialista.estado === false || especialista.especialidad?.estado === false) {
+    return [];
+  }
+
   const duracion_minutos = especialista.especialidad?.duracion_minutos ?? 0;
 
   const slotsPosibles = generarHorariosDelDia(fecha, duracion_minutos);
@@ -166,6 +170,10 @@ export async function sGetTurnoById(cod_turno: number): Promise<Turno | null> {
  * Crear un nuevo turno
  */
 export async function sCreateTurno(input: TurnoInput): Promise<Turno> {
+  if (input.especialista.estado === false || input.especialista.especialidad?.estado === false) {
+    throw new BadRequestError('No se pueden reservar turnos con especialistas o especialidades inactivas');
+  }
+
   const duracion = input.especialista.especialidad?.duracion_minutos ?? 0;
   if (!esTurnoValido(input.fecha, input.hora_inicio, duracion)) {
     throw new BadRequestError(
@@ -201,6 +209,10 @@ export async function sUpdateTurno(
   if (!turno) return null;
   if (turno.estado !== 'PENDIENTE') {
     throw new BadRequestError('No se puede modificar un turno que ya fue confirmado, cancelado, atendido o marcado como ausente');
+  }
+
+  if (input.especialista.estado === false || input.especialista.especialidad?.estado === false) {
+    throw new BadRequestError('No se pueden reservar turnos con especialistas o especialidades inactivas');
   }
 
   const duracion = input.especialista.especialidad?.duracion_minutos ?? 0;

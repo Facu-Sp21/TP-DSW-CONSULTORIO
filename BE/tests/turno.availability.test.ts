@@ -26,7 +26,8 @@ const crearTurno = (fecha: string, hora: string, paciente = 10, especialista = 1
   especialista: {
     cod_especialista: especialista,
     consulta_particular: 100,
-    especialidad: { duracion_minutos: duracion },
+    estado: true,
+    especialidad: { duracion_minutos: duracion, estado: true },
   } as any,
   aceptaParticular: true,
 });
@@ -116,6 +117,22 @@ describe('sCreateTurno', () => {
       'El horario debe coincidir con la duración de la consulta y estar dentro de la atención de 08:00 a 17:00',
     );
   });
+
+  it('rechaza reservar turnos con un especialista inactivo', async () => {
+    const turnoInactivo = crearTurno('2026-08-03', '10:00');
+    turnoInactivo.especialista.estado = false;
+
+    await expect(sCreateTurno(turnoInactivo)).rejects.toThrow('especialistas o especialidades inactivas');
+    expect(orm.em.find).not.toHaveBeenCalled();
+  });
+
+  it('rechaza reservar turnos con una especialidad inactiva', async () => {
+    const turnoInactivo = crearTurno('2026-08-03', '10:00');
+    turnoInactivo.especialista.especialidad.estado = false;
+
+    await expect(sCreateTurno(turnoInactivo)).rejects.toThrow('especialistas o especialidades inactivas');
+    expect(orm.em.find).not.toHaveBeenCalled();
+  });
 });
 
 describe('reglas de calendario y horarios', () => {
@@ -200,6 +217,28 @@ describe('sGetHorariosDisponibles', () => {
     expect(horarios[0]).toBe('10:00');
     expect(horarios).not.toContain('09:00');
     expect(horarios).not.toContain('09:30');
+  });
+
+  it('no ofrece horarios para un especialista inactivo', async () => {
+    const horarios = await sGetHorariosDisponibles('2026-08-03', {
+      estado: false,
+      cod_especialista: 1,
+      especialidad: { duracion_minutos: 30, estado: true },
+    } as any);
+
+    expect(horarios).toEqual([]);
+    expect(orm.em.find).not.toHaveBeenCalled();
+  });
+
+  it('no ofrece horarios para una especialidad inactiva', async () => {
+    const horarios = await sGetHorariosDisponibles('2026-08-03', {
+      estado: true,
+      cod_especialista: 1,
+      especialidad: { duracion_minutos: 30, estado: false },
+    } as any);
+
+    expect(horarios).toEqual([]);
+    expect(orm.em.find).not.toHaveBeenCalled();
   });
 });
 
