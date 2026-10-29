@@ -4,8 +4,9 @@ import { Especialidad } from './especialidad.entity.js';
 import { Especialista } from '../especialista/especialista.entity.js';
 import { alreadyExistsError } from '../shared/errorsModel.js';
 
-export async function sGetAllEspecialidades(): Promise<Especialidad[]> {
-  return await orm.em.find(Especialidad, {});
+export async function sGetAllEspecialidades(estado?:number): Promise<Especialidad[]> {
+  const filter = estado === 1? {estado : true} : {};
+  return await orm.em.find(Especialidad,filter ,{});
 }
 
 export async function sGetEspecialidadById(cod_especialidad: number): Promise<Especialidad | null> {

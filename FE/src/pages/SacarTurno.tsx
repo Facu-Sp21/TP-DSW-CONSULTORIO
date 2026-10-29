@@ -55,7 +55,7 @@ export const SacarTurno: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    getEspecialidades()
+    getEspecialidades(1)
       .then(setEspecialidades)
       .catch(() => setModalAlerta({ show: true, titulo: 'Error', mensaje: 'No se pudieron cargar las especialidades.', tipo: 'error' }));
   }, []);

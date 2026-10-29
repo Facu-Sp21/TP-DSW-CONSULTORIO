@@ -10,7 +10,8 @@ import {
 } from './especialidad.service.js';
 
 export async function cGetAllEspecialidades(req: Request, res: Response) {
-  const especialidades = await sGetAllEspecialidades();
+  const estado= req.query.estado === '1'? 1 : undefined;
+  const especialidades = await sGetAllEspecialidades(estado);
   res.json(especialidades);
 }
 

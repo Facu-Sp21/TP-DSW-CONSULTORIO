@@ -24,9 +24,6 @@ export class Especialista {
   @Property({ length: 30, nullable: false, type: 'string' })
   telefono!: string;
 
-  //@ManyToOne('Especialidad', { fieldName: 'cod_especialidad', nullable: false })
-  //especialidad!: Especialidad;
-
   @OneToMany('Turno', (unTurno: Turno) => unTurno.especialista)
   turnos = new Collection<Turno>(this);
   
