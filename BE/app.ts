@@ -1,20 +1,25 @@
 import 'reflect-metadata';
-import {orm, syncSchema} from './src/shared/db/orm.js';
+import { orm, syncSchema } from './src/shared/db/orm.js';
 import express from 'express';
+import cors from 'cors';
+
 import especialidadRoutes from './src/especialidad/especialidad.routes.js';
 import especialistaRoutes from './src/especialista/especialista.routes.js';
 import pacienteRoutes from './src/paciente/paciente.routes.js';
 import turnoRoutes from './src/turno/turno.routes.js';
+import afiliadoRoutes from './src/Afiliado/routes.js';
 import { errorHandler } from './src/shared/errorHandler.js';
 import { RequestContext } from '@mikro-orm/core';
 import { apiReference } from '@scalar/express-api-reference';
 import { openApiDocument } from './src/shared/openapi.js';
-
+import suscripcionRoutes from './src/suscripcion/suscripcion.routes.js';
 
 const app = express();
+
+app.use(cors());
 app.use(express.json());
 
-app.use((req, res, next) => { // esto es para que cada request tenga su propio contexto de la base de datos, para que no se mezclen las transacciones
+app.use((req, res, next) => {
     RequestContext.create(orm.em, next);
 });
 
@@ -22,6 +27,8 @@ app.use('/especialidad', especialidadRoutes);
 app.use('/especialista', especialistaRoutes);
 app.use('/paciente', pacienteRoutes);
 app.use('/turno', turnoRoutes);
+app.use('/afiliado', afiliadoRoutes);
+app.use('/suscripcion', suscripcionRoutes);
 
 app.get('/openapi.json', (_req, res) => {
     res.json(openApiDocument);
@@ -39,6 +46,6 @@ app.use(
 
 app.use(errorHandler);
 
-await syncSchema(); // esto es para sincronizar la base de datos con las entidades, solo usar en desarrollo
+await syncSchema();
 
 export { app };

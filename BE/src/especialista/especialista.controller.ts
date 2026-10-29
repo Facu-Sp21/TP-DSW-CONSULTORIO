@@ -10,7 +10,8 @@ import {
 } from './especialista.service.js';
 
 export async function cGetAllEspecialistas(req: Request, res: Response) {
-  const especialistas = await sGetAllEspecialistas();
+  const cod_especialidad = req.query.especialidad ? Number(req.query.especialidad) : undefined;
+  const especialistas = await sGetAllEspecialistas(cod_especialidad);
   res.json(especialistas);
 }
 
