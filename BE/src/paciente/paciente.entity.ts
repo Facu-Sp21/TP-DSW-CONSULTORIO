@@ -1,5 +1,6 @@
-import { Collection, Entity, OneToMany, Opt, PrimaryKey, Property } from '@mikro-orm/core';
+import { Collection, Entity, ManyToOne, OneToMany, Opt, PrimaryKey, Property } from '@mikro-orm/core';
 import type { Turno } from '../turno/turno.entity.js';
+import type { ObraSocial } from '../ObraSocial/obraSocial.entity.js';
 
 @Entity()
 export class Paciente {
@@ -21,11 +22,11 @@ export class Paciente {
   @Property({ length: 120, nullable: false, type: 'string', unique: true })
   email!: string;
 
-  @Property({ length: 100, nullable: false, type: 'string' })
-  contrasena!: string;
+  @Property({ length: 100, nullable: true, type: 'string' })
+  contrasena?: string & Opt;
 
-  @Property({ type: 'number', nullable: true })
-  cod_os?: number | null; // Puede ser particular o por obra social
+  @ManyToOne('ObraSocial', { fieldName: 'cod_os', nullable: true })
+  obraSocial?: ObraSocial | null;
 
   @OneToMany('Turno', (turno: any) => turno.paciente)
   turnos = new Collection<Turno>(this);

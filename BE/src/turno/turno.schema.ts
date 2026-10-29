@@ -47,6 +47,7 @@ export const turnoBodySchema = z.object({
     .regex(regexHora, 'La hora debe tener formato HH:mm (ej: 17:00)'),
   nro_afiliado: z.coerce.number().int().positive('El número de afiliado es inválido'),
   cod_especialista: z.coerce.number().int().positive('El código de especialista es inválido'),
+  acepta_particular: z.boolean().optional(),
 }).superRefine((data, ctx) => { // data contiene los valores de fecha y hora_inicio, ctx es el contexto de validación
   // Usamos superRefine porque necesitamos evaluar la fecha y la hora en conjunto
   if (!esFechaHoraFuturaValida(data.fecha, data.hora_inicio)) {
@@ -78,4 +79,14 @@ export const disponibilidadQuerySchema = z.object({
 
 export const turnoParamsSchema = z.object({
   cod_turno: z.coerce.number().int().positive('El código de turno es inválido'),
+});
+
+export const confirmarAsistenciaBodySchema = z.object({
+  token: z.string().trim().min(1, 'El token es obligatorio'),
+
+  accion: z.enum(['confirmar', 'cancelar']),
+});
+
+export const turnoDelCorreoQuerySchema = z.object({
+  token: z.string().trim().min(1, 'El token es obligatorio'),
 });

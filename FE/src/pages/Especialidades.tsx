@@ -12,7 +12,7 @@ export const Especialidades: React.FC = () => {
   const [busqueda, setBusqueda] = useState<string>('');
 
   useEffect(() => {
-    getEspecialidades()
+    getEspecialidades(1)
       .then((data: Especialidad[]) => {
         setEspecialidades(data);
         setLoading(false);
@@ -92,9 +92,7 @@ export const Especialidades: React.FC = () => {
                     <div className="card-body p-0">
                       <div className="d-flex align-items-start justify-content-between mb-3">
                         <span className="caja-icono"><i className="bi bi-clipboard2-pulse fs-4"></i></span>
-                        <span className="badge rounded-pill" style={{ backgroundColor: 'var(--color-primary-soft)', color: 'var(--color-primario-oscuro)' }}>
-                          Código #{item.cod_especialidad}
-                        </span>
+                      
                       </div>
                       <h3 className="h5 fw-bold mb-2">{item.nombre}</h3>
                       <p className="text-muted small">Consultas de rutina, diagnóstico especializado y seguimiento del paciente.</p>

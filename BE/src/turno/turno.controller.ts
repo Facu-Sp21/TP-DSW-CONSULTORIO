@@ -1,5 +1,5 @@
-import { Request, Response } from 'express';
-import { NotFoundError } from '../shared/errorsModel.js';
+import { NextFunction, Request, Response } from 'express';
+import { NotFoundError,BadRequestError } from '../shared/errorsModel.js';
 import { sGetEspecialistaById } from '../especialista/especialista.service.js';
 import { sGetPacienteById } from '../paciente/paciente.service.js';
 import {
@@ -9,6 +9,10 @@ import {
   sGetTurnos,
   sGetTurnoById,
   sUpdateTurno,
+  sAtenderTurno,
+  sMarcarAusente,
+  sConfirmarTurno,
+  sGetTurnoDelCorreo,
 } from './turno.service.js';
 
 export async function cGetTurnos(req: Request, res: Response) {
@@ -43,7 +47,7 @@ export async function cGetTurnoById(req: Request, res: Response) {
 }
 
 export async function cCreateTurno(req: Request, res: Response) {
-  const { fecha, hora_inicio, nro_afiliado, cod_especialista } = res.locals.body;
+  const { fecha, hora_inicio, nro_afiliado, cod_especialista, acepta_particular } = res.locals.body;
   const paciente = await sGetPacienteById(nro_afiliado);
 
   if (!paciente) {
@@ -61,6 +65,7 @@ export async function cCreateTurno(req: Request, res: Response) {
     hora_inicio,
     paciente,
     especialista,
+    aceptaParticular: acepta_particular,
   });
 
   res.status(201).json(nuevoTurno);
@@ -68,7 +73,7 @@ export async function cCreateTurno(req: Request, res: Response) {
 
 export async function cUpdateTurno(req: Request, res: Response) {
   const cod_turno = res.locals.params.cod_turno;
-  const { fecha, hora_inicio, nro_afiliado, cod_especialista } = res.locals.body;
+  const { fecha, hora_inicio, nro_afiliado, cod_especialista, acepta_particular } = res.locals.body;
   const paciente = await sGetPacienteById(nro_afiliado);
 
   if (!paciente) {
@@ -86,6 +91,7 @@ export async function cUpdateTurno(req: Request, res: Response) {
     hora_inicio,
     paciente,
     especialista,
+    aceptaParticular: acepta_particular,
   });
 
   if (!turno) {
@@ -104,4 +110,50 @@ export async function cDeleteTurno(req: Request, res: Response) {
   }
 
   res.status(204).send();
+}
+
+export async function cAtenderTurno(req: Request, res: Response) {
+  const turno = await sAtenderTurno(res.locals.params.cod_turno, res.locals.body);
+
+  if (!turno) {
+    throw new NotFoundError('Turno no encontrado');
+  }
+
+  // Devolvemos solo lo necesario: no hace falta (ni conviene) mandar los datos completos del paciente
+  res.json({ cod_turno: turno.cod_turno, estado: turno.estado });
+}
+
+export async function cConfirmarTurno(req: Request, res: Response) {
+  const turno = await sConfirmarTurno(res.locals.body.token,res.locals.body.accion,);
+
+  res.json({cod_turno: turno.cod_turno,estado: turno.estado,});
+}
+
+export async function cGetTurnoDelCorreo(
+  req: Request,
+  res: Response,
+) {
+  const turno = await sGetTurnoDelCorreo(
+    res.locals.query.token,
+  );
+
+  res.json({
+    cod_turno: turno.cod_turno,
+    fecha: turno.fecha,
+    hora_inicio: turno.hora_inicio,
+    estado: turno.estado,
+    especialista: {
+      nombre: turno.especialista.nombre,
+    },
+  });
+}
+
+export async function cMarcarAusente(req: Request, res: Response) {
+  const turno = await sMarcarAusente(res.locals.params.cod_turno);
+
+  if (!turno) {
+    throw new NotFoundError('Turno no encontrado');
+  }
+
+  res.json({ cod_turno: turno.cod_turno, estado: turno.estado });
 }

@@ -106,7 +106,7 @@ export const Especialistas: React.FC = () => {
                       </div>
                       <h3 className="h5 fw-bold mb-2">{item.nombre}</h3>
                       <p className="text-muted small mb-3">
-                        <i className="bi bi-telephone me-2"></i>{item.telefono}
+                        <i className="bi bi-envelope me-2"></i>{item.email || 'Sin email'}
                       </p>
                       <button className="btn btn-primary w-full rounded-pill mt-2 w-100" onClick={() => navigate('/sacar-turno')}>
                         Solicitar Turno

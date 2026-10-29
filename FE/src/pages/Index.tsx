@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import * as React from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { PublicLayout } from '../components/PublicLayout';
 import { getEspecialidades } from '../../services/especialidadService';
@@ -10,7 +11,7 @@ const [loading, setLoading] = useState(true);
 const [error, setError] = useState<string | null>(null);
 
 useEffect(() => {
-  getEspecialidades()
+  getEspecialidades(1)
     .then(setEspecialidades)
     .catch((err: Error) => setError(err.message))
     .finally(() => setLoading(false));

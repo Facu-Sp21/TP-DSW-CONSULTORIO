@@ -5,7 +5,7 @@ export const orm = await MikroORM.init({
   entities: ['./dist/src/**/*.entity.js'],
   entitiesTs: ['./src/**/*.entity.ts'],
   dbName: 'tp-consultorio-db',
-  clientUrl: 'mysql://dsw:dsw@localhost:3307/tp-consultorio-db',
+  clientUrl: process.env.DATABASE_URL || 'mysql://dsw:dsw@localhost:3307/tp-consultorio-db',
   highlighter: new SqlHighlighter(),
   debug: true,
   schemaGenerator: { // Nunca usar en produccion, solo para desarrollo porque borra y crea la base de datos cada vez que se ejecuta

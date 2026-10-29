@@ -1,28 +1,35 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { getUsuarioActual, isAuthenticated, logout } from '../../services/authService';
+import { cancelarTurno, getTurnosPaciente } from '../../services/turnoService';
 
 export interface Turno {
-  id: string;
+  id: number;
   especialidad: string;
   especialista: string;
   fecha: string;
   hora: string;
+  estado: string;
 }
 
-const initialTurnos: Turno[] = [
-  { id: 'demo-1', especialidad: 'Clínica médica', especialista: 'Dra. Laura Fernández', fecha: '2026-09-17', hora: '10:30' },
-];
+const toTurno = (turno: {
+  cod_turno?: number;
+  fecha: string;
+  hora_inicio: string;
+  estado?: string;
+  especialista?: { nombre: string; especialidad?: { nombre: string } };
+}) => ({
+  id: turno.cod_turno!,
+  especialidad: turno.especialista?.especialidad?.nombre ?? 'Especialidad',
+  especialista: turno.especialista?.nombre ?? 'Especialista',
+  fecha: turno.fecha,
+  hora: turno.hora_inicio.slice(0, 5),
+  estado: turno.estado ?? 'PENDIENTE',
+});
 
-export function getTurnos(): Turno[] {
-  const saved = localStorage.getItem('vitalis-turnos');
-  if (!saved) return initialTurnos;
-  try {
-    const parsed = JSON.parse(saved);
-    return Array.isArray(parsed) ? parsed : initialTurnos;
-  } catch {
-    return initialTurnos;
-  }
-}
+const isFutureTurno = (turno: Turno) =>
+  turno.estado !== 'CANCELADO' &&
+  new Date(`${turno.fecha}T${turno.hora}:00`).getTime() > Date.now();
 
 const formatDate = (date: string) => new Intl.DateTimeFormat('es-AR', {
   weekday: 'long', day: 'numeric', month: 'long',
@@ -46,8 +53,13 @@ export function buildMonthCalendar(year: number, month: number): CalendarDay[] {
   for (let index = 0; index < totalCells; index += 1) {
     const dayOffset = index - leadingDays + 1;
     const date = new Date(year, month, dayOffset);
+    const dateString = [
+      date.getFullYear(),
+      String(date.getMonth() + 1).padStart(2, '0'),
+      String(date.getDate()).padStart(2, '0'),
+    ].join('-');
     result.push({
-      date: date.toISOString().slice(0, 10),
+      date: dateString,
       isCurrentMonth: dayOffset >= 1 && dayOffset <= daysInMonth,
     });
   }
@@ -58,7 +70,7 @@ export function buildMonthCalendar(year: number, month: number): CalendarDay[] {
 export const UserNavigation: React.FC = () => {
   const navigate = useNavigate();
   const cerrarSesion = () => {
-    sessionStorage.removeItem('vitalis-authenticated');
+    logout();
     navigate('/login');
   };
 
@@ -73,13 +85,10 @@ export const UserNavigation: React.FC = () => {
           <Link className="btn btn-sm btn-link text-decoration-none" to="/usuario">
             <i className="bi bi-house me-1" />Inicio
           </Link>
-          <Link className="btn btn-sm btn-primary" to="/sacar-turno">
-            <i className="bi bi-calendar-plus me-1" />Sacar turno
-          </Link>
           <Link className="btn btn-sm btn-outline-primary" to="/calendario">
             <i className="bi bi-calendar3 me-1" />Calendario
           </Link>
-          <button className="btn btn-outline-secondary btn-sm" onClick={cerrarSesion}>
+          <button className="btn btn-outline-danger rounded-pill px-4" onClick={cerrarSesion}>
             <i className="bi bi-box-arrow-right me-1" />Salir
           </button>
         </div>
@@ -89,10 +98,20 @@ export const UserNavigation: React.FC = () => {
 };
 
 export const Usuario: React.FC = () => {
-  const turnos = useMemo(getTurnos, []);
+  const [turnos, setTurnos] = useState<Turno[]>([]);
   const location = useLocation();
   const [showFeedback, setShowFeedback] = useState(Boolean(location.state?.bookingSuccess));
-  if (sessionStorage.getItem('vitalis-authenticated') !== 'true') return <Navigate to="/login" replace />;
+  const usuario = getUsuarioActual();
+  const nombreUsuario = usuario?.nombre?.trim() || 'usuario';
+
+  useEffect(() => {
+    if (!usuario?.id) return;
+    getTurnosPaciente(usuario.id)
+      .then((turnosApi) => setTurnos(turnosApi.map(toTurno).filter(isFutureTurno)))
+      .catch(() => setTurnos([]));
+  }, [usuario?.id]);
+
+  if (!isAuthenticated()) return <Navigate to="/login" replace />;
 
   const today = new Date();
   const weekStart = new Date(today);
@@ -119,7 +138,7 @@ export const Usuario: React.FC = () => {
         <div className="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
           <div>
             <span className="etiqueta-superior rounded-pill mb-3">Mi espacio de salud</span>
-            <h1 className="fw-bold mb-1">Hola, Martín</h1>
+            <h1 className="fw-bold mb-1">Hola, {nombreUsuario}</h1>
             <p className="text-muted mb-0">Gestioná tus próximos turnos de forma simple.</p>
           </div>
           <Link to="/sacar-turno" className="btn btn-primary px-4">
@@ -165,16 +184,69 @@ const TurnoCard: React.FC<{ turno: Turno }> = ({ turno }) => (
 
 export const Calendario: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
-  const turnos = useMemo(() => sortTurnos(getTurnos()), []);
-  if (sessionStorage.getItem('vitalis-authenticated') !== 'true') return <Navigate to="/login" replace />;
+  const [turnos, setTurnos] = useState<Turno[]>([]);
+  const [displayedMonth, setDisplayedMonth] = useState(() => {
+    const today = new Date();
+    return new Date(today.getFullYear(), today.getMonth(), 1);
+  });
+  const usuario = getUsuarioActual();
+
+  // ESTADO PARA MODAL / CARTEL INTEGRADO
+  const [modalAlerta, setModalAlerta] = useState<{
+    show: boolean;
+    titulo: string;
+    mensaje: string;
+    tipo: 'error' | 'success' | 'confirm';
+    onConfirm?: () => void;
+  }>({ show: false, titulo: '', mensaje: '', tipo: 'error' });
+
+  useEffect(() => {
+    if (!usuario?.id) return;
+    getTurnosPaciente(usuario.id)
+      .then((turnosApi) => setTurnos(turnosApi.map(toTurno).filter(isFutureTurno)))
+      .catch(() => setTurnos([]));
+  }, [usuario?.id]);
+
+  if (!isAuthenticated()) return <Navigate to="/login" replace />;
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const maxDate = new Date(today);
-  maxDate.setMonth(maxDate.getMonth() + 1);
-  const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
-  const calendarDays = buildMonthCalendar(firstDay.getFullYear(), firstDay.getMonth());
+  maxDate.setMonth(maxDate.getMonth() + 6);
+  maxDate.setHours(23, 59, 59, 999);
+  const minMonth = today.getFullYear() * 12 + today.getMonth();
+  const maxMonth = maxDate.getFullYear() * 12 + maxDate.getMonth();
+  const currentMonth = displayedMonth.getFullYear() * 12 + displayedMonth.getMonth();
+  const calendarDays = buildMonthCalendar(displayedMonth.getFullYear(), displayedMonth.getMonth());
   const selectedTurnos = selectedDate ? turnos.filter((turno) => turno.fecha === selectedDate) : [];
+
+  const cancelar = (id: number) => {
+    setModalAlerta({
+      show: true,
+      titulo: 'Cancelar Turno',
+      mensaje: '¿Estás seguro de que deseás cancelar este turno? Esta acción no se puede deshacer.',
+      tipo: 'confirm',
+      onConfirm: async () => {
+        try {
+          await cancelarTurno(id);
+          setTurnos((actuales) => actuales.filter((turno) => turno.id !== id));
+          setModalAlerta({
+            show: true,
+            titulo: 'Turno Cancelado',
+            mensaje: 'El turno ha sido cancelado con éxito.',
+            tipo: 'success'
+          });
+        } catch (error) {
+          setModalAlerta({
+            show: true,
+            titulo: 'Error',
+            mensaje: 'Ocurrió un error al intentar cancelar el turno.',
+            tipo: 'error'
+          });
+        }
+      }
+    });
+  };
 
   return (
     <div className="min-vh-100 bg-light">
@@ -189,8 +261,30 @@ export const Calendario: React.FC = () => {
           <section className="col-lg-7">
             <div className="card border-0 shadow-sm p-4">
               <div className="d-flex justify-content-between align-items-center mb-3">
-                <h2 className="h5 fw-bold mb-0">Próximos 30 días</h2>
-                <span className="small text-muted">Hasta {maxDate.toLocaleDateString('es-AR')}</span>
+                <button
+                  type="button"
+                  className="btn btn-sm btn-outline-secondary"
+                  aria-label="Mes anterior"
+                  disabled={currentMonth <= minMonth}
+                  onClick={() => setDisplayedMonth((month) => new Date(month.getFullYear(), month.getMonth() - 1, 1))}
+                >
+                  <i className="bi bi-chevron-left" />
+                </button>
+                <div className="text-center">
+                  <h2 className="h5 fw-bold text-capitalize mb-1" aria-live="polite">
+                    {displayedMonth.toLocaleDateString('es-AR', { month: 'long', year: 'numeric' })}
+                  </h2>
+                  <span className="small text-muted">Turnos hasta {maxDate.toLocaleDateString('es-AR')}</span>
+                </div>
+                <button
+                  type="button"
+                  className="btn btn-sm btn-outline-secondary"
+                  aria-label="Mes siguiente"
+                  disabled={currentMonth >= maxMonth}
+                  onClick={() => setDisplayedMonth((month) => new Date(month.getFullYear(), month.getMonth() + 1, 1))}
+                >
+                  <i className="bi bi-chevron-right" />
+                </button>
               </div>
               <div className="calendar-grid calendar-head mb-2">{['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'].map((day) => <span key={day}>{day}</span>)}</div>
               <div className="calendar-grid">
@@ -215,7 +309,15 @@ export const Calendario: React.FC = () => {
                   {(selectedDate ? selectedTurnos : turnos).map((turno) => (
                     <div className="agenda-item" key={turno.id}>
                       <span className="agenda-hora">{turno.hora}</span>
-                      <div><strong>{turno.especialidad}</strong><small className="d-block text-muted">{turno.especialista}</small><small className="d-block text-primary">{formatDate(turno.fecha)}</small></div>
+                      <div>
+                        <strong>{turno.especialidad}</strong>
+                        <small className="d-block text-muted">{turno.especialista}</small>
+                        <small className="d-block text-primary">{formatDate(turno.fecha)} · {turno.hora} hs</small>
+                        <span className="badge text-bg-primary mt-1">{turno.estado === 'CONFIRMADO' ? 'Confirmado' : 'Pendiente'}</span>
+                      </div>
+                      <button type="button" className="btn btn-sm btn-outline-danger ms-auto" onClick={() => cancelar(turno.id)}>
+                        Cancelar
+                      </button>
                     </div>
                   ))}
                 </div>
@@ -224,6 +326,58 @@ export const Calendario: React.FC = () => {
           </section>
         </div>
       </main>
+
+      {/* MODAL / CARTEL INTEGRADO DE ALERTAS Y CONFIRMACIONES */}
+      {modalAlerta.show && (
+        <div className="modal show d-block" tabIndex={-1} style={{ backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1050 }}>
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content border-0 shadow-lg rounded-4">
+              <div className={`modal-header border-0 pb-0 ${modalAlerta.tipo === 'error' ? 'text-danger' : modalAlerta.tipo === 'success' ? 'text-success' : 'text-primary'}`}>
+                <h5 className="modal-title fw-bold">
+                  <i className={`bi ${modalAlerta.tipo === 'error' ? 'bi-exclamation-triangle-fill' : modalAlerta.tipo === 'success' ? 'bi-check-circle-fill' : 'bi-question-circle-fill'} me-2`}></i>
+                  {modalAlerta.titulo}
+                </h5>
+                <button type="button" className="btn-close" onClick={() => setModalAlerta({ ...modalAlerta, show: false })}></button>
+              </div>
+              <div className="modal-body py-4 text-center">
+                <p className="mb-0 text-secondary fs-6">{modalAlerta.mensaje}</p>
+              </div>
+              <div className="modal-footer border-0 pt-0 justify-content-center pb-4">
+                {modalAlerta.tipo === 'confirm' ? (
+                  <>
+                    <button
+                      type="button"
+                      className="btn btn-outline-secondary rounded-pill px-4"
+                      onClick={() => setModalAlerta({ ...modalAlerta, show: false })}
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-danger rounded-pill px-4"
+                      onClick={() => {
+                        const confirmCallback = modalAlerta.onConfirm;
+                        setModalAlerta({ ...modalAlerta, show: false });
+                        if (confirmCallback) confirmCallback();
+                      }}
+                    >
+                      Aceptar
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    type="button"
+                    className="btn btn-primary rounded-pill px-5"
+                    onClick={() => setModalAlerta({ ...modalAlerta, show: false })}
+                  >
+                    Entendido
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -8,7 +8,12 @@ import { Login } from './pages/Login';
 import { Registro } from './pages/Registro';
 import { Calendario, Usuario } from './pages/Usuario';
 import { SacarTurno } from './pages/SacarTurno';
+import { Legal } from './pages/Legal';
 import { Administrativo } from './pages/Administrativo';
+import { EspecialistaAgenda } from './pages/especialista/EspecialistaAgenda';
+import { EspecialistaTurno } from './pages/especialista/EspecialistaTurno';
+import { ConfirmarAsistencia } from './pages/ConfirmarAsistencia';
+import { RutaProtegida } from './components/RutaProtegida';
 
 function App() {
   return (
@@ -22,10 +27,18 @@ function App() {
         <Route path="/contacto" element={<Contacto />} />
         <Route path="/login" element={<Login />} />
         <Route path="/registro" element={<Registro />} />
-        <Route path="/usuario" element={<Usuario />} />
-        <Route path="/calendario" element={<Calendario />} />
-        <Route path="/sacar-turno" element={<SacarTurno />} />
+        <Route path="/usuario" element={<RutaProtegida roles={['paciente']}><Usuario /></RutaProtegida>} />
+        <Route path="/calendario" element={<RutaProtegida roles={['paciente']}><Calendario /></RutaProtegida>} />
+        <Route path="/sacar-turno" element={<RutaProtegida roles={['paciente']}><SacarTurno /></RutaProtegida>} />
+        <Route path="/terminos" element={<Legal tipo="terminos" />} />
+        <Route path="/privacidad" element={<Legal tipo="privacidad" />} />
         <Route path="/administrativo" element={<Administrativo />} />
+        <Route path="/especialista" element={<EspecialistaAgenda />} />
+        <Route path="/especialista/turno/:id" element={<EspecialistaTurno />} />
+        <Route path="/confirmar-asistencia" element={<ConfirmarAsistencia />} />
+        <Route path="/administrativo" element={<RutaProtegida roles={['administrativo']}><Administrativo /></RutaProtegida>} />
+        <Route path="/especialista" element={<RutaProtegida roles={['especialista']}><EspecialistaAgenda /></RutaProtegida>} />
+        <Route path="/especialista/turno/:id" element={<RutaProtegida roles={['especialista']}><EspecialistaTurno /></RutaProtegida>} />
       </Routes>
     </BrowserRouter>
   );

@@ -1,3 +1,4 @@
+import './src/shared/env.js';
 import 'reflect-metadata';
 import { orm, syncSchema } from './src/shared/db/orm.js';
 import express from 'express';
@@ -7,12 +8,17 @@ import especialidadRoutes from './src/especialidad/especialidad.routes.js';
 import especialistaRoutes from './src/especialista/especialista.routes.js';
 import pacienteRoutes from './src/paciente/paciente.routes.js';
 import turnoRoutes from './src/turno/turno.routes.js';
-import afiliadoRoutes from './src/Afiliado/routes.js';
+import administrativoRoutes from './src/Administrativo/administrativo.routes.js';
+import authRoutes from './src/auth/auth.routes.js';
+import obraSocialRoutes from './src/ObraSocial/obraSocial.routes.js';
 import { errorHandler } from './src/shared/errorHandler.js';
 import { RequestContext } from '@mikro-orm/core';
 import { apiReference } from '@scalar/express-api-reference';
 import { openApiDocument } from './src/shared/openapi.js';
+import './src/Email/email.service.js';
 import suscripcionRoutes from './src/suscripcion/suscripcion.routes.js';
+import historiaClinicaRoutes from './src/historiaClinica/historiaClinica.routes.js'; 
+import {iniciarRecordatoriosTurnos} from './src/Email/recordatorios_turnos-task.js';
 
 const app = express();
 
@@ -25,10 +31,18 @@ app.use((req, res, next) => {
 
 app.use('/especialidad', especialidadRoutes);
 app.use('/especialista', especialistaRoutes);
+app.use('/obra-social', obraSocialRoutes);
+
+
 app.use('/paciente', pacienteRoutes);
 app.use('/turno', turnoRoutes);
-app.use('/afiliado', afiliadoRoutes);
+app.use('/historia-clinica', historiaClinicaRoutes);
 app.use('/suscripcion', suscripcionRoutes);
+app.use('/administrativo', administrativoRoutes);
+app.use('/auth', authRoutes);
+app.use('/obraSocial', obraSocialRoutes);
+
+iniciarRecordatoriosTurnos(); // Inicia la tarea de recordatorios de turnos para pacientes
 
 app.get('/openapi.json', (_req, res) => {
     res.json(openApiDocument);

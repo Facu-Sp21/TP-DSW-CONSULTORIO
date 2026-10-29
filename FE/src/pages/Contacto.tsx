@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
+import * as React from 'react';
+import { useState } from 'react';
 import { PublicLayout } from '../components/PublicLayout';
+import {useForm, ValidationError} from "@formspree/react"
 
 export const Contacto: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -24,10 +26,8 @@ export const Contacto: React.FC = () => {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    console.log('Datos enviados:', formData);
-  };
+
+const [state, handleSubmit] = useForm("mjygdayd");
 
   return (
     <PublicLayout activo="/contacto">
@@ -83,8 +83,8 @@ export const Contacto: React.FC = () => {
                 <li className="d-flex gap-3">
                   <span className="icono-contacto"><i className="bi bi-clock-fill fs-5"></i></span>
                   <div>
-                    <h6 className="fw-bold mb-1">Atención administrativa</h6>
-                    <p className="text-muted small mb-0">Lunes a viernes de 08:00 a 20:00 hs · Sábados de 08:00 a 13:00 hs</p>
+                    <h6 className="fw-bold mb-1">Horario del consultorio</h6>
+                    <p className="text-muted small mb-0">Lunes a viernes de 08:00 a 17:00 hs</p>
                   </div>
                 </li>
               </ul>
@@ -108,27 +108,27 @@ export const Contacto: React.FC = () => {
                   <form className="row g-3" onSubmit={handleSubmit}>
                     <div className="col-md-6">
                       <label htmlFor="nombre" className="form-label fw-semibold">Nombre y apellido <span className="text-danger">*</span></label>
-                      <input type="text" className="form-control" id="nombre" placeholder="Ej: María Fernández" value={formData.nombre} onChange={handleChange} required />
+                      <input type="text" className="form-control" id="nombre" name= "nombre" placeholder="Ej: María Fernández" value={formData.nombre} onChange={handleChange} required />
                     </div>
 
                     <div className="col-md-6">
                       <label htmlFor="dni" className="form-label fw-semibold">DNI</label>
-                      <input type="text" className="form-control" id="dni" placeholder="Ej: 30123456" value={formData.dni} onChange={handleChange} />
+                      <input type="text" className="form-control" id="dni" name= "dni" placeholder="Ej: 30123456" value={formData.dni} onChange={handleChange} />
                     </div>
 
                     <div className="col-md-6">
                       <label htmlFor="email" className="form-label fw-semibold">Correo electrónico <span className="text-danger">*</span></label>
-                      <input type="email" className="form-control" id="email" placeholder="tu@correo.com" value={formData.email} onChange={handleChange} required />
+                      <input type="email" className="form-control" id="email" name= "email" placeholder="tu@correo.com" value={formData.email} onChange={handleChange} required />
                     </div>
 
                     <div className="col-md-6">
                       <label htmlFor="telefono" className="form-label fw-semibold">Teléfono de contacto <span className="text-danger">*</span></label>
-                      <input type="tel" className="form-control" id="telefono" placeholder="Ej: 341 555-1234" value={formData.telefono} onChange={handleChange} required />
+                      <input type="tel" className="form-control" id="telefono" name="telefono" placeholder="Ej: 341 555-1234" value={formData.telefono} onChange={handleChange} required />
                     </div>
 
                     <div className="col-12">
                       <label htmlFor="motivo" className="form-label fw-semibold">Motivo de la consulta <span className="text-danger">*</span></label>
-                      <select id="motivo" className="form-select" value={formData.motivo} onChange={handleChange} required>
+                      <select id="motivo" name="motivo" className="form-select" value={formData.motivo} onChange={handleChange} required>
                         <option value="" disabled>Seleccioná una opción</option>
                         <option value="turno">Coordinar o modificar un turno</option>
                         <option value="administrativo">Consulta administrativa</option>
@@ -139,12 +139,12 @@ export const Contacto: React.FC = () => {
 
                     <div className="col-12">
                       <label htmlFor="mensaje" className="form-label fw-semibold">Mensaje <span className="text-danger">*</span></label>
-                      <textarea id="mensaje" className="form-control" rows={4} placeholder="Contanos en detalle en qué podemos ayudarte..." value={formData.mensaje} onChange={handleChange} required></textarea>
+                      <textarea id="mensaje" name= "mensaje "className="form-control" rows={4} placeholder="Contanos en detalle en qué podemos ayudarte..." value={formData.mensaje} onChange={handleChange} required></textarea>
                     </div>
 
                     <div className="col-12">
                       <div className="form-check">
-                        <input type="checkbox" className="form-check-input" id="consentimiento" checked={formData.consentimiento} onChange={handleChange} required />
+                        <input type="checkbox" className="form-check-input" id="consentimiento" name="consetimiento" checked={formData.consentimiento} onChange={handleChange} required />
                         <label className="form-check-label small text-muted" htmlFor="consentimiento">
                           Acepto que mis datos sean utilizados para dar respuesta a esta consulta, de acuerdo a la Política de Privacidad.
                         </label>
@@ -152,10 +152,21 @@ export const Contacto: React.FC = () => {
                     </div>
 
                     <div className="col-12">
-                      <button type="submit" className="btn btn-primary w-100 py-2">
-                        <i className="bi bi-send-fill me-2"></i>Enviar mensaje
-                      </button>
+                      <button type="submit" className="btn btn-primary w-100 py-2"disabled={state.submitting || state.succeeded}>
+                          <i className="bi bi-send-fill me-2"></i>
+                          {state.submitting? "Enviando...": state.succeeded? "Mensaje enviado": "Enviar mensaje"}
+                        </button> 
                     </div>
+                         <div className="col-12" aria-live="polite">
+                      {state.succeeded && (
+                        <div className="alert alert-success" role="status">
+                          Tu mensaje fue enviado. Te contactaremos a la brevedad.
+                        </div>
+                      )}
+
+                      <ValidationError errors={state.errors} />
+                    </div>
+
                   </form>
                 </div>
               </div>

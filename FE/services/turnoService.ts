@@ -1,27 +1,103 @@
 import { apiFetch } from './api';
 
+export interface CreateTurnoPayload {
+  fecha: string;            
+  hora_inicio: string;      
+  cod_especialista: number; 
+  nro_afiliado: number; 
+  acepta_particular?: boolean;
+  cod_os?: number | null;
+}
+
 export interface TurnoAdmin {
-  id?: number;
+  cod_turno?: number;
   fecha: string;
-  hora: string;
-  especialistaId: number;
-  afiliadoId?: number;
-  estado: string;
+  hora_inicio: string;
+  cod_especialista: number;
+  nro_afiliado: number;
+  estado?: string;
+  obraSocial?: {
+    cod_os: number;
+    nombre: string;
+  } | null;
+  paciente?: {
+    nro_afiliado: number;
+    nombre: string;
+    dni: string;
+  };
+  especialista?: {
+    cod_especialista: number;
+    nombre: string;
+    matricula: string;
+  };
+}
+
+export type AccionConfirmacion = 'confirmar' | 'cancelar';
+
+export interface ResponderConfirmacionPayload {
+  token: string;
+  accion: AccionConfirmacion;
+}
+
+export interface ResponderConfirmacionResponse {
+  cod_turno: number;
+  estado: 'CONFIRMADO' | 'CANCELADO';
+}
+
+export interface HorariosDisponibles {
+  fecha: string;
+  horarios: string[];
 }
 
 export const getTurnos = () => {
   return apiFetch<TurnoAdmin[]>('/turno');
 };
 
-export const createTurno = (data: TurnoAdmin) => {
+export const getTurnosPaciente = (nroAfiliado: number) => {
+  return apiFetch<TurnoAdmin[]>(`/turno?nro_afiliado=${nroAfiliado}`);
+};
+
+export const getHorariosDisponibles = (cod_especialista: number, fecha: string) => {
+  return apiFetch<HorariosDisponibles>(
+    `/turno/disponibles?cod_especialista=${cod_especialista}&fecha=${fecha}`,
+  );
+};
+
+export const createTurno = (data: CreateTurnoPayload) => {
   return apiFetch<TurnoAdmin>('/turno', {
     method: 'POST',
     body: JSON.stringify(data),
   });
 };
 
-export const cancelarTurno = (id: number) => {
-  return apiFetch<TurnoAdmin>(`/turno/${id}/cancelar`, {
-    method: 'PUT',
+export const cancelarTurno = (cod_turno: number) => {
+  return apiFetch<void>(`/turno/${cod_turno}`, {
+    method: 'DELETE',
   });
+};
+
+export const confirmacionTurno = (
+  data: ResponderConfirmacionPayload,
+) => {
+  return apiFetch<ResponderConfirmacionResponse>('/turno/confirmar-asistencia',
+    {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    },
+  )};
+
+  export interface TurnoDelCorreo {
+  cod_turno: number;
+  fecha: string;
+  hora_inicio: string;
+  estado: string;
+  especialista: {
+    nombre: string;
+  };
+}
+
+export const getTurnoDelCorreo = (token: string) => {
+  return apiFetch<TurnoDelCorreo>(
+    `/turno/confirmar-asistencia?token=${encodeURIComponent(token)}`,
+  );
 };
