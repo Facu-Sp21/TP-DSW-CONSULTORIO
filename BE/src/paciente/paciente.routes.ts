@@ -16,13 +16,12 @@ import {
 
 const pacienteRouter = Router();
 
-// El registro queda público: cualquiera puede crear su cuenta de paciente
+
 pacienteRouter.post('/', validate({ body: pacienteBodySchema }), cCreatePaciente);
 
-// Listar todos los pacientes: solo el personal administrativo
+
 pacienteRouter.get('/', requireAuth(['administrativo']), cGetAllPacientes);
 
-// Ver/editar/borrar un paciente puntual: el propio paciente o un administrativo
 pacienteRouter.get(
   '/:nro_afiliado',
   requireAuth(['administrativo', 'paciente']),

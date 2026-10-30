@@ -190,9 +190,7 @@ export async function sCreateTurno(input: TurnoInput): Promise<Turno> {
   return turno;
 }
 
-/**
- * Actualizar turno (ej: cambiar el día o la hora)
- */
+
 export async function sUpdateTurno(
   cod_turno: number,
   input: TurnoInput
@@ -210,7 +208,6 @@ export async function sUpdateTurno(
     );
   }
 
-  // Pasamos el cod_turno para que no crea que choca consigo mismo
   await ensureTurnoDisponible(
     input.fecha,
     input.hora_inicio,
@@ -244,9 +241,6 @@ export async function sDeleteTurno(cod_turno: number): Promise<boolean> {
   return true;
 }
 
-/**
- * La confirmación automática se implementa con el envío de correo.
- */
 export async function sConfirmarTurno(token:string, accion:'confirmar'|'cancelar'): Promise<Turno> {
   const payload = verifyTokenGestionTurno(token);
   const turno = await orm.em.findOne(Turno, { cod_turno: payload.cod_turno });

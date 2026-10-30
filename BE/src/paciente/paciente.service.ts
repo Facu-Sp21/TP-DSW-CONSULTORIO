@@ -12,7 +12,7 @@ type PacienteInput = {
   telefono: string;
   direccion: string;
   email: string;
-  contrasena?: string; // <-- Ahora es opcional
+  contrasena?: string; 
   cod_os?: number | null;
 };
 
@@ -37,7 +37,7 @@ export async function sCreatePaciente(input: PacienteInput): Promise<Paciente> {
   // Si no puso contraseña, autogeneramos una por defecto (ej: usamos su DNI o una clave genérica)
   const passwordPlana = (input.contrasena && input.contrasena.trim() !== '') 
     ? input.contrasena 
-    : input.dni; // O podés poner una fija como '123456'
+    : input.dni; 
 
   const hashedPassword = await hashPassword(passwordPlana);
 
