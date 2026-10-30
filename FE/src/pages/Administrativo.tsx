@@ -38,6 +38,7 @@ import {
   updateObraSocial,
   deleteObraSocial,
 } from '../../services/obraSocialService';
+import { esHorarioPasado, tieneConflictoDeTurno } from '../utils/turno';
 
 export const Administrativo: React.FC = () => {
   const usuario = getUsuarioActual();
@@ -157,7 +158,7 @@ export const Administrativo: React.FC = () => {
 
   // Filtrar médicos según la especialidad elegida
   const especialistasFiltrados = especialistas.filter((esp: any) => {
-    if (!espEspecialidadSel) return false;
+    if (!espEspecialidadSel || esp.estado === false) return false;
     const codEsp =
       esp.cod_especialidad ||
       esp.codEspecialidad ||
@@ -178,15 +179,16 @@ export const Administrativo: React.FC = () => {
   // FILTRAR HORARIOS: Oculta por completo los que ya están ocupados por turnos activos
   const horariosDisponibles = horariosDinamicos.filter((hora) => {
     if (!espTurnoSel || !fechaTurno) return true;
-    const yaOcupado = turnos.some((t: any) => {
-      const medCod = Number(t.cod_especialista || t.especialista?.cod_especialista);
-      const tFecha = t.fecha;
-      const tHora = (t.hora_inicio || t.horaInicio || '').substring(0, 5);
-      const estadoTurno = (t.estado || '').toUpperCase();
-      if (estadoTurno === 'CANCELADO') return false;
-      return medCod === Number(espTurnoSel) && tFecha === fechaTurno && tHora === hora;
-    });
-    return !yaOcupado;
+    if (esHorarioPasado(fechaTurno, hora)) return false;
+
+    return !tieneConflictoDeTurno(
+      fechaTurno,
+      hora,
+      duracionMinutosTurno,
+      Number(espTurnoSel),
+      pacTurnoSel,
+      turnos,
+    );
   });
 
   // Filtrar turnos activos para la tabla
@@ -750,13 +752,47 @@ export const Administrativo: React.FC = () => {
       setModalAlerta({ show: true, titulo: 'Campo incompleto', mensaje: 'Debe seleccionar el campo Horario Disponible.', tipo: 'error' });
       return;
     }
+    if (!horariosDisponibles.includes(horaTurno)) {
+      setHoraTurno('');
+      setModalAlerta({
+        show: true,
+        titulo: 'Horario no disponible',
+        mensaje: 'El horario seleccionado ya no está disponible. Por favor, seleccione otro.',
+        tipo: 'error',
+      });
+      return;
+    }
+    if (esHorarioPasado(fechaTurno, horaTurno)) {
+      setHoraTurno('');
+      setModalAlerta({
+        show: true,
+        titulo: 'Horario no disponible',
+        mensaje: 'El horario seleccionado ya pasó. Por favor, seleccione otro horario.',
+        tipo: 'error',
+      });
+      return;
+    }
 
     const especialistaSeleccionado = especialistas.find(
       (especialista) => especialista.cod_especialista === Number(espTurnoSel)
     );
+    const especialidadSeleccionada = especialidades.find(
+      (especialidad) => Number(especialidad.cod_especialidad) === Number(espEspecialidadSel)
+    );
     const pacienteSeleccionado = pacientes.find(
       (paciente) => Number(paciente.nro_afiliado ?? paciente.id) === Number(pacTurnoSel)
     );
+
+    if (especialidadSeleccionada?.estado === false || especialistaSeleccionado?.estado === false) {
+      setHoraTurno('');
+      setModalAlerta({
+        show: true,
+        titulo: 'Turno no disponible',
+        mensaje: 'No se pueden asignar turnos con especialistas o especialidades inactivas.',
+        tipo: 'error',
+      });
+      return;
+    }
 
     if (!especialistaSeleccionado || !pacienteSeleccionado) {
       setModalAlerta({
@@ -2014,7 +2050,7 @@ export const Administrativo: React.FC = () => {
                             }}
                           >
                             <option value="">Seleccione una especialidad</option>
-                            {especialidades.map((esp) => (
+                            {especialidades.filter((esp) => esp.estado !== false).map((esp) => (
                               <option key={esp.cod_especialidad} value={esp.cod_especialidad}>
                                 {esp.nombre}
                               </option>
@@ -2051,7 +2087,10 @@ export const Administrativo: React.FC = () => {
                             className="form-select"
                             value={pacTurnoSel}
                             onChange={(e) =>
-                              setPacTurnoSel(e.target.value ? Number(e.target.value) : '')
+                              {
+                                setPacTurnoSel(e.target.value ? Number(e.target.value) : '');
+                                setHoraTurno('');
+                              }
                             }
                           >
                             <option value="">Seleccione un paciente</option>
@@ -2137,7 +2176,7 @@ export const Administrativo: React.FC = () => {
                           )}
                         </div>
 
-                        <button type="submit" className="btn btn-primary w-100" disabled={!horaTurno}>
+                        <button type="submit" className="btn btn-primary w-100" disabled={!horaTurno || !horariosDisponibles.includes(horaTurno)}>
                           <i className="bi bi-check-circle me-1"></i>Confirmar Turno
                         </button>
                       </form>

@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { getUsuarioActual, isAuthenticated, logout } from '../../services/authService';
 import { cancelarTurno, getTurnosPaciente } from '../../services/turnoService';
+import { getPacienteById, updatePaciente, type PacienteResponse } from '../../services/pacienteService';
+import { getObrasSociales, type ObraSocial } from '../../services/obraSocialService';
 
 export interface Turno {
   id: number;
@@ -99,6 +101,11 @@ export const UserNavigation: React.FC = () => {
 
 export const Usuario: React.FC = () => {
   const [turnos, setTurnos] = useState<Turno[]>([]);
+  const [paciente, setPaciente] = useState<PacienteResponse | null>(null);
+  const [obrasSociales, setObrasSociales] = useState<ObraSocial[]>([]);
+  const [obraSocialSeleccionada, setObraSocialSeleccionada] = useState('');
+  const [guardandoObraSocial, setGuardandoObraSocial] = useState(false);
+  const [mensajeObraSocial, setMensajeObraSocial] = useState<{ tipo: 'success' | 'danger'; texto: string } | null>(null);
   const location = useLocation();
   const [showFeedback, setShowFeedback] = useState(Boolean(location.state?.bookingSuccess));
   const usuario = getUsuarioActual();
@@ -106,10 +113,54 @@ export const Usuario: React.FC = () => {
 
   useEffect(() => {
     if (!usuario?.id) return;
-    getTurnosPaciente(usuario.id)
-      .then((turnosApi) => setTurnos(turnosApi.map(toTurno).filter(isFutureTurno)))
-      .catch(() => setTurnos([]));
+    Promise.all([
+      getTurnosPaciente(usuario.id),
+      getPacienteById(usuario.id),
+      getObrasSociales(),
+    ])
+      .then(([turnosApi, pacienteApi, obrasSocialesApi]) => {
+        setTurnos(turnosApi.map(toTurno).filter(isFutureTurno));
+        setPaciente(pacienteApi);
+        setObrasSociales(obrasSocialesApi);
+        setObraSocialSeleccionada(
+          String(pacienteApi.obraSocial?.cod_os ?? pacienteApi.cod_os ?? ''),
+        );
+      })
+      .catch(() => {
+        setTurnos([]);
+        setMensajeObraSocial({
+          tipo: 'danger',
+          texto: 'No se pudieron cargar los datos de cobertura médica.',
+        });
+      });
   }, [usuario?.id]);
+
+  const guardarObraSocial = async () => {
+    if (!usuario?.id) return;
+
+    setGuardandoObraSocial(true);
+    setMensajeObraSocial(null);
+    try {
+      const pacienteActualizado = await updatePaciente(usuario.id, {
+        cod_os: obraSocialSeleccionada ? Number(obraSocialSeleccionada) : null,
+      });
+      setPaciente(pacienteActualizado);
+      setObraSocialSeleccionada(
+        String(pacienteActualizado.obraSocial?.cod_os ?? pacienteActualizado.cod_os ?? ''),
+      );
+      setMensajeObraSocial({
+        tipo: 'success',
+        texto: 'Tu obra social se actualizó correctamente.',
+      });
+    } catch (error) {
+      setMensajeObraSocial({
+        tipo: 'danger',
+        texto: error instanceof Error ? error.message : 'No se pudo actualizar la obra social.',
+      });
+    } finally {
+      setGuardandoObraSocial(false);
+    }
+  };
 
   if (!isAuthenticated()) return <Navigate to="/login" replace />;
 
@@ -145,6 +196,58 @@ export const Usuario: React.FC = () => {
             <i className="bi bi-plus-lg me-2" />Sacar un turno
           </Link>
         </div>
+        <section className="card border-0 shadow-sm p-4 mb-4">
+          <div className="row align-items-end g-3">
+            <div className="col-md-8">
+              <h2 className="h5 fw-bold mb-1">
+                <i className="bi bi-credit-card-2-front text-primary me-2" />
+                Mi cobertura médica
+              </h2>
+              <p className="small text-muted mb-2">
+                Elegí la obra social que querés utilizar para tus próximos turnos.
+              </p>
+              <label className="visually-hidden" htmlFor="obra-social-usuario">
+                Obra social
+              </label>
+              <select
+                id="obra-social-usuario"
+                className="form-select"
+                value={obraSocialSeleccionada}
+                onChange={(event) => {
+                  setObraSocialSeleccionada(event.target.value);
+                  setMensajeObraSocial(null);
+                }}
+                disabled={guardandoObraSocial || obrasSociales.length === 0}
+              >
+                <option value="">Sin obra social</option>
+                {obrasSociales.map((obraSocial) => (
+                  <option key={obraSocial.cod_os} value={obraSocial.cod_os}>
+                    {obraSocial.nombre}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="col-md-4 d-grid">
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={guardarObraSocial}
+                disabled={
+                  guardandoObraSocial ||
+                  !paciente ||
+                  String(paciente.obraSocial?.cod_os ?? paciente.cod_os ?? '') === obraSocialSeleccionada
+                }
+              >
+                {guardandoObraSocial ? 'Guardando...' : 'Guardar cambios'}
+              </button>
+            </div>
+          </div>
+          {mensajeObraSocial && (
+            <div className={`alert alert-${mensajeObraSocial.tipo} mt-3 mb-0`} role="alert">
+              {mensajeObraSocial.texto}
+            </div>
+          )}
+        </section>
         <section className="card border-0 shadow-sm p-4">
           <div className="d-flex justify-content-between align-items-center mb-3">
             <div>

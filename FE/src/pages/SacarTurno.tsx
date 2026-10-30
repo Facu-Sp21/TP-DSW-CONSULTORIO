@@ -8,8 +8,9 @@ import { getEspecialistasByEspecialidad } from '../../services/especialistaServi
 import type { Especialista } from '../../services/especialistaService';
 import { isAuthenticated } from '../../services/authService';
 import { getUsuarioActual } from '../../services/authService';
-import { createTurno, getHorariosDisponibles } from '../../services/turnoService';
+import { createTurno, getHorariosDisponibles, getTurnosPaciente } from '../../services/turnoService';
 import { getPacienteById, type PacienteResponse } from '../../services/pacienteService';
+import { tieneConflictoDeTurno } from '../utils/turno';
 
 export const SacarTurno: React.FC = () => {
   const navigate = useNavigate();
@@ -39,6 +40,8 @@ export const SacarTurno: React.FC = () => {
     tipo: 'error' | 'success' | 'confirm';
     onConfirm?: () => void;
   }>({ show: false, titulo: '', mensaje: '', tipo: 'error' });
+  const especialidadesActivas = especialidades.filter((item) => item.estado !== false);
+  const especialistasActivos = especialistas.filter((item) => item.estado !== false);
 
   useEffect(() => {
     const usuario = getUsuarioActual();
@@ -62,7 +65,8 @@ export const SacarTurno: React.FC = () => {
 
   useEffect(() => {
     const selectedId = Number(searchParams.get('especialidad'));
-    const selected = especialidades.find((item) => item.cod_especialidad === selectedId);
+    const selected = especialidades.filter((item) => item.estado !== false)
+      .find((item) => item.cod_especialidad === selectedId);
     if (selected && !especialidad) {
       setEspecialidad(selected);
       setStep(2);
@@ -79,12 +83,34 @@ export const SacarTurno: React.FC = () => {
   }, [especialidad]);
 
   useEffect(() => {
-    if (!especialista?.cod_especialista || !fecha) return;
+    const codEspecialista = especialista?.cod_especialista;
+    if (!codEspecialista || !fecha) return;
 
     let cancelled = false;
-    getHorariosDisponibles(especialista.cod_especialista, fecha)
-      .then((disponibilidad) => {
-        if (!cancelled) setHorariosDisponibles(disponibilidad.horarios);
+    const usuario = getUsuarioActual();
+    if (!usuario) return;
+
+    Promise.all([
+      getHorariosDisponibles(codEspecialista, fecha),
+      getTurnosPaciente(usuario.id),
+    ])
+      .then(([disponibilidad, turnosPaciente]) => {
+        if (cancelled) return;
+
+        const duracion = especialidad?.duracion_minutos ?? 0;
+        setHorariosDisponibles(
+          disponibilidad.horarios.filter(
+            (horario) =>
+              !tieneConflictoDeTurno(
+                fecha,
+                horario,
+                duracion,
+                codEspecialista,
+                usuario.id,
+                turnosPaciente,
+              ),
+          ),
+        );
       })
       .catch((err: unknown) => {
         if (!cancelled) {
@@ -103,7 +129,7 @@ export const SacarTurno: React.FC = () => {
     return () => {
       cancelled = true;
     };
-  }, [especialista, fecha]);
+  }, [especialista, fecha, especialidad]);
 
   const { calendarDays, maxDate, minMonth, maxMonth } = useMemo(() => {
     const today = new Date();
@@ -198,7 +224,7 @@ export const SacarTurno: React.FC = () => {
               <h2 className="h4 fw-bold mb-1">¿Qué especialidad necesitás?</h2>
               <p className="text-muted mb-4">Seleccioná el tipo de consulta.</p>
               <div className="row g-3">
-                {especialidades.map((item) => (
+                {especialidadesActivas.map((item) => (
                   <div className="col-md-6" key={item.cod_especialidad}>
                     <button className={`selection-card text-start w-100 ${especialidad?.cod_especialidad === item.cod_especialidad ? 'selected' : ''}`} onClick={() => setEspecialidad(item)} onDoubleClick={() => { setEspecialidad(item); setStep(2); }}>
                       <i className="bi bi-clipboard2-pulse fs-4" />
@@ -217,7 +243,7 @@ export const SacarTurno: React.FC = () => {
               <p className="text-muted mb-4">Profesionales disponibles para {especialidad?.nombre}.</p>
               {loading ? <div className="text-center py-4"><div className="spinner-border text-primary" /></div> : (
                 <div className="row g-3">
-                  {especialistas.map((item) => (
+                  {especialistasActivos.map((item) => (
                     <div className="col-md-6" key={item.cod_especialista}>
                       <button className={`selection-card text-start w-100 ${especialista?.cod_especialista === item.cod_especialista ? 'selected' : ''}`} onClick={() => { setEspecialista(item); setHora(''); setHorariosDisponibles([]); setLoadingHorarios(Boolean(fecha)); }} onDoubleClick={() => { setEspecialista(item); setHora(''); setHorariosDisponibles([]); setLoadingHorarios(Boolean(fecha)); setStep(3); }}>
                         <i className="bi bi-person-badge fs-4" /><span><strong className="d-block">{item.nombre}</strong><small className="text-muted">{item.matricula}</small></span>
@@ -225,6 +251,9 @@ export const SacarTurno: React.FC = () => {
                       </button>
                     </div>
                   ))}
+                  {especialistasActivos.length === 0 && (
+                    <p className="text-muted mb-0">No hay especialistas activos para esta especialidad.</p>
+                  )}
                 </div>
               )}
               <div className="d-flex justify-content-between mt-4"><button className="btn btn-outline-secondary" onClick={() => setStep(1)}>Atrás</button><button className="btn btn-primary" disabled={!especialista} onClick={() => setStep(3)}>Continuar <i className="bi bi-arrow-right ms-2" /></button></div>
